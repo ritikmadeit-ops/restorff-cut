@@ -1,0 +1,7 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew): a 49.5 s ad at 30 fps = 1,484 frames checked; frame 6 of the strip is flagged and fixed, then the master renders.",
+  "count": 1484,
+  "flag": 5,
+  "status": "RENDERING",
+  "done": "halcyon-ad-014.mp4"
+}

@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/stagger-cascade); fictional.",
+  "itemCount": 8,
+  "stagger": 90,
+  "direction": "left",
+  "speed": 1
+}

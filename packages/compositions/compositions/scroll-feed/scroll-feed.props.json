@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/scroll-feed); fictional.",
+  "speedVar": "frantic",
+  "cardCount": 8,
+  "cues": "",
+  "exit": "none",
+  "speed": 1
+}

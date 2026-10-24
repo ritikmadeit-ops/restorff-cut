@@ -27,7 +27,8 @@ export interface DraggableItemProps {
 	shouldShowPlusOnDrag?: boolean;
 	shouldShowLabel?: boolean;
 	isRounded?: boolean;
-	variant?: "card" | "compact";
+	/** "inline": a bare draggable word, for the artboard's SFX line ("kettle_click · pour_soft"). */
+	variant?: "card" | "compact" | "inline";
 	isDraggable?: boolean;
 }
 
@@ -94,22 +95,38 @@ export function DraggableItem({
 
 	return (
 		<>
-			{variant === "card" ? (
+			{variant === "inline" ? (
+				<button
+					type="button"
+					title={`${name} · drag to the timeline, double-click to add at the playhead`}
+					className={cn(
+						"cursor-grab text-left text-[13px] text-bone outline-none hover:underline focus-visible:underline",
+						isDraggable && "[&::-webkit-drag-ghost]:opacity-0",
+						className,
+					)}
+					draggable={isDraggable}
+					onDragStart={isDraggable ? handleDragStart : undefined}
+					onDragEnd={isDraggable ? handleDragEnd : undefined}
+					onDoubleClick={handleAddToTimeline}
+				>
+					{name}
+				</button>
+			) : variant === "card" ? (
 				<div
 					ref={dragRef}
 					className={cn("group relative", containerClassName ?? "w-28")}
 				>
 					<div
 						className={cn(
-							"relative flex h-auto w-full cursor-default flex-col gap-1 p-",
+							"relative flex h-auto w-full cursor-default flex-col gap-[3px]",
 							className,
 						)}
 					>
 						<AspectRatio
 							ratio={aspectRatio}
 							className={cn(
-								"bg-accent relative overflow-hidden",
-								isRounded && "rounded-sm",
+								"bg-surface relative overflow-hidden",
+								isRounded && "rounded-[6px]",
 								isDraggable && "[&::-webkit-drag-ghost]:opacity-0",
 							)}
 							draggable={isDraggable}
@@ -126,15 +143,10 @@ export function DraggableItem({
 						</AspectRatio>
 						{shouldShowLabel && (
 							<span
-								className="text-muted-foreground w-full truncate text-left text-[0.7rem]"
+								className="rc-mono text-mist w-full truncate text-left text-[10px] leading-[14px]"
 								title={name}
 							>
-								<span className="sr-only">{name}</span>
-								<span aria-hidden="true">
-									{name.length > 8
-										? `${name.slice(0, 16)}...${name.slice(-3)}`
-										: name}
-								</span>
+								{name}
 							</span>
 						)}
 					</div>
@@ -147,18 +159,21 @@ export function DraggableItem({
 					<button
 						type="button"
 						className={cn(
-							"flex h-8 w-full cursor-default items-center gap-3 px-1 outline-none",
+							"flex h-7 w-full cursor-default items-center gap-2 outline-none",
 							isDraggable && "[&::-webkit-drag-ghost]:opacity-0",
 							className,
 						)}
 						draggable={isDraggable}
 						onDragStart={isDraggable ? handleDragStart : undefined}
 						onDragEnd={isDraggable ? handleDragEnd : undefined}
+						onDoubleClick={handleAddToTimeline}
 					>
-						<div className="size-6 shrink-0 overflow-hidden rounded-sm">
-							{preview}
-						</div>
-						<span className="w-full flex-1 truncate text-sm text-left">
+						{preview && (
+							<div className="size-5 shrink-0 overflow-hidden rounded-sm">
+								{preview}
+							</div>
+						)}
+						<span className="w-full flex-1 truncate text-left text-[13px] text-bone">
 							{name}
 						</span>
 					</button>
@@ -221,6 +236,7 @@ function PlusButton({
 				onClick?.();
 			}}
 			title={tooltipText}
+			aria-label={tooltipText ?? "Add to the timeline" /* ui-fix-panels (QA #27) */}
 		>
 			<Plus />
 		</Button>

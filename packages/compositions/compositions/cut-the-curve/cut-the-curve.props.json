@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/cut-the-curve); fictional.",
+  "subject": "card",
+  "direction": "left",
+  "cutFraction": 0.33,
+  "blurPx": 12,
+  "exit": "none",
+  "speed": 1
+}

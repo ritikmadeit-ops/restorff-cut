@@ -152,6 +152,24 @@ export const ACTIONS = {
 
 export type TAction = keyof typeof ACTIONS;
 
+// Actions whose args are required (see TActionArgsMap): they can't be bound to a
+// key on their own.
+const ACTIONS_WITH_REQUIRED_ARGS: ReadonlySet<string> = new Set<TAction>([
+	"remove-media-asset",
+	"remove-media-assets",
+]);
+
+// Upstream (base commit 238750c0) imported this guard in keybindings/persistence.ts
+// without defining it, which failed `next build`; defined here.
+export function isActionWithOptionalArgs(
+	value: string,
+): value is TActionWithOptionalArgs {
+	return (
+		Object.prototype.hasOwnProperty.call(ACTIONS, value) &&
+		!ACTIONS_WITH_REQUIRED_ARGS.has(value)
+	);
+}
+
 const ACTION_DEFAULT_SHORTCUTS = [
 	["toggle-play", ["space", "k"]],
 	["seek-forward", ["l"]],

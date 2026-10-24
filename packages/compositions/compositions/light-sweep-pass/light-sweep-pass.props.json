@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/light-sweep-pass); fictional.",
+  "angle": 128,
+  "sweepAt": 0.6,
+  "strength": "standard",
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

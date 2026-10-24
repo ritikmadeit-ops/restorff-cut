@@ -1,0 +1,320 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/text-stagger@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html lang="en">
+  <head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "text-stagger",
+  "title": "Text Stagger",
+  "description": "A transitions.dev-inspired text stagger primitive with enter, shimmer, and exit-ready words. Imported from a HyperFrames component (kinetic-type; provenance below).",
+  "duration": 5,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "tags": [
+    "kinetic-type",
+    "video-primitive",
+    "transition-primitive",
+    "transitions-dev-port",
+    "text",
+    "stagger",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "text": {
+      "type": "string",
+      "default": "Build motion systems fast",
+      "label": "Text",
+      "description": "Headline copy. Every whitespace-separated word becomes one staggered span.",
+      "required": true
+    },
+    "size": {
+      "type": "number",
+      "default": 74,
+      "label": "Size",
+      "description": "Type size of every word in pixels, clamped to 24-160. Line height stays proportional.",
+      "min": 24,
+      "max": 160,
+      "step": 1
+    },
+    "tone": {
+      "type": "enum",
+      "options": [
+        "ink",
+        "paper"
+      ],
+      "default": "ink",
+      "label": "Tone",
+      "description": "Base word colour: ink for light frames, paper for dark ones."
+    },
+    "accent": {
+      "type": "enum",
+      "options": [
+        "blue",
+        "green",
+        "violet"
+      ],
+      "default": "blue",
+      "label": "Accent",
+      "description": "Colour of the shimmer the second timeline step sweeps across the words."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1920x1080 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    }
+  },
+  "hf": {
+    "vars": {
+      "text": "text",
+      "size": "size",
+      "tone": "tone",
+      "accent": "accent"
+    },
+    "width": 1920,
+    "height": 1080,
+    "mode": "demo",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/text-stagger",
+    "path": "registry/components/text-stagger",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+    
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Text Stagger - Demo</title>
+    
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+      #demo {
+        width: 1920px;
+        height: 1080px;
+        display: grid;
+        place-items: center;
+        background: #fafafa;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      .demo-frame {
+        display: grid;
+        place-items: center;
+        gap: 28px;
+        /* Scale the non-GSAP wrapper while keeping the full phrase inside the frame. */
+        transform: scale(1.9);
+        transform-origin: center center;
+      }
+      .demo-label {
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #737379;
+      }
+      .hf-transition-text-stagger {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.24em;
+        color: #18181b;
+        font:
+          900 74px/0.95 Inter,
+          system-ui,
+          sans-serif;
+        letter-spacing: -0.045em;
+      }
+      .hf-transition-text-stagger span {
+        display: inline-block;
+        background: linear-gradient(90deg, #18181b, #18181b, #71717a, #18181b);
+        background-size: 240% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="demo"
+      data-composition-id="text-stagger-demo"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-duration="5"
+    >
+      <div class="demo-frame">
+        <div class="demo-label">text-stagger</div>
+        <div
+          class="hf-transition-text-stagger"
+          data-composition-variables='[
+    {"id": "text", "type": "string", "role": "content", "label": "Text", "description": "Headline copy. Every whitespace-separated word becomes one staggered span.", "default": "Build motion systems fast"},
+    {"id": "size", "type": "number", "role": "layout", "label": "Size", "description": "Type size of every word in pixels, clamped to 24-160. Line height stays proportional.", "default": 74, "min": 24, "max": 160, "step": 1, "unit": "px"},
+    {"id": "tone", "type": "enum", "role": "style", "label": "Tone", "description": "Base word colour: ink for light frames, paper for dark ones.", "default": "ink", "options": [{"value": "ink", "label": "Ink"}, {"value": "paper", "label": "Paper"}]},
+    {"id": "accent", "type": "enum", "role": "style", "label": "Accent", "description": "Colour of the shimmer the second timeline step sweeps across the words.", "default": "blue", "options": [{"value": "blue", "label": "Blue"}, {"value": "green", "label": "Green"}, {"value": "violet", "label": "Violet"}]}
+  ]'
+        >
+          <span>Build</span>
+          <span>motion</span>
+          <span>systems</span>
+          <span>fast</span>
+        </div>
+      </div>
+      <script type="text/x-rc-deferred">
+        (function () {
+          "use strict";
+
+          var vars =
+            window.__hyperframes && window.__hyperframes.getVariables
+              ? window.__hyperframes.getVariables()
+              : {};
+
+          // Unrecognised overrides return to their declared defaults.
+          var DEFAULT_TEXT = "Build motion systems fast";
+          var tones = { ink: "#111827", paper: "#f8fafc" };
+          var accents = { blue: "#38bdf8", green: "#34d399", violet: "#a78bfa" };
+
+          function pick(table, value, fallback) {
+            return Object.prototype.hasOwnProperty.call(table, value) ? value : fallback;
+          }
+
+          var words = String(vars.text == null ? DEFAULT_TEXT : vars.text)
+            .split(/\s+/)
+            .filter(function (word) {
+              return word.length > 0;
+            });
+          if (words.length === 0) words = DEFAULT_TEXT.split(" ");
+
+          // Number(null) is 0, so null has to miss the numeric branch and clamp back
+          // to the declared default instead of snapping to the minimum.
+          var size = typeof vars.size === "number" ? vars.size : parseFloat(vars.size);
+          if (!isFinite(size)) size = 74;
+          size = Math.min(160, Math.max(24, size));
+
+          var tone = tones[pick(tones, vars.tone, "ink")];
+          var accent = accents[pick(accents, vars.accent, "blue")];
+
+          var roots = document.querySelectorAll(".hf-transition-text-stagger");
+          for (var i = 0; i < roots.length; i += 1) {
+            var root = roots[i];
+            root.style.setProperty("--hf-stagger-size", size + "px");
+            root.style.setProperty("--hf-stagger-ink", tone);
+            root.style.setProperty("--hf-stagger-accent", accent);
+            // Rebuilt without whitespace between the spans: whitespace-only text
+            // between flex items is not rendered, so this matches the markup above.
+            root.textContent = "";
+            for (var w = 0; w < words.length; w += 1) {
+              var span = document.createElement("span");
+              span.textContent = words[w];
+              root.appendChild(span);
+            }
+          }
+        })();
+      </script>
+      <script type="text/x-rc-deferred">
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo(
+          ".hf-transition-text-stagger span",
+          { opacity: 0, y: 48, filter: "blur(14px)" },
+          {
+            opacity: 1,
+            y: 0,
+            filter: "blur(0px)",
+            duration: 0.54,
+            stagger: 0.09,
+            ease: "power3.out",
+          },
+          0.35,
+        );
+        tl.to(
+          ".hf-transition-text-stagger span",
+          { backgroundPosition: "100% 0%", duration: 0.72, stagger: 0.04, ease: "power2.inOut" },
+          1.05,
+        );
+        tl.set({}, {}, 5);
+        window.__timelines = window.__timelines || {};
+        window.__timelines["text-stagger-demo"] = tl;
+      </script>
+    </div>
+    <style>
+      .hf-transition-text-stagger {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.24em;
+        color: var(--hf-stagger-ink, #111827);
+        font:
+          900 74px/0.95 Inter,
+          system-ui,
+          sans-serif;
+        font-size: var(--hf-stagger-size, 74px);
+        letter-spacing: -0.045em;
+      }
+      .hf-transition-text-stagger span {
+        display: inline-block;
+        background: linear-gradient(
+          90deg,
+          var(--hf-stagger-ink, #111827),
+          var(--hf-stagger-ink, #111827),
+          var(--hf-stagger-accent, #38bdf8),
+          var(--hf-stagger-ink, #111827)
+        );
+        background-size: 240% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        
+      }
+    </style>
+  <script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/star-rating-fill@d63ff90; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-variables='[
+    { "id": "rating", "type": "number", "role": "content", "label": "Rating", "description": "Target rating in star units from 0 to 5.", "default": 4.8, "min": 0, "max": 5, "step": 0.1 },
+    { "id": "starCount", "type": "number", "role": "layout", "label": "Star count", "description": "Number of stars shown in the row.", "default": 5, "min": 1, "max": 10, "step": 1 },
+    { "id": "showValue", "type": "enum", "role": "content", "label": "Show value", "description": "Show or hide the synchronized numeric rating.", "default": "yes", "options": [{ "value": "yes", "label": "Yes" }, { "value": "no", "label": "No" }] }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "star-rating-fill",
+  "title": "Star Rating Fill",
+  "description": "A token-driven star row whose colored layer sweeps to a rating, preserves the fractional final star, and can count the value in sync. Imported from a HyperFrames component (proof; provenance below).",
+  "duration": 4,
+  "size": [
+    1114,
+    454
+  ],
+  "fps": 30,
+  "tags": [
+    "proof",
+    "data",
+    "rating",
+    "stars",
+    "fractional",
+    "fill",
+    "prove",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "rating": {
+      "type": "number",
+      "default": 4.8,
+      "label": "Rating",
+      "description": "Target rating in star units from 0 to 5.",
+      "min": 0,
+      "max": 5,
+      "step": 0.1,
+      "display": true
+    },
+    "starCount": {
+      "type": "number",
+      "default": 5,
+      "label": "Star count",
+      "description": "Number of stars shown in the row.",
+      "min": 1,
+      "max": 10,
+      "step": 1
+    },
+    "showValue": {
+      "type": "enum",
+      "options": [
+        "yes",
+        "no"
+      ],
+      "default": "yes",
+      "label": "Show value",
+      "description": "Show or hide the synchronized numeric rating."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1114x454 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "rating": "rating",
+      "starCount": "starCount",
+      "showValue": "showValue"
+    },
+    "width": 1114,
+    "height": 454,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/star-rating-fill",
+    "path": "registry/components/star-rating-fill",
+    "commit": "d63ff907aae9440e999610595c09adb2da189b7f",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="star-rating-fill" data-start="0" data-duration="4" data-width="1114" data-height="454" style="position:absolute;left:0;top:0;width:1114px;height:454px">
+
+      <div
+        id="root"
+        data-composition-id="star-rating-fill"
+        data-start="0"
+        data-duration="4"
+        data-fps="30"
+      >
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          /* INVARIANT: #root owns only the mount boundary. The host owns the
+             box, while all internal geometry stays container-relative. */
+          #root {
+            position: absolute;
+            inset: 0;
+            container-type: size;
+            isolation: isolate;
+            overflow: hidden;
+            color: var(--fg, CanvasText);
+            font-family: var(--font-display, system-ui);
+          }
+
+          .srf-clip {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background: var(--bg, transparent);
+          }
+
+          .srf-stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2, 3cqw);
+          }
+
+          /* EDIT ZONE: the row owns only its responsive presentation size.
+             --srf-count is supplied by the clamped public starCount value. */
+          .srf-stars {
+            --srf-count: 5;
+            position: relative;
+            width: min(68cqw, calc(72cqh * var(--srf-count)));
+          }
+
+          .srf-layer {
+            width: 100%;
+            display: flex;
+            align-items: center;
+          }
+
+          .srf-base {
+            color: color-mix(in srgb, var(--muted, currentColor) 68%, var(--surface, transparent));
+          }
+
+          .srf-fill {
+            position: absolute;
+            inset: 0;
+            color: var(--brand, currentColor);
+            clip-path: inset(0 100% 0 0);
+          }
+
+          .srf-star-cell {
+            display: block;
+            flex: 1 1 0;
+            min-width: 0;
+            aspect-ratio: 1;
+            transform-origin: center;
+          }
+
+          .srf-star-cell svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            fill: currentColor;
+          }
+
+          .srf-value {
+            min-width: 2.2em;
+            color: var(--fg, currentColor);
+            font-size: min(9cqw, 16cqh);
+            font-weight: 720;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            text-align: right;
+          }
+        </style>
+
+        <div
+          id="star-rating-fill-clip"
+          class="srf-clip clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="0"
+        >
+          <div class="srf-stage">
+            <div class="srf-stars" role="img" aria-label="0 out of 5 stars">
+              <div class="srf-layer srf-base" aria-hidden="true"></div>
+              <div class="srf-layer srf-fill" aria-hidden="true"></div>
+            </div>
+            <div class="srf-value" aria-hidden="true">0.0</div>
+          </div>
+        </div>
+
+        <template id="star-rating-fill-star-template">
+          <span class="srf-star-cell">
+            <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+              <path
+                d="M50 0 61.8 36.2 100 36.2 69.1 58.6 80.9 95 50 72.4 19.1 95 30.9 58.6 0 36.2 38.2 36.2Z"
+              />
+            </svg>
+          </span>
+        </template>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var stage = root.querySelector(".srf-stage");
+            var stars = root.querySelector(".srf-stars");
+            var baseLayer = root.querySelector(".srf-base");
+            var fillLayer = root.querySelector(".srf-fill");
+            var valueElement = root.querySelector(".srf-value");
+            var starTemplate = root.querySelector("#star-rating-fill-star-template");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            /* INVARIANT: zero is a valid rating. Missing values and zero are
+               handled separately, then every public number is clamped once. */
+            var ratingValue = vars.rating == null || vars.rating === "" ? NaN : Number(vars.rating);
+            var requestedRating = Number.isFinite(ratingValue)
+              ? Math.max(0, Math.min(5, ratingValue))
+              : 4.8;
+            var starCountValue =
+              vars.starCount == null || vars.starCount === "" ? NaN : Number(vars.starCount);
+            var starCount = Number.isFinite(starCountValue) ? Math.round(starCountValue) : 5;
+            starCount = Math.max(1, Math.min(10, starCount));
+            var rating = Math.min(requestedRating, starCount);
+            var showValue = vars.showValue === "no" ? "no" : "yes";
+            var fillPercent = (rating / starCount) * 100;
+
+            stars.style.setProperty("--srf-count", String(starCount));
+            stars.setAttribute("aria-label", rating.toFixed(1) + " out of " + starCount + " stars");
+            valueElement.hidden = showValue === "no";
+
+            /* The template is the single owner of star geometry. Both paint
+               layers clone it so their silhouettes cannot drift. */
+            var baseFragment = document.createDocumentFragment();
+            var fillFragment = document.createDocumentFragment();
+            for (var index = 0; index < starCount; index += 1) {
+              baseFragment.appendChild(starTemplate.content.firstElementChild.cloneNode(true));
+              fillFragment.appendChild(starTemplate.content.firstElementChild.cloneNode(true));
+            }
+            baseLayer.replaceChildren(baseFragment);
+            fillLayer.replaceChildren(fillFragment);
+
+            var baseCells = baseLayer.querySelectorAll(".srf-star-cell");
+            var fillCells = fillLayer.querySelectorAll(".srf-star-cell");
+            var valueState = { current: 0 };
+
+            /* RETIME RANGE: these values own the full lifecycle. The sweep
+               uses --ease-standard's GSAP owner, power2.out. */
+            var IN_BASE = 1.5;
+            var OUT_BASE = 0.4;
+            var FILL_START_BASE = 0.2;
+            var FILL_DURATION_BASE = 1.1;
+            var POP_DURATION_BASE = 0.2;
+            var durationValue = Number(root.dataset.duration);
+            var duration = Number.isFinite(durationValue) && durationValue > 0 ? durationValue : 4;
+            var scale = duration < IN_BASE + OUT_BASE ? duration / (IN_BASE + OUT_BASE) : 1;
+            var IN = IN_BASE * scale;
+            var OUT = OUT_BASE * scale;
+            var HOLD = Math.max(0, duration - IN - OUT);
+            var OUT_START = IN + HOLD;
+            var FILL_START = FILL_START_BASE * scale;
+            var FILL_DURATION = FILL_DURATION_BASE * scale;
+            var POP_DURATION = POP_DURATION_BASE * scale;
+
+            var timeline = gsap.timeline({ paused: true });
+
+            timeline.fromTo(
+              fillLayer,
+              { clipPath: "inset(0 100% 0 0)" },
+              {
+                clipPath: "inset(0 " + (100 - fillPercent) + "% 0 0)",
+                duration: FILL_DURATION,
+                ease: "power2.out",
+              },
+              FILL_START,
+            );
+
+            if (showValue === "yes") {
+              timeline.to(
+                valueState,
+                {
+                  current: rating,
+                  duration: FILL_DURATION,
+                  ease: "power2.out",
+                  onUpdate: function () {
+                    valueElement.textContent = valueState.current.toFixed(1);
+                  },
+                },
+                FILL_START,
+              );
+            }
+
+            /* Per-star pops are subordinate to the sweep and occur in the
+               same left-to-right order. They never change the fill endpoint. */
+            var popCount = Math.ceil(rating);
+            for (var popIndex = 0; popIndex < popCount; popIndex += 1) {
+              var popAt = FILL_START + FILL_DURATION * (popIndex / Math.max(1, rating)) * 0.82;
+              var popTargets = [baseCells[popIndex], fillCells[popIndex]];
+              timeline.to(
+                popTargets,
+                { scale: 1.06, duration: POP_DURATION * 0.45, ease: "power2.out" },
+                popAt,
+              );
+              timeline.to(
+                popTargets,
+                { scale: 1, duration: POP_DURATION * 0.55, ease: "power2.out" },
+                popAt + POP_DURATION * 0.45,
+              );
+            }
+
+            timeline.to(stage, { opacity: 0, duration: OUT, ease: "power2.in" }, OUT_START);
+
+            timeline.seek(0);
+
+            window.__timelines = window.__timelines || {};
+            window.__timelines["star-rating-fill"] = timeline;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

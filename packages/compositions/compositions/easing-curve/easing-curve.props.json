@@ -1,0 +1,11 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew): cold-brew extraction eases out over an 18-hour steep (sweet notes early, bitter late).",
+  "title": "EXTRACTION",
+  "kicker": "EASE · OUT",
+  "label": "extraction(t)",
+  "note": "18 h steep",
+  "curve": "ease-out",
+  "xTicks": ["0", "6", "12", "18 h"],
+  "xMax": 18,
+  "tags": [ { "at": 0.14, "text": "SWEETNESS" }, { "at": 0.62, "text": "BITTERNESS" } ]
+}

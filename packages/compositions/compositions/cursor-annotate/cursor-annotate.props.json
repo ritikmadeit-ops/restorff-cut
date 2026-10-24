@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/cursor-annotate); fictional.",
+  "shape": "circle",
+  "color": "#f43f5e",
+  "targetX": 50.2,
+  "targetY": 28.5,
+  "targetW": 7.8,
+  "targetH": 11.5,
+  "speed": 1
+}

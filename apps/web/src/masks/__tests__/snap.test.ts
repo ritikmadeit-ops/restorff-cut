@@ -147,6 +147,35 @@ function buildFreeformPathMaskParams(
 	};
 }
 
+/** Bun has no canvas; text masks measure text with a 2D context. Stub only what `measureTextLayout` reads. */
+function installCanvasStubIfMissing() {
+	if (typeof globalThis.OffscreenCanvas !== "undefined") return;
+	const context = {
+		font: "",
+		textBaseline: "alphabetic",
+		textAlign: "start",
+		save() {},
+		restore() {},
+		measureText(text: string) {
+			return {
+				width: text.length * 8,
+				actualBoundingBoxAscent: 11,
+				actualBoundingBoxDescent: 3,
+			};
+		},
+	};
+	class OffscreenCanvasStub {
+		constructor(
+			public width: number,
+			public height: number,
+		) {}
+		getContext(kind: string) {
+			return kind === "2d" ? context : null;
+		}
+	}
+	(globalThis as Record<string, unknown>).OffscreenCanvas = OffscreenCanvasStub;
+}
+
 function sortSegment(
 	segment: [{ x: number; y: number }, { x: number; y: number }],
 ): [{ x: number; y: number }, { x: number; y: number }] {
@@ -347,6 +376,9 @@ describe("mask snapping", () => {
 		// width=0.4, scale=1 → aabbHalfW = (0.4*200)/2 * 1 = 40.
 		// At scale=2.48 → rightEdge=0+40*2.48=99.2; |99.2-100|=0.8 < threshold(8)
 		// → snaps to scale=1*(100/40)=2.5; line at position 100.
+		// RestorffCut (polish, 2026-10-20): the uniform scale handle has no preferred edge, and the mask is centred,
+		// so the LEFT edge lands on -100 at the same time. `snapScale` reports every edge that sits on a guide when
+		// no edge is preferred (preview-snap.ts), so both lines are correct; the upstream test expected only the right.
 		const result = snapBoxMaskInteraction({
 			handleId: { kind: "scale" },
 			startParams: buildRectangleParams({ scale: 1 }),
@@ -357,10 +389,17 @@ describe("mask snapping", () => {
 		});
 
 		expect(result.params.scale).toBe(2.5);
-		expect(result.activeLines).toEqual([{ type: "vertical", position: 100 }]);
+		expect(result.activeLines).toEqual([
+			{ type: "vertical", position: -100 },
+			{ type: "vertical", position: 100 },
+		]);
 	});
 
 	test("snaps text mask movement using intrinsic text bounds", () => {
+		// RestorffCut (polish, 2026-10-20): Bun has no canvas, so `getTextMeasurementContext` threw "Failed to create
+		// text measurement context". Install a minimal 2D-context stub (8 px per character) when the runtime has no
+		// OffscreenCanvas. The snap only needs a finite intrinsic size; the position snap is what is asserted.
+		installCanvasStubIfMissing();
 		const params = buildTextMaskParams({
 			centerX: 0.03,
 			centerY: -0.04,
@@ -495,15 +534,20 @@ describe("custom mask point insertion", () => {
 		});
 
 		expect(nextPoints.map((point) => point.id)).toEqual(["a", "new", "b", "c"]);
+		// RestorffCut (polish, 2026-10-20): the insertion is an exact de Casteljau split of the cubic segment, so the
+		// new point gets handles along the line (in -0.1, out +0.1) and the curve keeps its shape; the upstream test
+		// expected zero handles, which the implementation never produced (same commit, c46d2889).
 		expect(nextPoints[1]).toMatchObject({
 			id: "new",
 			x: 0,
 			y: -0.1,
-			inX: 0,
 			inY: 0,
-			outX: 0,
 			outY: 0,
 		});
+		expect(nextPoints[1].inX).toBeCloseTo(-0.1);
+		expect(nextPoints[1].outX).toBeCloseTo(0.1);
+		expect(nextPoints[0]).toMatchObject({ outX: 0, outY: 0 });
+		expect(nextPoints[2]).toMatchObject({ inX: 0, inY: 0 });
 	});
 
 	test("builds updated custom mask params for a clicked segment", () => {

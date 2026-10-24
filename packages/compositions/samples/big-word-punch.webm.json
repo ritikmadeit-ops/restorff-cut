@@ -1,0 +1,41 @@
+{
+  "composition": "big-word-punch",
+  "source": "compositions/big-word-punch/big-word-punch.html",
+  "renderer": "@restorffcut/compositions 0.1.0",
+  "chrome": "HeadlessChrome/153.0.8010.12",
+  "out": "samples/big-word-punch.webm",
+  "format": "webm",
+  "frames": 90,
+  "fps": 30,
+  "duration": 3,
+  "width": 1080,
+  "height": 1920,
+  "ms": {
+    "total": 2883,
+    "load": 233,
+    "capture": 2650
+  },
+  "secondsPerSecond": 0.96,
+  "workers": 4,
+  "bytes": 408786,
+  "inputHash": "2076e93b28123adbe562f7a1db20e9812789ba2e46a99aade01b3b6a8339ce1f",
+  "framesHash": "ab490cf9ba5f4437b1b7fa6d7df876353382ce2a00757957b43eb80fa4264d62",
+  "params": {
+    "word": "FREE",
+    "kicker": "Halcyon Cold Brew",
+    "sub": "Shipping on your first case",
+    "color": "#EDEBE6",
+    "accent": "#F6FF00",
+    "scale": 1,
+    "speed": 1,
+    "ease": "snappy",
+    "anchor": "center",
+    "offsetY": 0,
+    "shake": true,
+    "exit": true
+  },
+  "sidecar": "samples/big-word-punch.webm.json",
+  "crf": 31,
+  "warnings": [],
+  "renderedAt": "2026-10-19T22:59:24.761Z"
+}

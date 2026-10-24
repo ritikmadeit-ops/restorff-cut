@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/cursor-marquee-select); fictional.",
+  "accent": "#0a84ff",
+  "startX": 20.5,
+  "startY": 25.5,
+  "endX": 57,
+  "endY": 52,
+  "pillLabel": "selected",
+  "speed": 1
+}

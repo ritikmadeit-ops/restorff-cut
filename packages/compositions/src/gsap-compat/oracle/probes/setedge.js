@@ -1,0 +1,8 @@
+const box = '<div id="a" style="opacity:0.2"></div><div id="b"></div>';
+export default [
+  { name: "set-at-frame", html: box, code: "const tl=gsap.timeline({paused:true}); tl.set('#a',{opacity:0},7.5); tl.set('#a',{opacity:1},9); tl.to({},{duration:5},10); const r=[]; tl.progress(0.0001,true); for (const t of [8.9,269/30,270/30,271/30]) { tl.totalTime(t,false); r.push(t+':'+document.getElementById('a').style.opacity); } return r;" },
+  { name: "set-at-frame-simple", html: box, code: "const tl=gsap.timeline({paused:true}); tl.set('#a',{opacity:1},1); tl.to({},{duration:5},2); const r=[]; for (const t of [0.5,0.9,1.0,1.1]) { tl.totalTime(t,false); r.push(t+':'+document.getElementById('a').style.opacity); } return r;" },
+  { name: "set-at-frame-step", html: box, code: "const tl=gsap.timeline({paused:true}); tl.set('#a',{opacity:1},1); tl.to({},{duration:5},2); const r=[]; for (let f=0; f<=31; f++) { tl.totalTime(f/30,false); if (f>=29) r.push(f+':'+document.getElementById('a').style.opacity); } return r;" },
+  { name: "set-at-3", html: box, code: "const tl=gsap.timeline({paused:true}); tl.set('#a',{opacity:1},3); tl.to({},{duration:5},4); const r=[]; for (let f=0; f<=91; f++) { tl.totalTime(f/30,false); if (f>=89) r.push(f+':'+document.getElementById('a').style.opacity); } return r;" },
+  { name: "set-at-9-sum", html: box, code: "let t=0; t+=3; let T=t+1.5; t=T+1.5+1.0; t+=0.5; T=t+1.5; const tl=gsap.timeline({paused:true}); tl.set('#a',{opacity:1},T); tl.to({},{duration:5},10); const r=[T]; for (let f=0; f<=271; f++) { tl.totalTime(f/30,false); if (f>=269) r.push(f+':'+document.getElementById('a').style.opacity); } return r;" },
+];

@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/text-match-cut); fictional.",
+  "textA": "Ship the update",
+  "textB": "Watch it land",
+  "mode": "scale-down",
+  "sweep": "on",
+  "background": "navy",
+  "speed": 1
+}

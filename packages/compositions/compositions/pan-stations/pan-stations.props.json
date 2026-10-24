@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/pan-stations); fictional.",
+  "stationCount": 5,
+  "labels": "Discover,Compose,Polish,Publish,Measure",
+  "dwell": 0.2,
+  "speed": 1
+}

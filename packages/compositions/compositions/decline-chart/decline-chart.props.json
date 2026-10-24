@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/decline-chart); fictional.",
+  "label": "Weekly retention",
+  "startValue": 91,
+  "endValue": 26,
+  "speed": 1
+}

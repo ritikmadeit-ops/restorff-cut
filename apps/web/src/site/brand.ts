@@ -1,13 +1,17 @@
-export const SITE_URL = "https://opencut.app";
+// RestorffCut brand constants. One place for names and URLs so a rename is a
+// one-file change. SITE_URL is a placeholder until the owner picks a domain
+// (no public deploy exists yet).
+export const SITE_URL =
+	process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:8791";
+
+export const PRODUCT_NAME = "RestorffCut";
+export const PARENT_PRODUCT_NAME = "Restorff";
+export const COMPANY_NAME = "Overkill";
 
 export const SITE_INFO = {
-	title: "OpenCut",
+	title: PRODUCT_NAME,
 	description:
-		"A simple but powerful video editor that gets the job done. In your browser.",
+		"RestorffCut is the editor inside Restorff: the Edit stage, where a cut is finished and judged before it renders.",
 	url: SITE_URL,
-	openGraphImage: "/open-graph/default.jpg",
-	twitterImage: "/open-graph/default.jpg",
-	favicon: "/favicon.ico",
+	favicon: "/icon.svg",
 };
-
-export const DEFAULT_LOGO_URL = "/logos/opencut/svg/logo.svg";

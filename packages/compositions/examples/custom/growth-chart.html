@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Growth chart</title>
+<!-- Custom composition example (motion-code agent, 2026-10-20). Written as Claude would for the prompt:
+     "a chart that grows: Halcyon's weekly bottles March to September, the line draws itself, end on +212 %". -->
+<script type="application/json" id="params">
+{
+  "name": "growth-chart",
+  "title": "Growth chart",
+  "description": "A line chart on a dark card that draws itself left to right: the area fills behind the line, a dot rides the tip with the value counting under it, month labels light up as it passes, and the change from first to last value lands as a neon pill. Use it when the number is the story; every value must be real.",
+  "duration": 5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["chart", "data", "line", "growth", "custom"],
+  "params": {
+    "title": { "type": "string", "default": "BOTTLES A WEEK", "maxLength": 28, "label": "Title", "description": "What the numbers count." },
+    "subtitle": { "type": "string", "default": "HALCYON COLD BREW · MAR–SEP", "maxLength": 40, "label": "Subtitle", "description": "Whose numbers and over what period." },
+    "data": {
+      "type": "list",
+      "minItems": 2,
+      "maxItems": 12,
+      "of": { "type": "object", "fields": { "label": { "type": "string", "maxLength": 6 }, "value": { "type": "number", "min": 0, "max": 1000000000 } } },
+      "default": [
+        { "label": "MAR", "value": 1200 }, { "label": "APR", "value": 1480 }, { "label": "MAY", "value": 1350 },
+        { "label": "JUN", "value": 2100 }, { "label": "JUL", "value": 2760 }, { "label": "AUG", "value": 3050 },
+        { "label": "SEP", "value": 3740 }
+      ],
+      "label": "Data",
+      "description": "The points in order: a short label and the real value."
+    },
+    "callout": { "type": "string", "default": "", "maxLength": 16, "label": "Callout", "description": "Text of the neon pill at the end. Empty = the change from the first to the last value, e.g. +212 %." },
+    "drawTime": { "type": "number", "default": 2.4, "min": 0.4, "max": 20, "step": 0.1, "unit": "s", "label": "Draw time", "description": "Seconds the line takes to draw." },
+    "lineColor": { "type": "color", "default": "#EDEBE6", "label": "Line colour", "description": "The line and its area." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "The riding dot and the callout pill: the one isolate." },
+    "card": { "type": "boolean", "default": true, "label": "Card", "description": "Dark card behind the chart for legibility over footage." },
+    "ease": { "type": "easing", "default": "smooth", "label": "Draw motion", "description": "How the line's tip travels." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "center", "label": "Anchor", "description": "Vertical placement inside the safe area." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "The card drops and fades over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .card { position: absolute; overflow: visible; }
+  .head { position: absolute; left: 0; right: 0; }
+  .title { font-family: "Archivo", sans-serif; font-weight: 800; font-stretch: 125%; text-transform: uppercase; letter-spacing: .06em; color: #EDEBE6; white-space: nowrap; }
+  .sub { font-family: "JetBrains Mono", monospace; font-weight: 600; text-transform: uppercase; letter-spacing: .16em; color: #8C8C95; white-space: nowrap; }
+  svg { position: absolute; overflow: visible; }
+  .lbl { position: absolute; font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .08em; white-space: nowrap; transform-origin: 50% 0; }
+  .dot { position: absolute; left: 0; top: 0; border-radius: 50%; }
+  .val { position: absolute; left: 0; top: 0; font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 112%; color: #EDEBE6; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pill { position: absolute; font-family: "JetBrains Mono", monospace; font-weight: 800; letter-spacing: .06em; color: #0C0C0E; white-space: nowrap; border-radius: 999px; transform-origin: 50% 100%; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var C = {};
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function fmt(v) { return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+  function svg(tag, attrs) {
+    var n = document.createElementNS(SVGNS, tag);
+    Object.keys(attrs).forEach(function (k) { n.setAttribute(k, String(attrs[k])); });
+    return n;
+  }
+  /** Catmull-Rom through the points, as cubic Bézier segments: a smooth line that passes every value. */
+  function smoothPath(pts) {
+    var d = "M" + pts[0][0] + "," + pts[0][1];
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      var c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      var c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += " C" + c1x + "," + c1y + " " + c2x + "," + c2y + " " + p2[0] + "," + p2[1];
+    }
+    return d;
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var W = Math.min(RC.width - RC.safe.left - RC.safe.right, 900 * u);
+      var pad = 48 * u;
+      var chartH = 560 * u;
+      var card = RC.el("div", { class: "card", style: { width: W + "px", left: (RC.width - W) / 2 + "px", borderRadius: 28 * u + "px", background: P.card ? "rgba(22,22,26,0.88)" : "transparent", boxShadow: P.card ? "0 " + 20 * u + "px " + 60 * u + "px rgba(0,0,0,.45)" : "none" } });
+      var head = RC.el("div", { class: "head", style: { padding: pad + "px " + pad + "px 0" } }, [
+        RC.el("div", { class: "title", text: P.title, style: { fontSize: 50 * u + "px" } }),
+        RC.el("div", { class: "sub", text: P.subtitle, style: { fontSize: 24 * u + "px", marginTop: 12 * u + "px" } }),
+      ]);
+      card.appendChild(head);
+      document.getElementById("stage").appendChild(card);
+      var headH = head.offsetHeight;
+      var top = headH + 150 * u; // room above the plot for the riding value and the callout over the highest point
+      var plotW = W - 2 * pad;
+      var H = top + chartH + 110 * u;
+      card.style.height = H + "px";
+      var values = P.data.map(function (d) { return d.value; });
+      var max = Math.max.apply(null, values);
+      var min = Math.min(0, Math.min.apply(null, values));
+      var y = function (v) { return top + chartH - ((v - min) / (max - min || 1)) * chartH; };
+      var x = function (i) { return pad + (P.data.length === 1 ? plotW / 2 : (i / (P.data.length - 1)) * plotW); };
+      var pts = P.data.map(function (d, i) { return [x(i), y(d.value)]; });
+      var s = svg("svg", { width: W, height: H, viewBox: "0 0 " + W + " " + H });
+      s.style.left = "0px"; s.style.top = "0px";
+      // gridlines: four, faint
+      for (var g = 0; g <= 3; g++) {
+        var gy = top + (g / 3) * chartH;
+        s.appendChild(svg("line", { x1: pad, x2: W - pad, y1: gy, y2: gy, stroke: "rgba(237,235,230,0.12)", "stroke-width": 2 * u }));
+      }
+      var defs = svg("defs", {});
+      var grad = svg("linearGradient", { id: "fill", x1: 0, y1: 0, x2: 0, y2: 1 });
+      grad.appendChild(svg("stop", { offset: "0", "stop-color": P.lineColor, "stop-opacity": 0.28 }));
+      grad.appendChild(svg("stop", { offset: "1", "stop-color": P.lineColor, "stop-opacity": 0 }));
+      defs.appendChild(grad);
+      var clip = svg("clipPath", { id: "reveal" });
+      C.clipRect = svg("rect", { x: 0, y: 0, width: 0, height: H });
+      clip.appendChild(C.clipRect);
+      defs.appendChild(clip);
+      s.appendChild(defs);
+      var d = smoothPath(pts);
+      var area = svg("path", { d: d + " L" + pts[pts.length - 1][0] + "," + (top + chartH) + " L" + pts[0][0] + "," + (top + chartH) + " Z", fill: "url(#fill)", "clip-path": "url(#reveal)" });
+      s.appendChild(area);
+      C.line = svg("path", { d: d, fill: "none", stroke: P.lineColor, "stroke-width": 7 * u, "stroke-linecap": "round", "stroke-linejoin": "round" });
+      s.appendChild(C.line);
+      card.appendChild(s);
+      C.len = C.line.getTotalLength();
+      C.line.setAttribute("stroke-dasharray", C.len + " " + C.len);
+      // x labels
+      C.labels = P.data.map(function (dp, i) {
+        var l = RC.el("div", { class: "lbl", text: dp.label, style: { fontSize: 24 * u + "px", top: top + chartH + 26 * u + "px" } });
+        card.appendChild(l);
+        l.style.left = x(i) - l.offsetWidth / 2 + "px";
+        return l;
+      });
+      // the riding dot + value, and the callout pill
+      C.dot = RC.el("div", { class: "dot", style: { width: 26 * u + "px", height: 26 * u + "px", background: P.accent, boxShadow: "0 0 0 " + 8 * u + "px " + RC.alpha(P.accent, 0.25) } });
+      C.val = RC.el("div", { class: "val", text: fmt(max), style: { fontSize: 46 * u + "px", textShadow: "0 2px 14px rgba(0,0,0,.6)" } });
+      card.appendChild(C.dot);
+      card.appendChild(C.val);
+      var first = values[0], last = values[values.length - 1];
+      var change = first ? Math.round(((last - first) / first) * 100) : 0;
+      var text = P.callout || (change >= 0 ? "+" : "−") + Math.abs(change) + " %";
+      C.pill = RC.el("div", { class: "pill", text: text, style: { fontSize: 40 * u + "px", padding: 12 * u + "px " + 26 * u + "px", background: P.accent } });
+      card.appendChild(C.pill);
+      var end = pts[pts.length - 1];
+      C.pill.style.left = Math.min(W - pad - C.pill.offsetWidth, end[0] - C.pill.offsetWidth / 2) + "px";
+      C.pill.style.top = end[1] - C.pill.offsetHeight - 32 * u + "px";
+      C.valW = C.val.offsetWidth; C.valH = C.val.offsetHeight; C.dotR = 13 * u;
+      // place the card
+      var cardTop = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - H : (RC.height - H) / 2;
+      card.style.top = cardTop + P.offsetY * RC.u + "px";
+      C.card = card; C.pts = pts; C.values = values; C.u = u; C.W = W; C.pad = pad;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var inP = RC.progress(t, 0, 0.45, "snappy");
+      var out = P.exit ? RC.progress(0.4 - time.left, 0, 0.4, "ease-in") : 0;
+      RC.set(C.card, { y: (1 - inP) * 60 * C.u + out * 120 * C.u, opacity: inP * (1 - out) });
+      // the line draws: p = 0..1 along its length
+      var p = RC.progress(t, 0.35, P.drawTime, P.ease);
+      C.line.setAttribute("stroke-dashoffset", String(C.len * (1 - p)));
+      var tip = C.line.getPointAtLength(C.len * p);
+      C.clipRect.setAttribute("width", String(tip.x));
+      var on = p > 0.001 ? 1 : 0;
+      RC.set(C.dot, { x: tip.x - C.dotR, y: tip.y - C.dotR, opacity: on });
+      // value under the tip: interpolate the data at the tip's x (the label always shows a real value at a point)
+      var n = C.pts.length;
+      var fi = RC.clamp((tip.x - C.pts[0][0]) / ((C.pts[n - 1][0] - C.pts[0][0]) || 1), 0, 1) * (n - 1);
+      var i0 = Math.floor(fi), i1 = Math.min(n - 1, i0 + 1);
+      var v = RC.mix(C.values[i0], C.values[i1], fi - i0);
+      C.val.textContent = fmt(p >= 1 ? C.values[n - 1] : v);
+      var vx = RC.clamp(tip.x - C.valW / 2, C.pad * 0.5, C.W - C.pad * 0.5 - C.valW);
+      var done = RC.progress(t, 0.35 + P.drawTime, 0.3, "smooth");
+      RC.set(C.val, { x: vx, y: tip.y - C.valH - 34 * C.u, opacity: on * (1 - done) });
+      // month labels light up as the tip passes them
+      C.labels.forEach(function (l, i) {
+        var lit = RC.clamp((tip.x - C.pts[i][0]) / (8 * C.u) + 1, 0, 1);
+        l.style.color = RC.mixColor("#8C8C95", "#EDEBE6", lit);
+        RC.set(l, { scale: 1 + 0.12 * lit * (1 - RC.clamp((tip.x - C.pts[i][0]) / (60 * C.u), 0, 1)) });
+      });
+      // the callout lands once the line is drawn
+      var k = RC.progress(t, 0.45 + P.drawTime, 0.4, "bouncy");
+      RC.set(C.pill, { scale: 0.5 + 0.5 * k, opacity: RC.clamp(k * 1.5, 0, 1) });
+    },
+  });
+</script>
+</body>
+</html>

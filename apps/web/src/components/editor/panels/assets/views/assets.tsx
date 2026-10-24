@@ -48,6 +48,7 @@ import {
 import { MASKABLE_ELEMENT_TYPES } from "@/timeline";
 import type { MediaAsset } from "@/media/types";
 import { cn } from "@/utils/ui";
+import { shotLabel, stripExtension } from "@/storyboard/labels";
 import {
 	CloudUploadIcon,
 	GridViewIcon,
@@ -186,13 +187,16 @@ export function MediaView() {
 	const orderedMediaIds = useMemo(() => {
 		return filteredMediaItems.map((item) => item.id);
 	}, [filteredMediaItems]);
+	const visualCount = filteredMediaItems.filter(
+		(item) => item.type !== "audio",
+	).length;
 
 	return (
 		<>
 			<input {...fileInputProps} />
 
 			<PanelView
-				title="Assets"
+				title={`Kept clips · ${visualCount}`}
 				actions={
 					<MediaActions
 						mediaViewMode={mediaViewMode}
@@ -245,11 +249,17 @@ function MediaAssetDraggable({
 	preview,
 	variant,
 	isRounded,
+	label,
+	aspectRatio,
+	containerClassName,
 }: {
 	item: MediaAsset;
 	preview: React.ReactNode;
-	variant: "card" | "compact";
+	variant: "card" | "compact" | "inline";
 	isRounded?: boolean;
+	label?: string;
+	aspectRatio?: number;
+	containerClassName?: string;
 }) {
 	const editor = useEditor();
 
@@ -279,8 +289,10 @@ function MediaAssetDraggable({
 
 	return (
 		<DraggableItem
-			name={item.name}
+			name={label ?? item.name}
 			preview={preview}
+			aspectRatio={aspectRatio}
+			containerClassName={containerClassName}
 			dragData={{
 				id: item.id,
 				type: "media",
@@ -355,31 +367,155 @@ function MediaItemList({
 }) {
 	const isGrid = mode === "grid";
 
-	return (
-		<div
-			className={cn(isGrid ? "grid gap-4" : "flex flex-col gap-1.5")}
-			style={
-				isGrid ? { gridTemplateColumns: "repeat(auto-fill, 7rem)" } : undefined
+	if (!isGrid) {
+		return (
+			<div className="flex flex-col gap-1.5">
+				{items.map((item) => (
+					<MediaListItem
+						key={item.id}
+						item={item}
+						onRemove={onRemove}
+						variant="compact"
+					/>
+				))}
+			</div>
+		);
+	}
+
+	return <KeptClipsGrid items={items} onRemove={onRemove} />;
+}
+
+/**
+ * The artboard's left column, measured from its DOM: a 3-column grid of 9:16
+ * tiles (gap 8, radius 6) labelled with shot keys in mono 10 px #A6A6AE, then
+ * "AUDIO" (mono label, 8 px extra space) with one 13 px line per music/voice
+ * file ("morning-bed · 31 s") and the short effects on one shared line
+ * ("kettle_click · pour_soft · bottle_tap").
+ */
+function KeptClipsGrid({
+	items,
+	onRemove,
+}: {
+	items: MediaAsset[];
+	onRemove: ({
+		event,
+		ids,
+	}: {
+		event: React.MouseEvent;
+		ids: string[];
+	}) => void;
+}) {
+	const scene = useEditor((e) => e.scenes.getActiveSceneOrNull());
+	const visualItems = items.filter((item) => item.type !== "audio");
+	const audioItems = items.filter((item) => item.type === "audio");
+
+	const sfxMediaIds = useMemo(() => {
+		const ids = new Set<string>();
+		for (const track of scene?.tracks.audio ?? []) {
+			const role = (track as { restorff?: { role?: string } }).restorff?.role;
+			if (role !== "sfx" && !track.name.toUpperCase().startsWith("SFX")) continue;
+			for (const element of track.elements) {
+				if (element.sourceType === "upload") ids.add(element.mediaId);
 			}
-		>
-			{items.map((item) => (
-				<MediaItemWithContextMenu item={item} onRemove={onRemove} key={item.id}>
-					<SelectableItem className={cn(!isGrid && "w-full")} id={item.id}>
-						<MediaAssetDraggable
+		}
+		return ids;
+	}, [scene]);
+
+	const isSfx = (item: MediaAsset) =>
+		sfxMediaIds.has(item.id) ||
+		(item.duration !== undefined && item.duration > 0 && item.duration <= SFX_MAX_SECONDS);
+	const beds = audioItems.filter((item) => !isSfx(item));
+	const sfx = audioItems.filter(isSfx);
+
+	return (
+		<div className="flex flex-col gap-3 pb-4">
+			{visualItems.length > 0 && (
+				<div className="grid grid-cols-3 gap-2">
+					{visualItems.map((item) => (
+						<MediaListItem
+							key={item.id}
 							item={item}
-							preview={
-								<MediaPreview
-									item={item}
-									variant={isGrid ? "grid" : "compact"}
-								/>
-							}
-							variant={isGrid ? "card" : "compact"}
-							isRounded={isGrid ? false : undefined}
+							onRemove={onRemove}
+							variant="card"
 						/>
-					</SelectableItem>
-				</MediaItemWithContextMenu>
-			))}
+					))}
+				</div>
+			)}
+			{audioItems.length > 0 && (
+				<>
+					<h3 className="rc-label mt-2">Audio</h3>
+					{beds.map((item) => (
+						<MediaListItem
+							key={item.id}
+							item={item}
+							onRemove={onRemove}
+							variant="audio-line"
+						/>
+					))}
+					{sfx.length > 0 && (
+						// ui-fix-panels (QA #26): a div, not a <p> — MediaListItem renders divs (hydration error)
+						<div className="flex flex-wrap items-baseline gap-x-[0.35em] text-[13px] leading-[18px] text-bone">
+							{sfx.map((item, index) => (
+								<span key={item.id} className="inline-flex items-baseline gap-x-[0.35em]">
+									{index > 0 && <span aria-hidden>·</span>}
+									<MediaListItem item={item} onRemove={onRemove} variant="inline" />
+								</span>
+							))}
+						</div>
+					)}
+				</>
+			)}
 		</div>
+	);
+}
+
+/** Audio this short is a sound effect (listed on the shared SFX line). */
+const SFX_MAX_SECONDS = 3;
+
+function MediaListItem({
+	item,
+	onRemove,
+	variant,
+}: {
+	item: MediaAsset;
+	onRemove: ({
+		event,
+		ids,
+	}: {
+		event: React.MouseEvent;
+		ids: string[];
+	}) => void;
+	variant: "card" | "compact" | "audio-line" | "inline";
+}) {
+	const isCard = variant === "card";
+	const isBare = variant === "audio-line" || variant === "inline";
+	const durationLabel =
+		(variant === "compact" || variant === "audio-line") && item.duration
+			? ` · ${Math.round(item.duration)} s`
+			: "";
+	// Labels read like the artboard: tiles carry the shot key ("S01"), audio its
+	// name without extension ("morning-bed · 31 s").
+	const displayName = isCard ? shotLabel(item.name) : stripExtension(item.name);
+	return (
+		<MediaItemWithContextMenu item={item} onRemove={onRemove}>
+			<SelectableItem
+				className={cn(variant === "inline" ? "inline-flex w-auto" : !isCard && "w-full")}
+				id={item.id}
+			>
+				<MediaAssetDraggable
+					item={item}
+					label={`${displayName}${durationLabel}`}
+					preview={
+						isBare ? null : (
+							<MediaPreview item={item} variant={isCard ? "grid" : "compact"} />
+						)
+					}
+					variant={variant === "audio-line" ? "compact" : variant}
+					aspectRatio={isCard ? 9 / 16 : undefined}
+					containerClassName={isCard ? "w-full" : undefined}
+				/>
+			</SelectableItem>
+		</MediaItemWithContextMenu>
 	);
 }
 
@@ -393,7 +529,7 @@ function MediaDurationBadge({ duration }: { duration?: number }) {
 	if (!duration) return null;
 
 	return (
-		<div className="absolute right-1 bottom-1 rounded bg-black/70 px-1 text-xs text-white">
+		<div className="rc-mono absolute right-1 bottom-1 rounded-full bg-black/70 px-1.5 text-[0.6rem] text-bone">
 			{formatDuration({ duration })}
 		</div>
 	);
@@ -441,7 +577,8 @@ function MediaPreview({
 	item: MediaAsset;
 	variant?: "grid" | "compact";
 }) {
-	const shouldShowDurationBadge = variant === "grid";
+	// The artboard's tiles carry no badge; the duration is in the tile's tooltip.
+	const shouldShowDurationBadge = false;
 
 	if (item.type === "image") {
 		return (
@@ -468,7 +605,7 @@ function MediaPreview({
 						alt={item.name}
 						fill
 						sizes="100vw"
-						className="rounded object-cover"
+						className="object-cover"
 						loading="lazy"
 						unoptimized
 					/>
@@ -486,6 +623,14 @@ function MediaPreview({
 				duration={item.duration}
 				variant="muted"
 			/>
+		);
+	}
+
+	if (item.type === "audio" && variant === "compact") {
+		return (
+			<div className="text-fog flex size-full items-center justify-center">
+				<HugeiconsIcon icon={MusicNote03Icon} className="size-4" />
+			</div>
 		);
 	}
 
@@ -523,7 +668,7 @@ function MediaActions({
 	onImport: () => void;
 }) {
 	return (
-		<div className="flex gap-1.5">
+		<div className="text-fog flex shrink-0 gap-0.5 [&_button]:size-6">
 			<TooltipProvider>
 				<Tooltip>
 					<TooltipTrigger asChild>
@@ -535,6 +680,7 @@ function MediaActions({
 							}
 							disabled={isProcessing}
 							className="items-center justify-center"
+							aria-label={mediaViewMode === "grid" ? "Switch to list view" : "Switch to grid view" /* ui-fix-panels (QA #27) */}
 						>
 							{mediaViewMode === "grid" ? (
 								<HugeiconsIcon icon={LeftToRightListDashIcon} />
@@ -560,6 +706,7 @@ function MediaActions({
 									variant="ghost"
 									disabled={isProcessing}
 									className="items-center justify-center"
+									aria-label="Sort clips"
 								>
 									<HugeiconsIcon icon={SortingOneNineIcon} />
 								</Button>
@@ -605,14 +752,15 @@ function MediaActions({
 				</Tooltip>
 			</TooltipProvider>
 			<Button
-				variant="outline"
+				variant="ghost"
+				size="icon"
 				onClick={onImport}
 				disabled={isProcessing}
-				size="sm"
-				className="items-center justify-center gap-1.5"
+				aria-label="Import"
+				title="Import clips"
+				className="items-center justify-center"
 			>
 				<HugeiconsIcon icon={CloudUploadIcon} />
-				Import
 			</Button>
 		</div>
 	);

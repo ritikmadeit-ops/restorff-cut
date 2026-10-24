@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/magnetic-cursor); fictional.",
+  "accent": "#3b82f6",
+  "tone": "light",
+  "visits": "0,3",
+  "press": 2,
+  "speed": 1
+}

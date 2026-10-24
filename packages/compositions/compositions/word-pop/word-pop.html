@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Word-pop captions</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "word-pop",
+  "title": "Word-pop captions",
+  "description": "Captions shown 1-3 words at a time, bold uppercase, with the word being spoken popped in the accent colour (or on a neon box). Feed it word timings from the transcript; it never changes the timing.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "tags": ["captions", "text", "reels", "talking-head"],
+  "params": {
+    "words": {
+      "type": "list",
+      "label": "Words",
+      "description": "Every spoken word with its start and end in seconds from the start of this overlay (word-timed transcript). Punctuation stays on the word; a word ending in . ! ? or , closes its group.",
+      "of": { "type": "object", "fields": {
+        "text": { "type": "string", "description": "The word as spoken, with trailing punctuation." },
+        "start": { "type": "number", "min": 0, "description": "Seconds when the word starts." },
+        "end": { "type": "number", "min": 0, "description": "Seconds when the word ends." }
+      } },
+      "minItems": 1,
+      "default": [
+        { "text": "Cold", "start": 0.10, "end": 0.38 },
+        { "text": "brew", "start": 0.38, "end": 0.70 },
+        { "text": "that", "start": 0.70, "end": 0.86 },
+        { "text": "tastes", "start": 0.86, "end": 1.20 },
+        { "text": "like", "start": 1.20, "end": 1.36 },
+        { "text": "it", "start": 1.36, "end": 1.46 },
+        { "text": "took", "start": 1.46, "end": 1.70 },
+        { "text": "twelve", "start": 1.70, "end": 2.02 },
+        { "text": "hours.", "start": 2.02, "end": 2.50 },
+        { "text": "Because", "start": 2.75, "end": 3.10 },
+        { "text": "it", "start": 3.10, "end": 3.22 },
+        { "text": "did.", "start": 3.22, "end": 3.70 }
+      ]
+    },
+    "maxWords": { "type": "number", "default": 3, "min": 1, "max": 3, "step": 1, "label": "Words per group", "description": "How many words show at once (1 = one word at a time)." },
+    "style": { "type": "enum", "options": ["color", "box"], "default": "color", "label": "Highlight style", "description": "color = active word turns the accent colour; box = active word sits on an accent box with dark text." },
+    "color": { "type": "color", "default": "#FFFFFF", "label": "Text colour", "description": "Colour of the words not being spoken right now." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Highlight colour of the word being spoken." },
+    "uppercase": { "type": "boolean", "default": true, "label": "Uppercase", "description": "Set every word in capitals." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Caption size multiplier (\"bigger captions\" = 1.15)." },
+    "ease": { "type": "easing", "default": "bouncy", "label": "Pop easing", "description": "How each group and active word pops in." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Speed of each pop. The words always stay on their spoken times." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "bottom", "label": "Anchor", "description": "Vertical placement inside the safe area. bottom sits just above the platform caption zone." },
+    "offsetY": { "type": "number", "default": -120, "min": -900, "max": 900, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .line {
+    position: absolute; left: 0; width: 100%; display: flex; flex-wrap: wrap; justify-content: center;
+    align-items: baseline; opacity: 0;
+  }
+  .word {
+    position: relative; z-index: 1; display: inline-block; font-family: "Archivo", sans-serif; font-weight: 800;
+    font-stretch: 112%; line-height: 1.05; letter-spacing: .005em; white-space: nowrap;
+    paint-order: stroke fill; -webkit-text-stroke: var(--stroke) rgba(12,12,14,.92);
+    text-shadow: 0 6px 22px rgba(0,0,0,.45);
+  }
+  .box { position: absolute; z-index: 0; left: 0; top: 0; box-shadow: 0 8px 26px rgba(0,0,0,.35); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var G = [];
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      stage.style.setProperty("--stroke", 9 * u + "px");
+      // group words: at most maxWords, and a group ends on . ! ? , or a pause longer than 0.6 s
+      var groups = [];
+      var cur = [];
+      P.words.forEach(function (w, i) {
+        cur.push(w);
+        var next = P.words[i + 1];
+        var closes = /[.!?,;:]$/.test(w.text) || cur.length >= P.maxWords || !next || next.start - w.end > 0.6;
+        if (closes) { groups.push(cur); cur = []; }
+      });
+      groups.forEach(function (words, gi) {
+        var line = RC.el("div", { class: "line", style: { padding: "0 " + (RC.safe.right) + "px", columnGap: 26 * u + "px", rowGap: 6 * u + "px" } });
+        var box = P.style === "box" ? RC.el("div", { class: "box", style: { background: P.accent, borderRadius: 16 * u + "px" } }) : null;
+        if (box) line.appendChild(box);
+        var size = 96 * u;
+        var spans = words.map(function (w) {
+          var s = RC.el("span", { class: "word", text: P.uppercase ? w.text.toUpperCase() : w.text, style: { fontSize: size + "px", color: P.color, padding: "0 " + 14 * u + "px" } });
+          line.appendChild(s);
+          return s;
+        });
+        stage.appendChild(line);
+        // one line per group: shrink to fit the safe width; wrap only if that would go below 62 % of the size
+        line.style.flexWrap = "nowrap";
+        var avail = RC.width - 2 * RC.safe.right;
+        var gap = 26 * u;
+        var total = spans.reduce(function (a, s) { return a + s.offsetWidth; }, 0) + gap * (spans.length - 1);
+        if (total > avail) {
+          var k = avail / total;
+          if (k >= 0.62) {
+            spans.forEach(function (s) { s.style.fontSize = Math.floor(size * k) + "px"; s.style.padding = "0 " + Math.floor(14 * u * k) + "px"; });
+            line.style.columnGap = Math.floor(gap * k) + "px";
+          } else {
+            line.style.flexWrap = "wrap";
+            spans.forEach(function (s) { s.style.fontSize = Math.floor(size * 0.8) + "px"; });
+          }
+        }
+        var gh = line.offsetHeight;
+        var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - gh : (RC.height - gh) / 2;
+        line.style.top = top + P.offsetY * RC.u + "px";
+        var next = groups[gi + 1];
+        var last = words[words.length - 1];
+        var end = next && next[0].start - last.end < 0.6 ? next[0].start : last.end + 0.25;
+        G.push({
+          line: line, box: box, words: words, spans: spans, start: words[0].start, end: end,
+          rects: spans.map(function (s) { return { x: s.offsetLeft, y: s.offsetTop, w: s.offsetWidth, h: s.offsetHeight }; }),
+        });
+      });
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var T = time.T; // captions follow the audio clock: never speed-scaled (only each pop's own animation runs at RC.rate)
+      G.forEach(function (g) {
+        var on = T >= g.start && T < g.end;
+        g.line.style.opacity = on ? String(RC.progress(RC.since(T, g.start), 0,0.06, "linear")) : "0";
+        if (!on) return;
+        RC.set(g.line, { scale: RC.mix(0.82, 1, RC.progress(RC.since(T, g.start), 0,0.16, P.ease)) });
+        var active = -1;
+        g.words.forEach(function (w, i) {
+          var nextStart = i + 1 < g.words.length ? g.words[i + 1].start : g.end;
+          if (T >= w.start && T < Math.max(w.end, nextStart)) active = i;
+        });
+        // the box slides from the previous word only along the same row; text turns dark once the box has arrived
+        var slide = 1;
+        if (g.box && active > 0 && g.rects[active - 1].y === g.rects[active].y) {
+          slide = RC.progress(RC.since(T, g.words[active].start), 0,0.1, "snappy");
+        }
+        g.spans.forEach(function (s, i) {
+          var isActive = i === active;
+          var onBox = isActive && P.style === "box" && slide >= 0.5;
+          var pop = isActive ? RC.progress(RC.since(T, g.words[i].start), 0,0.16, P.ease) : 1;
+          var scale = isActive ? RC.mix(0.92, 1.08, pop) : 1;
+          s.style.color = onBox ? "#0C0C0E" : isActive && P.style === "color" ? P.accent : P.color;
+          s.style.webkitTextStroke = onBox ? "0px transparent" : "";
+          s.style.textShadow = onBox ? "none" : "";
+          RC.set(s, { scale: scale });
+        });
+        if (g.box) {
+          if (active < 0) { g.box.style.opacity = "0"; return; }
+          var a = g.rects[active];
+          var prev = slide < 1 ? g.rects[active - 1] : a;
+          var k = slide;
+          var x = RC.mix(prev.x, a.x, k);
+          var w = RC.mix(prev.w, a.w, k);
+          var pop = RC.progress(RC.since(T, g.words[active].start), 0,0.16, P.ease);
+          g.box.style.opacity = "1";
+          g.box.style.width = w + "px";
+          g.box.style.height = a.h + "px";
+          RC.set(g.box, { x: x, y: a.y, scale: RC.mix(0.92, 1.08, pop) });
+        }
+      });
+    },
+  });
+</script>
+</body>
+</html>

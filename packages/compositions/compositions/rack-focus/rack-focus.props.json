@@ -1,0 +1,15 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/rack-focus); fictional.",
+  "nearfocus": 1.2,
+  "farfocus": 80,
+  "focallength": 85,
+  "aperture": 1.8,
+  "blades": 6,
+  "catseye": 0.62,
+  "pullstart": 1.2,
+  "pullduration": 3.2,
+  "pullease": "power2.inOut",
+  "bokeh": 1,
+  "backdropVar": "#05060a",
+  "speed": 1
+}

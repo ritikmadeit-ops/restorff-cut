@@ -1,0 +1,280 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/logo-sting@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-id="logo-sting"
+  data-composition-duration="2.2"
+  data-composition-variables='[
+    { "id": "wordmark", "type": "string", "role": "content", "label": "Wordmark", "description": "Brand name displayed in the final lockup.", "default": "HALCYON" },
+    { "id": "accent", "type": "enum", "role": "style", "label": "Accent", "description": "Color of the single impact ring.", "default": "green", "options": [{ "value": "green", "label": "Green" }, { "value": "blue", "label": "Blue" }, { "value": "violet", "label": "Violet" }] }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "logo-sting",
+  "title": "Logo Sting",
+  "description": "A wordmark slams into its final scale, fires one accent ring and one white impact frame, then holds completely still. Imported from a HyperFrames component (hooks; provenance below).",
+  "duration": 2.2,
+  "size": [
+    1460,
+    562
+  ],
+  "fps": 30,
+  "tags": [
+    "hooks",
+    "motion-primitive",
+    "brand",
+    "logo",
+    "sting",
+    "impact",
+    "reveal",
+    "imported",
+    "hyperframes"
+  ],
+  "opaque": true,
+  "kit": "hf-compat",
+  "params": {
+    "wordmark": {
+      "type": "string",
+      "default": "HALCYON",
+      "label": "Wordmark",
+      "description": "Brand name displayed in the final lockup.",
+      "required": true
+    },
+    "accent": {
+      "type": "enum",
+      "options": [
+        "green",
+        "blue",
+        "violet"
+      ],
+      "default": "green",
+      "label": "Accent",
+      "description": "Color of the single impact ring."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1459x562 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "wordmark": "wordmark",
+      "accent": "accent"
+    },
+    "width": 1459,
+    "height": 562,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/logo-sting",
+    "path": "registry/components/logo-sting",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="logo-sting" data-start="0" data-duration="2.2" data-width="1459" data-height="562" style="position:absolute;left:0;top:0;width:1459px;height:562px">
+
+      <div id="root" data-composition-id="logo-sting" data-duration="2.2" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            container-type: size;
+            background: var(--bg, #0b0c0e);
+            color: var(--fg, #f8fafc);
+            font-family: var(--font-display, Inter, system-ui, sans-serif);
+            pointer-events: none;
+          }
+
+          .ls-clip {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+          }
+
+          .ls-ring {
+            position: absolute;
+            z-index: 1;
+            width: min(42cqw, 72cqh);
+            aspect-ratio: 1;
+            border: min(0.34cqw, 0.62cqh) solid var(--ls-accent);
+            border-radius: 50%;
+            opacity: 0;
+            
+          }
+
+          .ls-wordmark {
+            position: relative;
+            z-index: 2;
+            max-width: 90cqw;
+            color: var(--fg, #f8fafc);
+            font-size: min(10.5cqw, 18cqh);
+            font-weight: 850;
+            line-height: 0.9;
+            letter-spacing: -0.055em;
+            text-align: center;
+            white-space: nowrap;
+            transform-origin: 50% 50%;
+            
+          }
+
+          .ls-flash {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            background: #ffffff;
+            opacity: 0;
+          }
+        </style>
+
+        <div
+          id="logo-sting-clip"
+          class="ls-clip clip"
+          data-start="0"
+          data-duration="2.2"
+          data-track-index="0"
+        >
+          <div class="ls-ring" aria-hidden="true"></div>
+          <div class="ls-wordmark"></div>
+          <div class="ls-flash" aria-hidden="true"></div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var wordmark = root.querySelector(".ls-wordmark");
+            var ring = root.querySelector(".ls-ring");
+            var flash = root.querySelector(".ls-flash");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            var accentColors = {
+              green: "var(--brand, #5df28b)",
+              blue: "var(--accent, #4da3ff)",
+              violet: "var(--accent-2, #a978ff)",
+            };
+            var accent = Object.prototype.hasOwnProperty.call(accentColors, vars.accent)
+              ? vars.accent
+              : "green";
+            var wordmarkText = vars.wordmark == null ? "HALCYON" : String(vars.wordmark);
+
+            wordmark.textContent = wordmarkText;
+            root.style.setProperty("--ls-accent", accentColors[accent]);
+
+            var IN_BASE = 0.95;
+            var IMPACT_BASE = 0.55;
+            var parsedDuration = parseFloat(root.dataset.duration);
+            var duration = Number.isFinite(parsedDuration) ? Math.max(0.001, parsedDuration) : 2.2;
+            var IN = Math.min(IN_BASE, duration);
+            var retime = IN / IN_BASE;
+            var IMPACT = IMPACT_BASE * retime;
+            var RING_DURATION = (IN_BASE - IMPACT_BASE) * retime;
+            var FLASH_FRAME = Math.min(1 / 30, RING_DURATION);
+            var HOLD = Math.max(0, duration - IN);
+
+            gsap.set(ring, { scale: 0.34, opacity: 0 });
+            gsap.set(flash, { opacity: 0 });
+
+            var tl = gsap.timeline({ paused: true });
+
+            tl.fromTo(
+              wordmark,
+              { scale: 1.15 },
+              { scale: 1, duration: IMPACT, ease: "expo.out" },
+              0,
+            );
+            tl.set(ring, { opacity: 0.92 }, IMPACT);
+            tl.to(
+              ring,
+              { scale: 2.4, opacity: 0, duration: RING_DURATION, ease: "power3.out" },
+              IMPACT,
+            );
+            tl.set(flash, { opacity: 1 }, IMPACT);
+            tl.set(flash, { opacity: 0 }, IMPACT + FLASH_FRAME);
+            tl.addLabel("hold", IN);
+            tl.addLabel("end", IN + HOLD);
+
+            tl.seek(0);
+            window.__timelines = window.__timelines || {};
+            window.__timelines["logo-sting"] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

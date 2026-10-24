@@ -1,0 +1,17 @@
+{
+  "name": "@restorffcut/styles",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Saved styles from repeated instructions (EDT-20) and the explainer-from-references style card + Paper collage plan (EDT-21) for RestorffCut. Pure: everything returns ops@1.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@restorffcut/timeline-ops": "workspace:*"
+  }
+}

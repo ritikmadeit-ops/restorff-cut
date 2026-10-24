@@ -1,0 +1,9 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew); in a real ad every date comes from a source.",
+  "items": [
+    { "date": "2019", "text": "First batch, one kitchen" },
+    { "date": "2022", "text": "Oat Vanilla joins the line" },
+    { "date": "2026", "text": "Bottled in 12 cities" }
+  ],
+  "legend": "HALCYON · A SHORT HISTORY"
+}

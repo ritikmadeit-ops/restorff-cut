@@ -1,0 +1,9 @@
+{
+  "$comment": "Fictional Halcyon Cold Brew content in our own focus-app scene. In the editor: layer back under the clip's person cutout, layer front (with matte = the cutout's frames) above it.",
+  "scene": "focus",
+  "headline": "today you only need",
+  "key": "patience",
+  "sub": "Everything else waits.",
+  "timerLabel": "Steep batch 14",
+  "tasks": ["Grind 40 kg", "Fill the jars", "Label case 12", "Reply to the café"]
+}

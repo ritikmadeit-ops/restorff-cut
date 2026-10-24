@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon grid form</title>
+<!-- neon-grid kit, piece 7 of 8 (composition-v3). The look switch: a paper form slides up over the dark grid; two
+     rows of mono boxes type in; one row gets a red hand-drawn strike and an X, the other a red tick; a stamp slams
+     onto the sheet (inside this piece, so no lane order can hide it); the sheet slides away. Every word and time
+     comes from the params. -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "neon-form",
+  "title": "Neon grid form",
+  "description": "Look switch to paper: a form slides up, two rows of typed mono boxes (the rejected way and the kept way), a red hand-drawn strike and X through one, a red tick on the other, and a red stamp that slams onto the sheet; slides away at the end. Use for 'the shortcut vs our way' beats. Times follow the voice-over's words.",
+  "duration": 6.1,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "kit": "neon-grid",
+  "opaque": true,
+  "tags": ["neon-grid", "paper", "form", "stamp", "strike", "checklist", "comparison", "look-switch"],
+  "params": {
+    "t0": { "type": "number", "default": 0, "min": 0, "max": 600, "step": 0.01, "label": "Starts at", "description": "Where this clip starts on the timeline (s). Every other time here is TIMELINE seconds. composition write fills it from t.", "display": false },
+    "words": { "type": "list", "default": [], "label": "Voice words", "description": "The voice-over's words with timeline times [{w, s, e}]: they time every item whose time is -1 and draw the captions.", "of": { "type": "object", "fields": { "w": { "type": "string" }, "s": { "type": "number" }, "e": { "type": "number", "default": 0 } } } },
+    "captions": { "type": "boolean", "default": true, "label": "Captions", "description": "Show the voice word by word on the paper, key words in red (needs words)." },
+    "keys": { "type": "list", "default": [], "of": { "type": "string" }, "label": "Key words", "description": "Caption words painted in red." },
+    "form": { "type": "object", "label": "Form header", "description": "The form's title (big), a mono subtitle line and a boxed number at the right.",
+      "fields": {
+        "title": { "type": "string", "maxLength": 14 },
+        "subtitle": { "type": "string", "default": "", "maxLength": 40 },
+        "number": { "type": "string", "default": "", "maxLength": 10 } },
+      "default": { "title": "FORM", "subtitle": "", "number": "" } },
+    "rows": { "type": "list", "minItems": 1, "maxItems": 2, "required": true, "label": "Rows", "description": "Up to two rows of one to three boxes; each box types when its first word is said (cells of one row may be said in any order). verdict strike = red strike + X; tick = red tick. check = the line next to the tick box.",
+      "of": { "type": "object", "fields": {
+        "label": { "type": "string", "default": "", "maxLength": 24 },
+        "cells": { "type": "list", "minItems": 1, "maxItems": 3, "of": { "type": "object", "fields": {
+          "text": { "type": "string", "maxLength": 11 },
+          "at": { "type": "number", "default": -1, "min": -1, "max": 600 },
+          "word": { "type": "string", "default": "" } } } },
+        "verdict": { "type": "enum", "options": ["strike", "tick", "none"], "default": "none" },
+        "check": { "type": "string", "default": "", "maxLength": 24 },
+        "at": { "type": "number", "default": -1, "min": -1, "max": 600, "description": "timeline s of the verdict; -1 = just after the row's last box" },
+        "word": { "type": "string", "default": "", "description": "the voice word of the verdict" } } },
+      "default": [ { "cells": [ { "text": "A" } ], "verdict": "strike" } ] },
+    "stamp": { "type": "string", "default": "", "maxLength": 16, "label": "Stamp", "description": "Red stamp text that slams onto the sheet (blank: none)." },
+    "stampAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Stamp at", "description": "Timeline s; -1 = on stampWord, else between the two verdicts." },
+    "stampWord": { "type": "string", "default": "", "maxLength": 20, "label": "Stamp word", "description": "The voice word the stamp lands on (optional)." },
+    "ink": { "type": "color", "default": "#17171A", "label": "Ink", "description": "Type and box lines." },
+    "red": { "type": "color", "default": "#D2352B", "label": "Red pen", "description": "Strike, X, tick, stamp and caption key words." },
+    "paper": { "type": "color", "default": "#EFEAE0", "label": "Paper", "description": "Sheet colour." },
+    "seed": { "type": "number", "default": 18, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Paper grain and pen wobble." },
+    "accent": { "type": "color", "default": "#FF5A1F", "label": "Accent", "description": "The dark grid's horizon glow, seen as the sheet slides in and out." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "label": "Speed", "description": "How fast the sheet slides and pushes in (the words stay on the voice)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #07070A; }
+  .box { position: absolute; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+    font-family: "JetBrains Mono"; font-weight: 800; letter-spacing: .06em; white-space: pre; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+var S = {};
+RC.composition({
+  build: function (RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, st = document.getElementById("stage");
+    var T = new KIT.Timing(P, RC.duration);
+    S.T = T;
+    // the dark grid the sheet slides over (never a bare black frame on the cuts)
+    S.cv = KIT.canvas(st); S.ctx = S.cv.getContext("2d");
+    S.cam = new KIT.Camera(W, H, 64);
+    S.sheet = RC.el("div", { style: { position: "absolute", left: "0", top: "0", width: W + "px", height: H + "px", background: P.paper,
+      boxShadow: "0 -" + 30 * u + "px " + 80 * u + "px rgba(0,0,0,.6)" } });
+    st.appendChild(S.sheet);
+    // paper grain + faint rules, drawn once
+    var gc = RC.el("canvas", { width: W, height: H, style: { position: "absolute", left: "0", top: "0" } });
+    S.sheet.appendChild(gc);
+    var c = gc.getContext("2d"), rnd = RC.random(P.seed);
+    for (var i = 0; i < 9000; i++) {
+      c.fillStyle = "rgba(60,50,40," + (0.025 + rnd() * 0.06).toFixed(3) + ")";
+      c.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 2.2 * u, 1 + rnd() * 2.2 * u);
+    }
+    c.strokeStyle = "rgba(70,90,120,.07)"; c.lineWidth = 2 * u;
+    for (var y = 500 * u; y < H; y += 64 * u) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+    var vg = c.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.8);
+    vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(60,40,20,.18)");
+    c.fillStyle = vg; c.fillRect(0, 0, W, H);
+    // header
+    var F = P.form;
+    var no = null;
+    if (F.number) {
+      no = KIT.mono(S.sheet, F.number, 28 * u, { color: P.ink, fontWeight: "800", padding: 8 * u + "px " + 16 * u + "px", border: 3 * u + "px solid " + P.ink });
+      no.style.left = W - 70 * u - no.offsetWidth + "px"; no.style.top = 262 * u + "px";
+    }
+    var title = KIT.big(S.sheet, F.title, 96 * u, { color: P.ink, letterSpacing: "0" });
+    RC.fitText(title, W - 140 * u - (no ? no.offsetWidth + 40 * u : 0), 96 * u, 50 * u);
+    title.style.left = 70 * u + "px"; title.style.top = 250 * u + "px";
+    if (F.subtitle) {
+      var sub = KIT.mono(S.sheet, F.subtitle, 28 * u, { color: RC.alpha(P.ink, 0.7), fontWeight: "700", letterSpacing: ".1em" });
+      RC.fitText(sub, W - 144 * u, 28 * u, 18 * u);
+      sub.style.left = 72 * u + "px"; sub.style.top = 380 * u + "px";
+    }
+    S.sheet.appendChild(RC.el("div", { style: { position: "absolute", left: 70 * u + "px", width: W - 140 * u + "px", top: 440 * u + "px", height: 6 * u + "px", background: P.ink } }));
+    S.sheet.appendChild(RC.el("div", { style: { position: "absolute", left: 70 * u + "px", width: W - 140 * u + "px", top: 454 * u + "px", height: 2 * u + "px", background: P.ink } }));
+    // rows of boxes
+    var gap = 62 * u;
+    S.rows = P.rows.map(function (rw, ri) {
+      var top = (590 + ri * 270) * u;
+      if (rw.label) {
+        var l = KIT.mono(S.sheet, rw.label, 26 * u, { color: RC.alpha(P.ink, 0.6), fontWeight: "700", letterSpacing: ".14em" });
+        l.style.left = 72 * u + "px"; l.style.top = top - 54 * u + "px";
+      }
+      var k = rw.cells.length, bw = (W - 140 * u - (k - 1) * gap) / k;
+      var boxes = rw.cells.map(function (cell, i) {
+        var x = 70 * u + i * (bw + gap);
+        var b = RC.el("div", { class: "box", style: { left: x + "px", top: top + "px", width: bw + "px", height: 128 * u + "px", fontSize: 36 * u + "px",
+          color: P.ink, border: 4 * u + "px solid " + P.ink, borderRadius: 6 * u + "px", background: RC.alpha(P.paper, 0.6) } });
+        S.sheet.appendChild(b);
+        // measure the text on its own (a fixed-width box always reports its own width)
+        var meas = RC.el("span", { text: cell.text, style: { display: "inline-block" } });
+        b.appendChild(meas);
+        b.style.fontSize = RC.fitText(meas, bw - 24 * u, 36 * u, 20 * u) + "px";
+        b.removeChild(meas);
+        b._text = cell.text;
+        if (i > 0) {
+          var ar = KIT.mono(S.sheet, "→", 52 * u, { color: P.ink, fontWeight: "800" });
+          ar.style.left = x - gap / 2 - ar.offsetWidth / 2 + "px"; ar.style.top = top + 64 * u - ar.offsetHeight / 2 + "px";
+          b._arrow = ar;
+        }
+        return b;
+      });
+      var check = null;
+      if (rw.check) {
+        check = KIT.mono(S.sheet, "[   ]  " + rw.check, 34 * u, { color: P.ink, fontWeight: "700" });
+        check.style.left = 72 * u + "px"; check.style.top = (1050 + ri * 62) * u + "px";
+      }
+      return { boxes: boxes, y: top + 64 * u, check: check, checkY: (1050 + ri * 62 + 24) * u, verdict: rw.verdict, first: 0 };
+    });
+    // pen layer (strike, X, tick), redrawn each frame from progress values
+    S.pen = RC.el("canvas", { width: W, height: H, style: { position: "absolute", left: "0", top: "0" } });
+    S.sheet.appendChild(S.pen); S.pctx = S.pen.getContext("2d");
+    var r2 = RC.random(P.seed + 7);
+    S.wob = []; for (var k2 = 0; k2 <= 26; k2++) S.wob.push((r2() - 0.5) * 14 * u);
+    // the stamp (inside the piece: nothing on another lane can hide it)
+    if (P.stamp) {
+      S.stamp = RC.el("div", { text: P.stamp, style: { position: "absolute", whiteSpace: "nowrap", fontFamily: "Archivo", fontWeight: "900",
+        fontStretch: "112%", textTransform: "uppercase", letterSpacing: ".04em", fontSize: 74 * u + "px", lineHeight: "1", color: P.red,
+        padding: 14 * u + "px " + 30 * u + "px", border: 8 * u + "px solid " + P.red, borderRadius: 14 * u + "px", opacity: "0", mixBlendMode: "multiply" } });
+      S.sheet.appendChild(S.stamp);
+      RC.fitText(S.stamp, W - 260 * u, 74 * u, 40 * u);
+      S.stamp.style.left = (W - S.stamp.offsetWidth) / 2 + 40 * u + "px"; S.stamp.style.top = 1230 * u + "px";
+    }
+    // times: the cells of one row in any order, then that row's verdict; the stamp between the verdicts
+    S.rows.forEach(function (row, ri) {
+      var rw = P.rows[ri], start = T.cursor, latest = start;
+      row.boxes.forEach(function (b, i) {
+        T.cursor = start;
+        b._at = T.at(rw.cells[i], T.frac(0.006 + ri * 0.48 + i * 0.1));
+        latest = Math.max(latest, b._at);
+        KIT.cue(T, b._at, "type", "box types");
+      });
+      T.cursor = latest + 0.01;
+      row.first = row.boxes.reduce(function (m, b) { return Math.min(m, b._at); }, Infinity);
+      var lastBox = row.boxes.reduce(function (m, b) { return Math.max(m, b._at); }, 0);
+      row.at = row.verdict === "none" ? null : T.at({ at: rw.at, word: rw.word }, lastBox + (row.verdict === "strike" ? 0.3 : 0.06));
+      if (row.at != null) KIT.cue(T, row.at, row.verdict === "strike" ? "strike" : "check", row.verdict);
+    });
+    var verdicts = S.rows.filter(function (r) { return r.at != null; }).map(function (r) { return r.at; });
+    if (S.stamp) {
+      var mid = verdicts.length >= 2 ? (verdicts[0] + verdicts[1]) / 2 : (verdicts[0] != null ? verdicts[0] + 0.6 : T.frac(0.7));
+      S.stampAt = P.stampAt >= 0 ? P.stampAt : P.stampWord ? (T.find(P.stampWord, T.t0) != null ? T.find(P.stampWord, T.t0) : mid) : mid;
+      KIT.cue(T, S.stampAt, "stamp", "stamp lands");
+    }
+    KIT.cue(T, T.t0, "paper", "sheet slides in");
+    KIT.cue(T, T.end - 0.32, "paper", "sheet slides out");
+    S.cap = KIT.captionsFor(S.sheet, P, T, { color: P.ink, key: P.red, glow: false, y: 1460 * u });
+  },
+  render: function (time, RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, T = S.T;
+    var g = T.t0 + time.T;
+    S.cam.set(0, 2.2, 30 + 0.5 * time.t, 0, -14, 0);
+    KIT.backdrop(S.ctx, W, H);
+    KIT.drawGrid(S.ctx, S.cam, { color: KIT.BONE, alpha: 0.22, lw: 1.6, reach: 26, accent: P.accent, axes: 0, glow: 0.8, u: u });
+    KIT.vignette(S.ctx, W, H, 0.6);
+    // the sheet slides up over the dark grid and slides away at the end; a slow push-in while it is up
+    var inP = RC.progress(time.t, 0, 0.3, "snappy");
+    var outP = RC.progress(0.32 - time.left, 0, 0.3, "ease-in");
+    RC.set(S.sheet, { y: (1 - inP) * H - outP * H, scale: 1 + 0.045 * RC.progress(time.T, 0.3, Math.max(0.5, RC.duration - 0.6), "linear") });
+    S.rows.forEach(function (row) {
+      row.boxes.forEach(function (b) {
+        b.textContent = KIT.typed(b._text, g, b._at, b._at + 0.3);
+        var vis = RC.progress(g, b._at - 0.12, 0.12, "smooth");
+        b.style.opacity = String(0.25 + 0.75 * vis);
+        if (b._arrow) b._arrow.style.opacity = String(0.2 + 0.8 * vis);
+      });
+      if (row.check) row.check.style.opacity = String(RC.progress(g, row.first, 0.2, "smooth"));
+    });
+    var ctx = S.pctx;
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = P.red; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    var bx = 72 * u + 51 * u, r = 20 * u;
+    S.rows.forEach(function (row) {
+      if (row.at == null) return;
+      if (row.verdict === "strike") {
+        // a red hand-drawn strike through the row, then an X in its tick box
+        var s = RC.progress(g, row.at, 0.38, "smooth");
+        if (s > 0) {
+          var x0 = 46 * u, x1 = W - 46 * u, N = S.wob.length - 1;
+          [0, 1].forEach(function (pass) {
+            ctx.lineWidth = (pass ? 7 : 13) * u; ctx.globalAlpha = pass ? 0.55 : 0.92;
+            ctx.beginPath();
+            for (var i = 0; i <= N * s; i++) {
+              var x = RC.mix(x0, x1, i / N), y = row.y + S.wob[i] + (i / N - 0.5) * 26 * u + pass * 9 * u;
+              if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+          });
+          ctx.globalAlpha = 1;
+        }
+        var xa = RC.progress(g, row.at + 0.3, 0.2, "smooth");
+        if (xa > 0 && row.check) {
+          ctx.lineWidth = 8 * u;
+          var by = row.checkY;
+          ctx.beginPath(); ctx.moveTo(bx - r, by - r); ctx.lineTo(bx - r + 2 * r * RC.clamp(xa * 2, 0, 1), by - r + 2 * r * RC.clamp(xa * 2, 0, 1));
+          if (xa > 0.5) { var q = (xa - 0.5) * 2; ctx.moveTo(bx + r, by - r); ctx.lineTo(bx + r - 2 * r * q, by - r + 2 * r * q); }
+          ctx.stroke();
+        }
+      } else if (row.verdict === "tick" && row.check) {
+        var tk = RC.progress(g, row.at, 0.25, "smooth");
+        if (tk > 0) {
+          var byB = row.checkY;
+          ctx.lineWidth = 10 * u;
+          ctx.beginPath(); ctx.moveTo(bx - r, byB);
+          var a = RC.clamp(tk / 0.35, 0, 1), b2 = RC.clamp((tk - 0.35) / 0.65, 0, 1);
+          ctx.lineTo(bx - r + 14 * u * a, byB + 16 * u * a);
+          if (b2 > 0) ctx.lineTo(bx - r + 14 * u + 46 * u * b2, byB + 16 * u - 56 * u * b2);
+          ctx.stroke();
+        }
+      }
+    });
+    if (S.stamp) {
+      // slam: big and faint -> lands with a small overshoot and a shake, then holds
+      var p = RC.progress(g, S.stampAt - 0.1, 0.12, "ease-in");
+      var shake = g > S.stampAt && g < S.stampAt + 0.18 ? Math.sin((g - S.stampAt) * 90) * 6 * u * (1 - (g - S.stampAt) / 0.18) : 0;
+      RC.set(S.stamp, { x: shake, rotate: -8, scale: RC.mix(1.9, 1, p), opacity: p });
+    }
+    S.cap.render(g);
+  },
+});
+</script>
+</body>
+</html>

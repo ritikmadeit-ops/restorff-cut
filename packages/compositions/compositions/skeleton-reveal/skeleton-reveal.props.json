@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/skeleton-reveal); fictional.",
+  "name": "Jane Cooper",
+  "detail": "jane@example.com",
+  "tone": "light",
+  "speed": 1
+}

@@ -1,0 +1,15 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/halftone-field); fictional.",
+  "frequency": 2,
+  "speedVar": 5,
+  "cellSize": 54,
+  "gamma": 12,
+  "paletteBias": 2,
+  "palette1": "#00AAFF",
+  "palette2": "#C2FF67",
+  "palette3": "#6600FF",
+  "palette4": "#000000",
+  "background": "#000000",
+  "quantize": false,
+  "speed": 1
+}

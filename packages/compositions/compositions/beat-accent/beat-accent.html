@@ -1,0 +1,397 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/beat-accent@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-variables='[
+    { "id": "text", "type": "string", "role": "content", "label": "Accent text", "description": "Word or short label emphasized by the beat hit.", "default": "BOOM" },
+    { "id": "flashColor", "type": "enum", "role": "style", "label": "Flash color", "description": "Token-backed accent tone used by the radial flash.", "default": "accent", "options": [{ "value": "accent", "label": "Accent" }, { "value": "soft", "label": "Soft accent" }, { "value": "bright", "label": "Bright accent" }] },
+    { "id": "intensity", "type": "number", "role": "timing", "label": "Intensity", "description": "Strength of the scale pulse, flash, and shake.", "default": 1, "min": 0.5, "max": 2, "step": 0.1 }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "beat-accent",
+  "title": "Beat Accent",
+  "description": "A single music-hit sting: impact flash, micro scale-pulse on the subject, immediate decay. Imported from a HyperFrames component (hooks; provenance below).",
+  "duration": 4,
+  "size": [
+    998,
+    476
+  ],
+  "fps": 30,
+  "tags": [
+    "hooks",
+    "motion-primitive",
+    "effects",
+    "burst",
+    "sting",
+    "emphasize",
+    "impact",
+    "imported",
+    "hyperframes"
+  ],
+  "opaque": true,
+  "kit": "hf-compat",
+  "params": {
+    "text": {
+      "type": "string",
+      "default": "BOOM",
+      "label": "Accent text",
+      "description": "Word or short label emphasized by the beat hit.",
+      "required": true
+    },
+    "flashColor": {
+      "type": "enum",
+      "options": [
+        "accent",
+        "soft",
+        "bright"
+      ],
+      "default": "accent",
+      "label": "Flash color",
+      "description": "Token-backed accent tone used by the radial flash."
+    },
+    "intensity": {
+      "type": "number",
+      "default": 1,
+      "label": "Intensity",
+      "description": "Strength of the scale pulse, flash, and shake.",
+      "min": 0.5,
+      "max": 2,
+      "step": 0.1
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 998x475 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "text": "text",
+      "flashColor": "flashColor",
+      "intensity": "intensity"
+    },
+    "width": 998,
+    "height": 475,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/beat-accent",
+    "path": "registry/components/beat-accent",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="beat-accent" data-start="0" data-duration="4" data-width="998" data-height="475" style="position:absolute;left:0;top:0;width:998px;height:475px">
+
+      <div id="root" data-composition-id="beat-accent" data-duration="4" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            --ease-slam: cubic-bezier(0.19, 1, 0.22, 1);
+            --ba-flash-color: var(--accent, #ff4f8b);
+            position: absolute;
+            inset: 0;
+            container-type: size;
+            isolation: isolate;
+            overflow: hidden;
+            background: var(--bg, #0b1120);
+            color: var(--fg, #f8fafc);
+            font-family: var(--font-body, system-ui, sans-serif);
+            pointer-events: none;
+          }
+
+          .ba-clip {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+          }
+
+          .ba-stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            place-items: center;
+            
+          }
+
+          .ba-flash {
+            position: absolute;
+            width: 62cqw;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: radial-gradient(
+              circle,
+              color-mix(in srgb, var(--ba-flash-color) 92%, transparent) 0%,
+              color-mix(in srgb, var(--ba-flash-color) 54%, transparent) 24%,
+              color-mix(in srgb, var(--ba-flash-color) 16%, transparent) 48%,
+              transparent 72%
+            );
+            opacity: 0;
+            
+          }
+
+          .ba-flash::after {
+            content: "";
+            position: absolute;
+            inset: 22%;
+            border: 0.45cqmin solid color-mix(in srgb, var(--ba-flash-color) 78%, transparent);
+            border-radius: 50%;
+          }
+
+          .ba-subject {
+            position: relative;
+            z-index: 1;
+            display: block;
+            width: 86cqw;
+            color: var(--fg, #f8fafc);
+            font-family: var(--font-display, var(--font-body, system-ui, sans-serif));
+            font-size: 20cqmin;
+            font-weight: 900;
+            line-height: 0.9;
+            letter-spacing: -0.055em;
+            text-align: center;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow:
+              0 0 2cqmin color-mix(in srgb, var(--accent, #ff4f8b) 46%, transparent),
+              0 1.2cqh 3.8cqh color-mix(in srgb, var(--bg, #0b1120) 68%, transparent);
+            transform-origin: 50% 50%;
+            
+          }
+        </style>
+
+        <div
+          id="beat-accent-clip"
+          class="ba-clip clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="0"
+        >
+          <div class="ba-stage">
+            <div class="ba-flash" aria-hidden="true"></div>
+            <div class="ba-subject"></div>
+          </div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var stage = root.querySelector(".ba-stage");
+            var flash = root.querySelector(".ba-flash");
+            var subject = root.querySelector(".ba-subject");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            var text = vars.text == null ? "BOOM" : String(vars.text);
+            var flashChoice =
+              vars.flashColor === "soft" || vars.flashColor === "bright"
+                ? vars.flashColor
+                : "accent";
+            var intensityValue = Number(vars.intensity);
+            var intensity = Number.isFinite(intensityValue)
+              ? Math.max(0.5, Math.min(2, intensityValue))
+              : 1;
+
+            var flashColors = {
+              accent: "var(--accent, #ff4f8b)",
+              soft: "color-mix(in srgb, var(--accent, #ff4f8b) 70%, var(--bg, #0b1120))",
+              bright: "color-mix(in srgb, var(--accent, #ff4f8b) 72%, var(--fg, #f8fafc))",
+            };
+
+            subject.textContent = text;
+            root.style.setProperty("--ba-flash-color", flashColors[flashChoice]);
+
+            var IN_BASE = 0.9;
+            var OUT_BASE = 0.4;
+            var IMPACT_AT_BASE = 0.25;
+            var SNAP_BASE = 0.12;
+            var SETTLE_BASE = 0.28;
+            var FLASH_IN_BASE = 0.08;
+            var FLASH_OUT_BASE = 0.28;
+
+            var duration = Math.max(0.001, parseFloat(root.dataset.duration || "4"));
+            var totalBase = IN_BASE + OUT_BASE;
+            var envelopeScale = duration < totalBase ? duration / totalBase : 1;
+            var IN = IN_BASE * envelopeScale;
+            var OUT = OUT_BASE * envelopeScale;
+            var IMPACT_AT = IMPACT_AT_BASE * envelopeScale;
+            var SNAP = SNAP_BASE * envelopeScale;
+            var SETTLE = SETTLE_BASE * envelopeScale;
+            var FLASH_IN = FLASH_IN_BASE * envelopeScale;
+            var FLASH_OUT = FLASH_OUT_BASE * envelopeScale;
+            var HOLD = Math.max(0, duration - (IN + OUT));
+            var OUT_START = IN + HOLD;
+
+            var restScale = 1 - 0.06 * intensity;
+            var peakScale = 1 + 0.18 * intensity;
+            var flashPeakScale = 0.78 + 0.3 * intensity;
+            var flashEndScale = 1.08 + 0.32 * intensity;
+            var flashPeakOpacity = Math.min(0.96, 0.5 + 0.23 * intensity);
+            var shakeX = 0.9 * intensity;
+            var shakeY = 0.34 * intensity;
+
+            gsap.set(stage, { x: 0, y: 0, opacity: 1 });
+            gsap.set(subject, { scale: restScale });
+            gsap.set(flash, { scale: 0.25, opacity: 0 });
+
+            var tl = gsap.timeline({ paused: true });
+
+            tl.to(subject, { scale: peakScale, duration: SNAP, ease: "expo.out" }, IMPACT_AT);
+            tl.to(subject, { scale: 1, duration: SETTLE, ease: "power3.out" }, IMPACT_AT + SNAP);
+
+            tl.to(
+              flash,
+              {
+                scale: flashPeakScale,
+                opacity: flashPeakOpacity,
+                duration: FLASH_IN,
+                ease: "expo.out",
+              },
+              IMPACT_AT,
+            );
+            tl.to(
+              flash,
+              { scale: flashEndScale, opacity: 0, duration: FLASH_OUT, ease: "power3.out" },
+              IMPACT_AT + FLASH_IN,
+            );
+
+            tl.to(
+              stage,
+              {
+                x: shakeX + "cqw",
+                y: -shakeY + "cqh",
+                duration: 0.04 * envelopeScale,
+                ease: "none",
+              },
+              IMPACT_AT,
+            );
+            tl.to(
+              stage,
+              {
+                x: -shakeX * 0.7 + "cqw",
+                y: shakeY * 0.75 + "cqh",
+                duration: 0.05 * envelopeScale,
+                ease: "none",
+              },
+              IMPACT_AT + 0.04 * envelopeScale,
+            );
+            tl.to(
+              stage,
+              {
+                x: shakeX * 0.3 + "cqw",
+                y: -shakeY * 0.35 + "cqh",
+                duration: 0.05 * envelopeScale,
+                ease: "none",
+              },
+              IMPACT_AT + 0.09 * envelopeScale,
+            );
+            tl.to(
+              stage,
+              {
+                x: 0,
+                y: 0,
+                duration: 0.12 * envelopeScale,
+                ease: "power3.out",
+              },
+              IMPACT_AT + 0.14 * envelopeScale,
+            );
+
+            tl.call(
+              function () {
+                root.dispatchEvent(
+                  new CustomEvent("hf:sfx", {
+                    detail: { id: "impact-hard", t: IMPACT_AT },
+                    bubbles: true,
+                  }),
+                );
+              },
+              [],
+              IMPACT_AT,
+            );
+
+            tl.to(stage, { opacity: 0, duration: OUT, ease: "power2.out" }, OUT_START);
+            tl.seek(0);
+
+            window.__timelines = window.__timelines || {};
+            // Literal id is required. Mount flattening strips data-composition-id
+            // from this inner root, so reading the id from root would register
+            // under null and leave the host unable to find this timeline.
+            window.__timelines["beat-accent"] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

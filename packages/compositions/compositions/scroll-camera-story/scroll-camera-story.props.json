@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/scroll-camera-story); fictional.",
+  "sections": 4,
+  "travel": 300,
+  "cues": "1.7,2.9,4.0",
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

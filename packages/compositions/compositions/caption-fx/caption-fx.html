@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Caption FX</title>
+<!--
+  Caption styles adapted from Remocn (MIT, Copyright (c) 2026 Remocn), https://github.com/Remocn/remocn
+  registry/remocn/caption-{highlight-box,karaoke,marker,redact,scramble,blur-in,bounce-in}/index.tsx
+  @ 7aebcbe6514ed9e54e3a4a6786f83f8425a4a9af; modified: re-written for RestorffCut's seek-per-frame runtime (no React,
+  no Remotion). Timings, easing curves, sizes and the per-style logic follow Remocn's files; the word paging, the
+  cubic-bezier solver and the damped spring are our own (Remocn's paging uses @remotion/captions and its bounce uses
+  remotion's spring(), neither of which is copied — Remotion licence). Licence copy: third_party/remocn/LICENSE.
+  Adapted from Remocn (MIT) registry/remocn/caption-*@7aebcbe; modified.
+-->
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "caption-fx",
+  "title": "Caption FX",
+  "description": "Word-timed captions in seven trending styles: highlight-box (a colour box slides from word to word as it is spoken), karaoke (each word fills with colour as it is said), marker (a highlighter swipes across key words), redact (black bars pull back to reveal each word), scramble (letters decode from random glyphs), blur-in (each word sharpens into view), bounce-in (each word drops in on a spring). Groups of 1-6 words, broken at sentence ends and pauses. Use for talking-head captions when the default caption styles are too plain, or one style per section to vary the rhythm.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "tags": ["captions", "subtitles", "karaoke", "highlight", "marker", "redact", "scramble", "word-by-word", "reels"],
+  "params": {
+    "words": { "type": "list", "required": true, "minItems": 1, "label": "Words", "description": "Every spoken word with its start and end in seconds from the start of this overlay (word-timed transcript). Punctuation stays on the word; a word ending in . ! ? closes its group.", "of": { "type": "object", "fields": { "text": { "type": "string", "description": "The word as spoken, with trailing punctuation." }, "start": { "type": "number", "min": 0, "description": "Seconds when the word starts." }, "end": { "type": "number", "min": 0, "description": "Seconds when the word ends." } } }, "default": [{ "text": "Cold", "start": 0.1, "end": 0.38 }, { "text": "brew", "start": 0.38, "end": 0.7 }, { "text": "that", "start": 0.7, "end": 0.86 }, { "text": "takes", "start": 0.86, "end": 1.2 }, { "text": "eighteen", "start": 1.2, "end": 1.62 }, { "text": "hours.", "start": 1.62, "end": 2.1 }, { "text": "Worth", "start": 2.4, "end": 2.7 }, { "text": "every", "start": 2.7, "end": 2.95 }, { "text": "minute.", "start": 2.95, "end": 3.5 }] },
+    "style": { "type": "enum", "options": ["highlight-box", "karaoke", "marker", "redact", "scramble", "blur-in", "bounce-in"], "default": "highlight-box", "label": "Style", "description": "How the spoken word is shown (see the description)." },
+    "keywords": { "type": "list", "of": { "type": "string" }, "default": [], "display": false, "label": "Key words", "description": "marker style: the words to swipe with the highlighter (as spoken, any case, punctuation ignored). Empty = the longest word (4+ letters) of each group." },
+    "maxWords": { "type": "number", "default": 4, "min": 1, "max": 6, "step": 1, "label": "Words per group", "description": "Most words on screen at once; groups also break at . ! ? and at pauses longer than the hold." },
+    "hold": { "type": "number", "default": 0.6, "min": 0, "max": 2, "step": 0.05, "unit": "s", "label": "Hold", "description": "How long a group stays after its last word when a pause follows (and the pause length that starts a new group)." },
+    "case": { "type": "enum", "options": ["natural", "upper", "lower"], "default": "natural", "display": false, "label": "Case", "description": "Letter case of the captions." },
+    "font": { "type": "font", "default": "Archivo", "label": "Font", "description": "Caption font." },
+    "size": { "type": "number", "default": 76, "min": 32, "max": 160, "step": 1, "unit": "px", "label": "Size", "description": "Font size, px on the 1080 grid." },
+    "weight": { "type": "number", "default": 800, "min": 400, "max": 900, "step": 100, "label": "Weight", "description": "Font weight." },
+    "color": { "type": "color", "default": "#FFFFFF", "label": "Text colour", "description": "Colour of the words." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "The box (highlight-box), the fill (karaoke), the highlighter (marker)." },
+    "accentText": { "type": "color", "default": "#0A0A0A", "label": "Text on accent", "description": "Word colour on the box / highlighter." },
+    "barColor": { "type": "color", "default": "#0A0A0A", "label": "Bar colour", "description": "redact: colour of the bars; scramble: colour of the unresolved glyphs is fixed grey." },
+    "bounce": { "type": "number", "default": 0.6, "min": 0, "max": 1, "step": 0.05, "label": "Bounce", "description": "bounce-in: 0 = settles without overshoot, 1 = very springy." },
+    "shadow": { "type": "boolean", "default": true, "label": "Shadow", "description": "Soft dark shadow for legibility over footage." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Caption size multiplier (\"bigger captions\" = 1.15)." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "bottom", "label": "Anchor", "description": "Vertical placement inside the safe area." },
+    "offsetY": { "type": "number", "default": -120, "min": -900, "max": 900, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Speed of each word's animation (never the word timings)." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Groups fade out into pauses (off = they cut)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .pg { position: absolute; left: 0; right: 0; text-align: center; visibility: hidden; }
+  .in { position: relative; display: inline-block; text-align: center; line-height: 1.2; }
+  .w { position: relative; display: inline-block; white-space: nowrap; }
+  .ov { position: absolute; left: 0; top: 0; white-space: nowrap; }
+  .box { position: absolute; }
+  .band { position: absolute; left: 0; right: 0; top: 12%; bottom: 2%; }
+  .bar { position: absolute; top: 14%; bottom: 6%; transform-origin: right center; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+(function () {
+  var P, u, pages = [], shadowCss, glyphColor = "#8C8C95";
+  var GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*/+=";
+  var SENTENCE_END = /[.!?…]["')\]]*$/;
+
+  // cubic-bezier(x1, y1, x2, y2) as an easing function (Newton steps, then bisection)
+  function bezier(x1, y1, x2, y2) {
+    function a(p1, p2) { return 1 - 3 * p2 + 3 * p1; }
+    function b(p1, p2) { return 3 * p2 - 6 * p1; }
+    function c(p1) { return 3 * p1; }
+    function at(t, p1, p2) { return ((a(p1, p2) * t + b(p1, p2)) * t + c(p1)) * t; }
+    function slope(t, p1, p2) { return 3 * a(p1, p2) * t * t + 2 * b(p1, p2) * t + c(p1); }
+    return function (x) {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      var t = x, i;
+      for (i = 0; i < 8; i++) {
+        var d = at(t, x1, x2) - x, s = slope(t, x1, x2);
+        if (Math.abs(d) < 1e-6) return at(t, y1, y2);
+        if (Math.abs(s) < 1e-6) break;
+        t -= d / s;
+      }
+      var lo = 0, hi = 1; t = x;
+      for (i = 0; i < 30; i++) { var v = at(t, x1, x2); if (Math.abs(v - x) < 1e-6) break; if (v < x) lo = t; else hi = t; t = (lo + hi) / 2; }
+      return at(t, y1, y2);
+    };
+  }
+  var enterEase = bezier(0.2, 0.8, 0.2, 1), travelEase = bezier(0.3, 0, 0.2, 1), drawEase = bezier(0.25, 1, 0.5, 1);
+  var blurEase = bezier(0.25, 0.6, 0.3, 1), revealEase = bezier(0.65, 0, 0.35, 1);
+
+  // damped spring 0 → 1 (stiffness 220, mass 0.6, damping from `bounce`), t in seconds
+  function spring(t, damping) {
+    if (t <= 0) return 0;
+    var k = 220, m = 0.6, w0 = Math.sqrt(k / m), z = damping / (2 * Math.sqrt(k * m));
+    if (z >= 1) return 1 - Math.exp(-w0 * t) * (1 + w0 * t);
+    var wd = w0 * Math.sqrt(1 - z * z);
+    return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + (z * w0 / wd) * Math.sin(wd * t));
+  }
+  function lin(x, a, b) { return RC.clamp((x - a) / (b - a), 0, 1); }
+  function mixHex(h1, h2, t) { return RC.mixColor(h1, h2, RC.clamp(t, 0, 1)); }
+  function norm(s) { return String(s).toLowerCase().replace(/[‘’]/g, "'").replace(/[^a-z0-9À-ɏ']/g, ""); }
+  function shadowOf(k) { return k <= 0 || !P.shadow ? "none" : "0 " + 2 * u + "px " + 3 * u + "px rgba(0,0,0," + (0.5 * k) + "), 0 " + 4 * u + "px " + 16 * u + "px rgba(0,0,0," + (0.35 * k) + ")"; }
+  function cased(s) { return P["case"] === "upper" ? s.toUpperCase() : P["case"] === "lower" ? s.toLowerCase() : s; }
+
+  function paginate(words, maxWords, hold) {
+    var out = [], cur = null;
+    var gapBreak = Math.max(hold, 0.3);
+    words.forEach(function (w, i) {
+      var prev = words[i - 1];
+      if (!cur || cur.words.length >= maxWords || (prev && SENTENCE_END.test(prev.text.trim())) || (prev && w.start - prev.end > gapBreak)) {
+        cur = { words: [] };
+        out.push(cur);
+      }
+      cur.words.push(w);
+    });
+    out.forEach(function (pg) {
+      pg.start = pg.words[0].start;
+      pg.speechEnd = pg.words[pg.words.length - 1].end;
+    });
+    out.forEach(function (pg, i) { // second pass: needs the next group's start
+      var held = pg.speechEnd + hold, next = out[i + 1];
+      pg.endsInSilence = !next || next.start > held;
+      pg.end = pg.endsInSilence ? held : Math.max(pg.start, next.start);
+      pg.previous = i > 0 && !out[i - 1].endsInSilence;
+    });
+    return out;
+  }
+
+  RC.composition({
+    build: function (RC) {
+      P = RC.params;
+      u = RC.u * P.scale;
+      var words = (P.words || []).filter(function (w) { return w && String(w.text || "").trim(); })
+        .map(function (w) { return { text: String(w.text).trim(), start: Number(w.start) || 0, end: Math.max(Number(w.end) || 0, Number(w.start) || 0) }; })
+        .sort(function (a, b) { return a.start - b.start; });
+      pages = paginate(words, Math.round(P.maxWords), P.hold);
+      var keys = {};
+      (P.keywords || []).forEach(function (k) { keys[norm(k)] = true; });
+      var stage = document.getElementById("stage");
+      var fs = P.size * u;
+      var font = P.font === "JetBrains Mono" ? "'JetBrains Mono', monospace" : P.font === "Instrument Serif" ? "'Instrument Serif', serif" : "'Archivo', sans-serif";
+      var padSide = RC.safe.right;
+
+      pages.forEach(function (pg) {
+        var el = RC.el("div", { class: "pg", style: { padding: "0 " + padSide + "px" } });
+        var inner = RC.el("div", { class: "in", style: { fontFamily: font, fontSize: fs + "px", fontWeight: String(P.weight), color: P.color, maxWidth: (RC.width - 2 * padSide) + "px" } });
+        el.appendChild(inner);
+        if (P.style === "highlight-box") {
+          pg.box = RC.el("div", { class: "box", style: { background: P.accent, borderRadius: (0.16 * fs) + "px", opacity: "0" } });
+          inner.appendChild(pg.box);
+        }
+        var longest = -1, longestLen = 3;
+        pg.words.forEach(function (w, i) { var n = norm(w.text).length; if (n > longestLen) { longest = i; longestLen = n; } });
+        pg.items = pg.words.map(function (w, i) {
+          if (i > 0) inner.appendChild(document.createTextNode(" "));
+          var text = cased(w.text);
+          var span = RC.el("span", { class: "w" });
+          var t = RC.el("span", { class: "t" }, [text]);
+          var it = { w: w, text: text, el: span, t: t };
+          if (P.style === "karaoke") {
+            span.appendChild(t);
+            it.k = RC.el("span", { class: "ov", style: { color: P.accent } }, [text]);
+            span.appendChild(it.k);
+          } else if (P.style === "marker") {
+            it.key = (P.keywords && P.keywords.length) ? !!keys[norm(w.text)] : i === longest;
+            if (it.key) {
+              span.style.padding = "0 " + (0.12 * fs) + "px";
+              span.style.margin = "0 " + (-0.12 * fs) + "px";
+              it.band = RC.el("span", { class: "band", style: { background: P.accent, borderRadius: (0.18 * fs) + "px", transform: "rotate(-1deg)" } });
+              span.appendChild(it.band);
+              t.style.position = "relative";
+              span.appendChild(t);
+              it.mt = RC.el("span", { class: "ov", style: { color: P.accentText, padding: "0 " + (0.12 * fs) + "px" } }, [text]);
+              span.appendChild(it.mt);
+            } else span.appendChild(t);
+          } else if (P.style === "redact") {
+            span.appendChild(t);
+            it.bar = RC.el("span", { class: "bar", style: { background: P.barColor, left: (-0.06 * fs) + "px", right: (-0.06 * fs) + "px", borderRadius: (0.06 * fs) + "px" } });
+            span.appendChild(it.bar);
+          } else if (P.style === "scramble") {
+            t.style.color = "transparent";
+            span.appendChild(t);
+            it.done = RC.el("span", {});
+            it.glyph = RC.el("span", { style: { color: glyphColor } });
+            it.scr = RC.el("span", { class: "ov" }, [it.done, it.glyph]);
+            span.appendChild(it.scr);
+          } else {
+            span.appendChild(t);
+          }
+          if (P.style === "bounce-in") span.style.transformOrigin = "50% 80%";
+          inner.appendChild(span);
+          return it;
+        });
+        stage.appendChild(el);
+        pg.el = el; pg.inner = inner;
+      });
+
+      // place each group and measure its words (after fonts: build runs once they are loaded)
+      pages.forEach(function (pg) {
+        pg.el.style.visibility = "hidden";
+        var h = pg.el.offsetHeight;
+        var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - h : (RC.height - h) / 2;
+        pg.el.style.top = (top + P.offsetY * RC.u) + "px";
+        pg.rects = pg.items.map(function (it) { return { left: it.el.offsetLeft, top: it.el.offsetTop, width: it.el.offsetWidth, height: it.el.offsetHeight }; });
+      });
+    },
+
+    render: function (time, RC) {
+      var ms = time.T * 1000, sp = P.speed;
+      var ENTER = 160 / sp, EXIT = 220 / sp, TRAVEL = 120 / sp;
+      var fs = P.size * u;
+      pages.forEach(function (pg) {
+        var on = ms >= pg.start * 1000 && ms < pg.end * 1000;
+        // display, not only visibility: redact/scramble set visibility on children, which would override a hidden parent
+        pg.el.style.display = on ? "block" : "none";
+        pg.el.style.visibility = on ? "visible" : "hidden";
+        if (!on) return;
+        var since = ms - pg.start * 1000, until = pg.end * 1000 - ms;
+        var holdRoom = (pg.end - pg.speechEnd) * 1000;
+        var exitWin = Math.max(1, Math.min(EXIT, holdRoom));
+        var exit = pg.endsInSilence && P.exit ? lin(until, 0, exitWin) : 1;
+        var hasPageEnter = !(P.style === "blur-in" || P.style === "bounce-in");
+        var enter = hasPageEnter ? enterEase(lin(pg.previous ? ENTER : since, 0, ENTER)) : 1;
+        pg.inner.style.opacity = String(Math.min(enter, exit));
+        pg.inner.style.transform = "translateY(" + ((1 - enter) * 0.14 * fs) + "px)";
+
+        var active = -1;
+        pg.items.forEach(function (it, i) { if (it.w.start * 1000 <= ms) active = i; });
+
+        pg.items.forEach(function (it, i) {
+          var from = it.w.start * 1000, to = it.w.end * 1000, s = ms - from;
+          var st = it.el.style;
+          if (P.style === "karaoke") {
+            it.t.style.textShadow = shadowOf(1);
+            var pr = s < 0 ? 0 : to <= from ? 1 : Math.min(1, s / (to - from));
+            it.k.style.clipPath = "inset(0 " + ((1 - pr) * 100) + "% 0 0)";
+          } else if (P.style === "marker") {
+            if (!it.key) { it.t.style.textShadow = shadowOf(1); return; }
+            var drawMs = Math.max(to - from, 220) / sp;
+            var drawn = drawEase(lin(s, 0, drawMs));
+            var hidden = ((1 - drawn) * 100) + "%";
+            it.band.style.clipPath = "inset(0 " + hidden + " 0 0 round " + (0.18 * fs) + "px)";
+            it.t.style.textShadow = shadowOf(1 - drawn);
+            it.mt.style.clipPath = "inset(12% " + hidden + " 2% 0)";
+          } else if (P.style === "redact") {
+            var revMs = Math.max(to - from, 180) / sp;
+            var rev = revealEase(lin(s, 0, revMs));
+            it.t.style.textShadow = shadowOf(1);
+            it.t.style.visibility = rev > 0 ? "visible" : "hidden";
+            it.t.style.clipPath = rev >= 1 ? "none" : "inset(-50% " + ((1 - rev) * 100) + "% -50% -50%)";
+            it.bar.style.display = rev < 1 ? "block" : "none";
+            it.bar.style.transform = "scaleX(" + (1 - rev) + ")";
+          } else if (P.style === "scramble") {
+            var chars = Array.from(it.text);
+            if (s < 0) { it.scr.style.visibility = "hidden"; return; }
+            it.scr.style.visibility = "visible";
+            it.scr.style.textShadow = shadowOf(1);
+            var dur = Math.min(to - from, 300) / sp;
+            var prog = dur <= 0 ? 1 : Math.min(1, s / dur);
+            var resolved = prog >= 1 ? chars.length : Math.floor(prog * chars.length);
+            var step = Math.floor(time.frame / 2);
+            it.done.textContent = chars.slice(0, resolved).join("");
+            it.glyph.textContent = chars.slice(resolved).map(function (ch, c) {
+              if (/\s/.test(ch)) return ch;
+              var r = RC.random(((pg.start * 1000) | 0) * 131 + i * 977 + (resolved + c) * 7919 + step * 104729)();
+              return GLYPHS[Math.floor(r * GLYPHS.length) % GLYPHS.length];
+            }).join("");
+          } else if (P.style === "blur-in") {
+            var pb = s < 0 ? 0 : blurEase(lin(s, 0, 220 / sp));
+            st.opacity = String(pb);
+            var rad = (1 - pb) * 12 * u;
+            st.filter = rad > 0.01 ? "blur(" + rad + "px)" : "none";
+            it.t.style.textShadow = shadowOf(1);
+          } else if (P.style === "bounce-in") {
+            var damping = 22 - 15 * RC.clamp(P.bounce, 0, 1);
+            var p = s < 0 ? 0 : spring((s / 1000) * sp, damping);
+            st.opacity = String(s < 0 ? 0 : lin(s, 0, 90 / sp));
+            st.transform = "translateY(" + ((1 - p) * 0.35 * fs) + "px) scale(" + (0.7 + 0.3 * p) + ")";
+            it.t.style.textShadow = shadowOf(1);
+          } else { // highlight-box: colour per word from the box coverage, set below
+            it.t.style.color = P.color;
+            it.t.style.textShadow = shadowOf(1);
+          }
+        });
+
+        if (P.style === "highlight-box") {
+          var box = pg.box.style;
+          if (active < 0) { box.opacity = "0"; return; }
+          var travel = travelEase(lin(ms - pg.items[active].w.start * 1000, 0, TRAVEL));
+          var tg = pg.rects[active], og = active > 0 ? pg.rects[active - 1] : null;
+          var padX = 0.14 * fs, padY = 0.14 * 0.3 * fs;
+          var L = og ? RC.mix(og.left, tg.left, travel) : tg.left, T = og ? RC.mix(og.top, tg.top, travel) : tg.top;
+          var W = og ? RC.mix(og.width, tg.width, travel) : tg.width, H = og ? RC.mix(og.height, tg.height, travel) : tg.height;
+          box.left = (L - padX) + "px"; box.top = (T - padY) + "px";
+          box.width = (W + 2 * padX) + "px"; box.height = (H + 2 * padY) + "px";
+          box.opacity = String(og ? 1 : travel);
+          pg.items.forEach(function (it, w) {
+            var cov = 0;
+            if (w === active) cov = og ? lin(travel, 0.3, 0.8) : travel;
+            else if (og && w === active - 1) cov = 1 - lin(travel, 0.2, 0.7);
+            it.t.style.color = mixHex(P.color, P.accentText, cov);
+            it.t.style.textShadow = shadowOf(1 - cov);
+          });
+        }
+      });
+    }
+  });
+})();
+</script>
+</body>
+</html>

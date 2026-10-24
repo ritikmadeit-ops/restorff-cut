@@ -1,0 +1,19 @@
+{
+  "name": "restorffcut-wasm",
+  "type": "module",
+  "description": "RestorffCut per-frame engine (compositor, effects, masks, media time) compiled to WebAssembly",
+  "version": "0.5.0",
+  "license": "MIT",
+  "files": [
+    "restorffcut_wasm_bg.wasm",
+    "restorffcut_wasm.js",
+    "restorffcut_wasm_bg.js",
+    "restorffcut_wasm.d.ts"
+  ],
+  "main": "restorffcut_wasm.js",
+  "types": "restorffcut_wasm.d.ts",
+  "sideEffects": [
+    "./restorffcut_wasm.js",
+    "./snippets/*"
+  ]
+}

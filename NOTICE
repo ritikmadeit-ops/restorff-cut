@@ -1,0 +1,157 @@
+RestorffCut
+Copyright 2026 Overkill
+
+RestorffCut is the editor inside Restorff. It is based on open-source software
+released under the MIT License. The MIT License text is in the LICENSE file;
+the original copyright notices are kept there as that licence requires.
+
+------------------------------------------------------------------------------
+OpenCut
+https://github.com/OpenCut-app/OpenCut
+Copyright 2025-2026 OpenCut
+Licensed under the MIT License.
+
+RestorffCut's web editor (apps/web), its Rust/WebAssembly crates (rust/) and
+the prebuilt WebAssembly package it depends on (opencut-wasm, from npm) come
+from OpenCut, starting at upstream commit 238750c0 (2026-05-18).
+
+------------------------------------------------------------------------------
+OpenCut-AI
+https://github.com/Ekaanth/OpenCut-AI
+Copyright 2025 OpenCut-AI
+Licensed under the MIT License.
+
+Portions of RestorffCut (server-side commits, share links, review comments and
+the alpha-video transcode fallback, as they are ported) come from OpenCut-AI.
+
+------------------------------------------------------------------------------
+MIT License (applies to the upstream portions above)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+------------------------------------------------------------------------------
+HyperFrames
+https://github.com/heygen-com/hyperframes
+Copyright 2026 HeyGen, Inc.
+Licensed under the Apache License, Version 2.0 (not the MIT License above):
+http://www.apache.org/licenses/LICENSE-2.0
+
+Portions adapted from HyperFrames at commit fa5dbd1 (2026-10-24), modified:
+- packages/compositions/knowledge/ : the playbooks served by the MCP `guide`
+  tool are adapted from HyperFrames' agent skills (skills/, .claude/skills/) and
+  docs (docs/); each file names its sources and says "modified".
+[fx-sync:hyperframes]
+- packages/compositions/compositions/ : 202 compositions adapted from its
+  registry at commit d63ff907aae9 by tools/fx-sync (list: tools/fx-sync/manifest.json);
+  each adapted file starts with "Adapted from HyperFrames (Apache-2.0)
+  <path>@<commit>; modified". GSAP is not included: our MIT gsap-compat
+  runtime replaces it. Pieces the upstream credits to other projects keep
+  those licences. Licence text and CREDITS.md: third_party/hyperframes/.
+- packages/compositions/kits/hf-compat.js : the theme token values come from its
+  themes/*.css.
+- Fonts localised from Google Fonts for these compositions (SIL Open Font
+  License 1.1 unless packages/compositions/fonts/gf/fonts.json says
+  otherwise; licence texts beside them):
+  Anton, Archivo Black, Caveat, Courier Prime, DM Sans, Geist, Inter, League
+  Gothic, Montserrat, Oswald, Permanent Marker, Space Mono
+[/fx-sync:hyperframes]
+
+------------------------------------------------------------------------------
+gl-transitions
+https://github.com/gl-transitions/gl-transitions
+Copyright (c) 2017-present gl-transitions contributors
+Licensed under the MIT License (third_party/gl-transitions/LICENSE); each shader
+names its own author and licence in its header (the 27 used are all MIT).
+
+27 shaders from transitions/*.glsl at commit 66a9759 (2026-10-21), unchanged
+inside a wrapper written for RestorffCut, in
+packages/compositions/compositions/gl-transition/ (modified: wrapped for the
+seek-per-frame renderer). Authors: gre, Ben Lucas, Mr Speaker, Xaychru, bobylito,
+Zeh Fernando, dycm8009, Rich Harris, Anastasia Dunbar, Brandon Anzaldi,
+rectalogic, Gunnar Roth, mikolalysenko, Eke Péter, Sergey Kosarevsky,
+Paweł Płóciennik (full list with files: third_party/gl-transitions/extract.ts).
+
+------------------------------------------------------------------------------
+Paper Shaders
+https://github.com/paper-design/shaders
+Licensed under the Apache License, Version 2.0 (third_party/paper-shaders/LICENSE).
+Its NOTICE file reads:
+  Powered by Paper Shaders:
+  https://shaders.paper.design
+
+Portions adapted from Paper Shaders at commit 71be015 (2026-10-23), modified: the
+mesh-gradient, grain-gradient, warp and swirl fragment shaders, the vertex shader,
+GLSL helpers, noise texture and default presets, in
+packages/compositions/compositions/shader-bg/ (GLSL resolved from the TypeScript
+templates; host code is ours).
+
+------------------------------------------------------------------------------
+Remocn
+https://github.com/Remocn/remocn
+Copyright (c) 2026 Remocn
+Licensed under the MIT License (third_party/remocn/LICENSE).
+
+Portions adapted from Remocn at commit 7aebcbe (2026-10-23), modified:
+- packages/compositions/compositions/caption-fx/ : the highlight-box, karaoke,
+  marker, redact, scramble, blur-in and bounce-in caption styles, re-written for
+  RestorffCut's runtime (no React; no Remotion code — Remocn's own imports of
+  `remotion` / `@remotion/captions` were not copied).
+- packages/compositions/compositions/shader-bg/ : the values of 36 named shader
+  looks (registry/remocn/shader-*-*/index.tsx).
+
+------------------------------------------------------------------------------
+uisfx (audio)
+https://github.com/romainsimon/uisfx
+The audio is dedicated to the public domain under CC0 1.0
+(third_party/uisfx/LICENSE-AUDIO); no uisfx code is included. Credit, as its
+authors ask but do not require: "UI sounds: uisfx (CC0)".
+
+28 cues of the "cinematic" personality at commit 9950fe6, gain-normalised and
+re-encoded, in apps/web/public/sfx/cc0/ (third_party/uisfx/README.md).
+
+------------------------------------------------------------------------------
+three.js
+https://github.com/mrdoob/three.js
+Copyright 2010-2026 three.js authors
+Licensed under the MIT License (packages/compositions/vendor/three/LICENSE and
+packages/compositions/vendor/three-r147/LICENSE).
+
+Unmodified builds, loaded offline into compositions that ask for them:
+- packages/compositions/vendor/three/three-0.184.0.min.js : 0.184.0 core plus 18
+  addons from examples/jsm, bundled by RestorffCut into one script (window.THREE).
+- packages/compositions/vendor/three-r147/ : 0.147.0 build/three.min.js and eight
+  examples/js files, concatenated unchanged.
+
+------------------------------------------------------------------------------
+lottie-web
+https://github.com/airbnb/lottie-web
+Copyright (c) 2015 Bodymovin
+Licensed under the MIT License (packages/compositions/vendor/lottie/LICENSE.md).
+5.12.2 build/player/lottie.min.js, unmodified, in packages/compositions/vendor/lottie/.
+
+------------------------------------------------------------------------------
+Anime.js
+https://github.com/juliangarnier/anime
+Copyright (c) 2025 Julian Garnier
+Licensed under the MIT License (packages/compositions/vendor/anime/LICENSE.md).
+4.5.0 dist/bundles/anime.umd.min.js, unmodified, in packages/compositions/vendor/anime/.
+
+------------------------------------------------------------------------------
+GSAP is NOT included. packages/compositions/src/gsap-compat/ is RestorffCut's own
+MIT implementation of the GSAP API subset compositions use, written from GSAP's
+public documentation and black-box behaviour; no GSAP code is in this repository.

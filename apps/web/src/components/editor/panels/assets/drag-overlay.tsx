@@ -29,20 +29,23 @@ export function MediaDragOverlay({
 
 	return (
 		<button
-			className="bg-foreground/5 hover:bg-foreground/10 flex flex-col items-center justify-center gap-4 rounded-lg p-8 text-center"
+			className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed border-[#3a3a42] p-6 text-center transition-colors hover:border-fog hover:bg-surface"
 			type="button"
 			disabled={isProcessing || !onClick}
 			onClick={(event) => handleClick({ event })}
 		>
 			<div className="flex items-center justify-center">
-				<HugeiconsIcon icon={UploadIcon} className="text-foreground size-10" />
+				<HugeiconsIcon icon={UploadIcon} className="text-fog size-7" />
 			</div>
 
 			<div className="space-y-2">
-				<p className="text-muted-foreground max-w-sm text-xs">
+				<p className="text-bone max-w-sm text-[0.85rem]">
+					{isProcessing ? "Importing" : "Drop clips here"}
+				</p>
+				<p className="rc-mono text-fog max-w-sm text-[0.68rem]">
 					{isProcessing
-						? `Processing your files (${progress}%)`
-						: "Drag and drop videos, photos, and audio files here"}
+						? `${progress} %`
+						: "video · photo · audio — or click to pick"}
 				</p>
 			</div>
 
@@ -50,7 +53,7 @@ export function MediaDragOverlay({
 				<div className="w-full max-w-xs">
 					<div className="bg-muted/50 h-2 w-full rounded-full">
 						<div
-							className="bg-primary h-2 rounded-full"
+							className="bg-bone h-2 rounded-full"
 							style={{ width: `${progress}%` }}
 						/>
 					</div>

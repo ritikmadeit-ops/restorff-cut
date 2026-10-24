@@ -1,24 +1,27 @@
 import { ThemeProvider } from "next-themes";
-import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "../components/ui/sonner";
-import { ChangelogNotification } from "@/changelog/components/changelog-notification";
 import { TooltipProvider } from "../components/ui/tooltip";
 import { baseMetaData } from "./metadata";
-import { BotIdClient } from "botid/client";
-import { webEnv } from "@/env/web";
-import { Inter } from "next/font/google";
+import { Archivo, JetBrains_Mono } from "next/font/google";
 
-const siteFont = Inter({ subsets: ["latin"] });
+// Restorff "screen" type: Archivo (variable width axis, so the wordmark and
+// section labels can run expanded at wdth 125) and JetBrains Mono for
+// timecodes, rulers, breadcrumbs and version lines.
+const archivo = Archivo({
+	subsets: ["latin"],
+	axes: ["wdth"],
+	variable: "--font-archivo",
+	display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+	subsets: ["latin"],
+	variable: "--font-jetbrains-mono",
+	display: "swap",
+});
 
 export const metadata = baseMetaData;
-
-const protectedRoutes = [
-	{
-		path: "/none",
-		method: "GET",
-	},
-];
 
 export default function RootLayout({
 	children,
@@ -26,40 +29,24 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" suppressHydrationWarning>
-			<head>
-				<BotIdClient protect={protectedRoutes} />
-				{process.env.NODE_ENV === "development" && (
-					<>
-						<Script
-							src="//unpkg.com/react-scan/dist/auto.global.js"
-							crossOrigin="anonymous"
-							strategy="beforeInteractive"
-						/>
-					</>
-				)}
-			</head>
-			<body className={`${siteFont.className} font-sans antialiased`}>
+		<html
+			lang="en"
+			className={`dark ${archivo.variable} ${jetbrainsMono.variable}`}
+			suppressHydrationWarning
+		>
+			<body className="font-sans antialiased">
+				{/* RestorffCut is dark-only: the screen stages never switch theme. */}
 				<ThemeProvider
 					attribute="class"
-					defaultTheme="system"
+					forcedTheme="dark"
+					defaultTheme="dark"
+					enableSystem={false}
 					disableTransitionOnChange={true}
 				>
 					<TooltipProvider>
 						<Toaster />
-						<Script
-							src="https://cdn.databuddy.cc/databuddy.js"
-							strategy="afterInteractive"
-							async
-							data-client-id="UP-Wcoy5arxFeK7oyjMMZ"
-							data-disabled={webEnv.NODE_ENV === "development"}
-							data-track-attributes={false}
-							data-track-errors={true}
-							data-track-outgoing-links={false}
-							data-track-web-vitals={false}
-							data-track-sessions={false}
-						/>
 						{children}
+						<div aria-hidden className="rc-grain" />
 					</TooltipProvider>
 				</ThemeProvider>
 			</body>

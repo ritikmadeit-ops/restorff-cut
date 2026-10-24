@@ -38,6 +38,28 @@ export type SingleCharacterShortcutKey = `${Key}`;
 
 export type ShortcutKey = ModifierBasedShortcutKey | SingleCharacterShortcutKey;
 
+const MODIFIER_SET: ReadonlySet<string> = new Set<ModifierKeys>([
+	"ctrl",
+	"alt",
+	"shift",
+	"ctrl+shift",
+	"alt+shift",
+	"ctrl+alt",
+	"ctrl+alt+shift",
+]);
+
+// Upstream (base commit 238750c0) imported this guard in keybindings/persistence.ts
+// without defining it, which failed `next build`; defined here.
+export function isShortcutKey(value: string): value is ShortcutKey {
+	if (isKey(value)) return true;
+	const lastPlus = value.lastIndexOf("+");
+	if (lastPlus <= 0) return false;
+	return (
+		MODIFIER_SET.has(value.slice(0, lastPlus)) &&
+		isKey(value.slice(lastPlus + 1))
+	);
+}
+
 export type KeybindingConfig = {
 	[key in ShortcutKey]?: TActionWithOptionalArgs;
 };

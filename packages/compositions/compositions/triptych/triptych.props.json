@@ -1,0 +1,9 @@
+{
+  "$comment": "Fictional Halcyon Cold Brew then / now / next. The middle panel is a hole: the speaker's clip on the track below plays in it (no keys needed for a middle hole).",
+  "panels": [
+    { "kind": "paper", "color": "#E6D7B8", "image": "assets/beans.svg", "fit": "cutout", "title": "2019", "tag": "FIRST BATCH · A GARAGE KITCHEN" },
+    { "kind": "hole", "tag": "TODAY · 12 HOURS, STILL" },
+    { "kind": "color", "color": "#2A2420", "image": "assets/bottle.svg", "fit": "cutout", "tag": "DROP 03 · 40 MINUTES", "stamp": "SOLD OUT" }
+  ],
+  "seams": ["THE SLOW WAY", "NO SHORTCUTS"]
+}

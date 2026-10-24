@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/split-tilt-cards); fictional.",
+  "labelA": "Manual",
+  "labelB": "Autopilot",
+  "badgeA": "4.2s",
+  "badgeB": "0.3s",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

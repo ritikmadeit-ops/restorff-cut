@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/spring-pop); fictional.",
+  "overshoot": 1.9,
+  "fromScale": 0.86,
+  "text": "Just shipped",
+  "speed": 1
+}

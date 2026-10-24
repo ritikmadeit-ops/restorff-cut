@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 360" width="520" height="360">
+  <!-- Fictional Halcyon delivery tricycle with a crate (our own drawing, collage-fx 2026-10-20) -->
+  <g fill="none" stroke="#1E1E22" stroke-width="12" stroke-linecap="round">
+    <circle cx="96" cy="292" r="56"/><circle cx="420" cy="292" r="56"/>
+    <path d="M96 292 L200 200 L330 200 L420 292"/><path d="M200 200 L230 120"/><path d="M330 200 L360 110 L400 110"/>
+  </g>
+  <circle cx="96" cy="292" r="10" fill="#1E1E22"/><circle cx="420" cy="292" r="10" fill="#1E1E22"/>
+  <rect x="20" y="118" width="210" height="120" rx="8" fill="#2F4A3A"/>
+  <rect x="34" y="132" width="182" height="92" rx="4" fill="#EDE3CF"/>
+  <text x="125" y="176" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#2F4A3A">Halcyon</text>
+  <text x="125" y="206" text-anchor="middle" font-family="monospace" font-weight="700" font-size="16" fill="#C8553D">COLD BREW · DAILY</text>
+  <rect x="210" y="100" width="44" height="16" rx="6" fill="#C8553D"/>
+  <g fill="#1B1714"><rect x="44" y="86" width="22" height="36" rx="5"/><rect x="80" y="80" width="22" height="42" rx="5"/><rect x="116" y="86" width="22" height="36" rx="5"/><rect x="152" y="82" width="22" height="40" rx="5"/></g>
+</svg>

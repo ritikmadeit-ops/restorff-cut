@@ -1,0 +1,7 @@
+{
+  "$comment": "Fictional Halcyon Cold Brew content in our own neutral chat UI. In the editor: key the clip down by split / 2 with the manifest's plateKeys, this overlay above it.",
+  "title": "Halcyon · edit assistant",
+  "text": "/steep-edit punchy, 30 s, captions",
+  "tag": "RAW CLIPS",
+  "callouts": [ { "text": "DROP CLIPS", "at": 0.45 }, { "text": "TRIGGER THE EDIT", "at": 2.1 } ]
+}

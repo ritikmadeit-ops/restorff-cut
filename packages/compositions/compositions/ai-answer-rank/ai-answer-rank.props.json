@@ -1,0 +1,14 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/ai-answer-rank); fictional.",
+  "prompt": "What's the best CRM for a small team?",
+  "lead": "Here are the top picks:",
+  "rowA": "Brand A",
+  "rowB": "Brand B",
+  "rowC": "Brand C",
+  "brand": "Your brand",
+  "brandRank": "1",
+  "accent": "#16a34a",
+  "ink": "#18181b",
+  "ground": "#fcfcfb",
+  "speed": 1
+}

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ignite type</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "ignite-type",
+  "title": "Ignite type",
+  "description": "Heavy extended caps reveal left to right word by word; each new word ignites ember-orange with a bloom, then cools to white (or ice blue) in about 0.3 s. Stacks up to three lines. Use for a punchy statement over dark footage (EFFECTS.md FX-23).",
+  "duration": 3,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["kinetic type", "text", "glow", "reels"],
+  "params": {
+    "text": { "type": "text", "required": true, "default": "COLD BREW THAT NEVER BURNS", "maxLength": 60, "label": "Text", "description": "The statement. Words reveal in order; line breaks with a | (pipe)." },
+    "wordGap": { "type": "number", "default": 0.18, "min": 0.04, "max": 1.5, "step": 0.01, "unit": "s", "label": "Word gap", "description": "Delay between words (put words on the voice's beats)." },
+    "ember": { "type": "color", "default": "#FF6A1F", "label": "Ember", "description": "The ignite colour." },
+    "cool": { "type": "color", "default": "#EDEBE6", "label": "Cooled", "description": "What words cool to: bone/white, or ice blue (#BFE3FF)." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "center", "label": "Anchor", "description": "Vertical placement." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.3 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .blk { position: absolute; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .ln { display: flex; flex-wrap: nowrap; justify-content: center; white-space: nowrap; }
+  .w { display: inline-block; font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 125%; text-transform: uppercase; line-height: .98; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var IG = { words: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var blk = RC.el("div", { class: "blk" });
+      stage.appendChild(blk); // in the document before measuring
+      var raw = String(P.text).indexOf("|") >= 0 ? String(P.text).split("|") : null;
+      var lines = raw ? raw : [];
+      if (!raw) {
+        // greedy wrap into up to 3 lines of similar length
+        var words = String(P.text).split(/\s+/).filter(Boolean);
+        var per = Math.ceil(words.length / Math.min(3, Math.max(1, Math.ceil(words.join(" ").length / 11))));
+        for (var i = 0; i < words.length; i += per) lines.push(words.slice(i, i + per).join(" "));
+      }
+      var maxW = RC.width - 2 * RC.safe.left;
+      lines.forEach(function (l) {
+        var ln = RC.el("div", { class: "ln", style: { gap: "0 " + 24 * u + "px" } });
+        l.trim().split(/\s+/).forEach(function (w) {
+          var node = RC.el("span", { class: "w", text: w, style: { color: P.cool } });
+          ln.appendChild(node);
+          IG.words.push(node);
+        });
+        blk.appendChild(ln);
+        // fit the line: shrink all its words together
+        // measure the words themselves (a centred row overflows on both sides, which scrollWidth does not count)
+        var size = 170 * u;
+        var ws = ln.querySelectorAll(".w");
+        var gapPx = 24 * u;
+        var rowWidth = function () {
+          var sum = gapPx * (ws.length - 1);
+          ws.forEach(function (n) { sum += n.offsetWidth; });
+          return sum;
+        };
+        ws.forEach(function (n) { n.style.fontSize = size + "px"; });
+        for (var k = 0; k < 3 && rowWidth() > maxW; k++) {
+          size = Math.max(40 * RC.u, Math.floor((size * maxW) / rowWidth()));
+          ws.forEach(function (n) { n.style.fontSize = size + "px"; });
+        }
+      });
+      var h = blk.offsetHeight;
+      var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - h : (RC.height - h) / 2;
+      blk.style.top = top + P.offsetY * RC.u + "px";
+      IG.blk = blk;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var out = P.exit ? 1 - RC.clamp(time.left / 0.3, 0, 1) : 0;
+      for (var i = 0; i < IG.words.length; i++) {
+        var node = IG.words[i];
+        var local = t - 0.05 - i * P.wordGap;
+        if (local < 0) { node.style.opacity = "0"; continue; }
+        var rev = RC.progress(local, 0, 0.14, "snappy");
+        var cool = RC.progress(local, 0.1, 0.3, "smooth");
+        node.style.opacity = "1";
+        node.style.clipPath = "inset(-30% " + (1 - rev) * 100 + "% -30% -5%)";
+        node.style.color = RC.mixColor(P.ember, P.cool, cool);
+        var g = (1 - cool);
+        node.style.textShadow = "0 0 " + (8 + 40 * g) * RC.u + "px " + RC.alpha(P.ember, 0.85 * g) + ", 0 0 " + (2 + 90 * g) * RC.u + "px " + RC.alpha(P.ember, 0.5 * g) + ", 0 6px 30px rgba(0,0,0,.45)";
+      }
+      IG.blk.style.opacity = String(1 - out);
+    },
+  });
+</script>
+</body>
+</html>

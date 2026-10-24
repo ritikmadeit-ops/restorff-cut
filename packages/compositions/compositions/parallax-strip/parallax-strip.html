@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Parallax strip</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "parallax-strip",
+  "title": "Parallax strip",
+  "description": "Collage kit, 2.5D: a side-scrolling street in paper cut-outs. A black town skyline drifts slowly, red post boxes, benches, lamps and trees pass at mid speed, the kerb and cobbles rush by, blurred paper scraps whip past close to the camera, and a hero cut-out (an image) rides along in the middle. Five depths, each at its own speed. Use for a journey, a delivery or a 'meanwhile in town' beat in a collage explainer (EFFECTS.md FX-61).",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["collage", "parallax", "2.5d", "depth", "scroll", "kit", "explainer"],
+  "effect": {
+    "fx": ["FX-61"],
+    "stack": ["self"],
+    "inputs": {
+      "hero": "props.hero = a cut-out with a transparent background (PNG/SVG; MCP cutout can cut one from a photo)",
+      "band": "where the strip sits; transparent outside it, so it can sit on paper-texture or footage"
+    },
+    "note": "Depth speeds: skyline 0.12, props 0.45, kerb 1, scraps 1.7 x the scroll speed."
+  },
+  "params": {
+    "hero": { "type": "image", "default": "assets/rider.svg", "label": "Hero", "description": "The cut-out that rides through the street (transparent background)." },
+    "heroSize": { "type": "number", "default": 0.62, "min": 0.2, "max": 1, "step": 0.01, "label": "Hero height", "description": "Hero height as a fraction of the strip's height." },
+    "band": {
+      "type": "object", "label": "Strip", "description": "Top and bottom of the strip as fractions of the frame (1080x1920: 0.32-0.78 = a tall strip in the middle).",
+      "fields": { "top": { "type": "number", "default": 0.32, "min": 0, "max": 1 }, "bottom": { "type": "number", "default": 0.78, "min": 0, "max": 1 } },
+      "default": { "top": 0.32, "bottom": 0.78 }
+    },
+    "paper": { "type": "color", "default": "#EFE6D2", "label": "Sky paper", "description": "Colour of the strip behind the skyline." },
+    "skyline": { "type": "color", "default": "#1A1A1D", "label": "Skyline", "description": "Colour of the town silhouette." },
+    "accent": { "type": "color", "default": "#C8352B", "label": "Post-box red", "description": "Colour of the post boxes." },
+    "caption": { "type": "string", "default": "delivered cold", "maxLength": 28, "label": "Caption", "description": "Serif line above the strip. Empty to hide." },
+    "key": { "type": "string", "default": "every morning", "maxLength": 24, "label": "Key words", "description": "Second, bigger italic line of the caption. Empty to hide." },
+    "scroll": { "type": "number", "default": 0.5, "min": 0.05, "max": 2, "step": 0.01, "label": "Scroll speed", "description": "How fast the street moves (frame widths per second at the kerb)." },
+    "outline": { "type": "boolean", "default": true, "label": "Paper edges", "description": "White cut-paper edge and shadow on the props and the hero." },
+    "seed": { "type": "number", "default": 4, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the skyline and the street furniture." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Entrance speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "The strip wipes away over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .band { position: absolute; left: 0; width: 100%; overflow: hidden; }
+  svg.l { position: absolute; left: 0; top: 0; overflow: visible; }
+  .hero { position: absolute; left: 0; top: 0; }
+  .hero img { display: block; height: 100%; width: auto; }
+  .scrap { position: absolute; left: 0; top: 0; }
+  .cap { position: absolute; left: 0; width: 100%; text-align: center; font-family: "Instrument Serif", serif; color: #fff; text-shadow: 0 3px 20px rgba(0,0,0,.5); line-height: 1; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="pe" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+    <feMorphology id="peDil" in="SourceAlpha" operator="dilate" radius="6" result="d"/>
+    <feFlood flood-color="#FFFFFF"/><feComposite in2="d" operator="in" result="edge"/>
+    <feGaussianBlur id="peBlur" in="d" stdDeviation="5" result="sb"/>
+    <feOffset id="peOff" in="sb" dx="3" dy="7" result="so"/>
+    <feFlood flood-color="#000000" flood-opacity="0.3"/><feComposite in2="so" operator="in" result="sh"/>
+    <feMerge><feMergeNode in="sh"/><feMergeNode in="edge"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs></svg>
+<script>
+  var PS = { layers: [] };
+  var NS = "http://www.w3.org/2000/svg";
+  function S(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  // street furniture, drawn in a local box: x from 0, ground at y = 0 (negative = up), h = strip height
+  function postbox(g, h, red) {
+    var w = h * 0.13, hh = h * 0.36;
+    S("rect", { x: 0, y: -hh, width: w, height: hh, rx: w * 0.15, fill: red }, g);
+    S("path", { d: "M" + (-w * 0.08) + " " + (-hh) + " Q" + (w / 2) + " " + (-hh - w * 0.6) + " " + (w * 1.08) + " " + (-hh) + " Z", fill: red }, g);
+    S("rect", { x: -w * 0.08, y: -hh, width: w * 1.16, height: w * 0.14, fill: "#8E1F18" }, g);
+    S("rect", { x: w * 0.2, y: -hh * 0.72, width: w * 0.6, height: w * 0.08, fill: "#2A0E0B" }, g);
+    S("rect", { x: -w * 0.1, y: -w * 0.16, width: w * 1.2, height: w * 0.16, fill: "#8E1F18" }, g);
+    return w;
+  }
+  function bench(g, h) {
+    var w = h * 0.4, sh = h * 0.12;
+    S("rect", { x: 0, y: -sh, width: w, height: h * 0.025, fill: "#7A5638" }, g);
+    S("rect", { x: 0, y: -sh - h * 0.07, width: w, height: h * 0.022, fill: "#7A5638" }, g);
+    S("rect", { x: 0, y: -sh - h * 0.115, width: w, height: h * 0.022, fill: "#7A5638" }, g);
+    S("rect", { x: w * 0.08, y: -sh, width: h * 0.02, height: sh, fill: "#2A2420" }, g);
+    S("rect", { x: w * 0.88, y: -sh, width: h * 0.02, height: sh, fill: "#2A2420" }, g);
+    return w;
+  }
+  function lamp(g, h) {
+    var w = h * 0.03, lh = h * 0.62;
+    S("rect", { x: 0, y: -lh, width: w, height: lh, fill: "#2A2420" }, g);
+    S("path", { d: "M" + -w * 2 + " " + -lh + " L" + w * 3 + " " + -lh + " L" + w * 2.2 + " " + (-lh - w * 3) + " L" + -w * 1.2 + " " + (-lh - w * 3) + " Z", fill: "#2A2420" }, g);
+    S("rect", { x: -w * 1.1, y: -lh + w * 0.2, width: w * 3.2, height: w * 1.6, fill: "#F6E7B4" }, g);
+    return w * 3;
+  }
+  function tree(g, h) {
+    var r = h * 0.14;
+    S("rect", { x: r * 0.85, y: -h * 0.3, width: r * 0.3, height: h * 0.3, fill: "#5A4030" }, g);
+    S("circle", { cx: r, cy: -h * 0.3 - r * 0.6, r: r, fill: "#4E7A4A" }, g);
+    S("circle", { cx: r * 0.55, cy: -h * 0.3 - r * 0.2, r: r * 0.6, fill: "#5E8A55" }, g);
+    return r * 2;
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var W = RC.width, H = RC.height, u = RC.u;
+      var stage = document.getElementById("stage");
+      document.getElementById("peDil").setAttribute("radius", String(Math.max(0.5, 6 * u)));
+      document.getElementById("peBlur").setAttribute("stdDeviation", String(5 * u));
+      document.getElementById("peOff").setAttribute("dx", String(3 * u));
+      document.getElementById("peOff").setAttribute("dy", String(7 * u));
+      var top = P.band.top * H, bh = Math.max(40, (P.band.bottom - P.band.top) * H);
+      PS.top = top; PS.bh = bh;
+      var band = RC.el("div", { class: "band", style: { top: top + "px", height: bh + "px", background: P.paper } });
+      stage.appendChild(band);
+      PS.band = band;
+      var rnd = RC.random(P.seed * 7 + 3);
+      var ground = bh * 0.86;
+      var L = W * 2.4; // loop length of every layer
+      PS.L = L;
+      function layer(speed, cls, filter) {
+        var svg = S("svg", { class: "l", width: L * 2, height: bh, viewBox: "0 0 " + L * 2 + " " + bh });
+        band.appendChild(svg);
+        var g = S("g", filter ? { filter: "url(#pe)" } : {}, svg);
+        var ly = { svg: svg, g: g, speed: speed };
+        PS.layers.push(ly);
+        return ly;
+      }
+      // 1. skyline (far): buildings with roofs, a spire and a dome, drawn twice so the loop is seamless
+      var far = layer(0.12, "far", false);
+      var x = 0, sky = "";
+      while (x < L) {
+        var bw = (0.06 + rnd() * 0.08) * W, bhh = (0.22 + rnd() * 0.32) * bh;
+        var kind = rnd();
+        sky += "M" + x + " " + ground + " V" + (ground - bhh);
+        if (kind < 0.25) sky += " L" + (x + bw / 2) + " " + (ground - bhh - bw * 0.5) + " L" + (x + bw) + " " + (ground - bhh);
+        else if (kind < 0.33) sky += " L" + (x + bw * 0.4) + " " + (ground - bhh) + " L" + (x + bw / 2) + " " + (ground - bhh - bw * 1.6) + " L" + (x + bw * 0.6) + " " + (ground - bhh) + " L" + (x + bw) + " " + (ground - bhh);
+        else if (kind < 0.4) sky += " A" + bw / 2 + " " + bw / 2 + " 0 0 1 " + (x + bw) + " " + (ground - bhh);
+        else if (kind < 0.6) sky += " H" + (x + bw * 0.2) + " V" + (ground - bhh - bw * 0.3) + " H" + (x + bw * 0.32) + " V" + (ground - bhh) + " H" + (x + bw);
+        else sky += " H" + (x + bw);
+        sky += " V" + ground + " Z ";
+        x += bw * (0.85 + rnd() * 0.3);
+      }
+      [0, L].forEach(function (off) { S("path", { d: sky, fill: P.skyline, transform: "translate(" + off + " 0)" }, far.g); });
+      // 2. props (mid): post boxes, benches, lamps, trees with paper edges
+      var mid = layer(0.45, "mid", P.outline);
+      var px = W * 0.1;
+      var items = [];
+      while (px < L - W * 0.15) {
+        var r = rnd();
+        items.push({ x: px, f: r < 0.35 ? "post" : r < 0.6 ? "bench" : r < 0.8 ? "lamp" : "tree" });
+        px += (0.22 + rnd() * 0.2) * W;
+      }
+      [0, L].forEach(function (off) {
+        items.forEach(function (it) {
+          var g = S("g", { transform: "translate(" + (it.x + off) + " " + ground + ")" }, mid.g);
+          if (it.f === "post") postbox(g, bh, P.accent);
+          else if (it.f === "bench") bench(g, bh);
+          else if (it.f === "lamp") lamp(g, bh);
+          else tree(g, bh);
+        });
+      });
+      // 3. kerb + cobbles (near)
+      var near = layer(1, "near", false);
+      [0, L].forEach(function (off) {
+        S("rect", { x: off, y: ground, width: L, height: bh - ground, fill: "#3A3A42" }, near.g);
+        S("rect", { x: off, y: ground, width: L, height: bh * 0.018, fill: "#8C8C95" }, near.g);
+        for (var c = 0; c < L; c += W * 0.05) S("rect", { x: off + c, y: ground + bh * 0.04, width: W * 0.032, height: bh * 0.035, rx: 3 * u, fill: "#55555F" }, near.g);
+      });
+      // 4. hero (does not scroll; rides in)
+      var hh = P.heroSize * bh;
+      PS.hero = RC.el("div", { class: "hero", style: { height: hh + "px", filter: P.outline ? "url(#pe)" : "none" } }, [RC.el("img", { src: P.hero })]);
+      band.appendChild(PS.hero);
+      PS.hh = hh;
+      PS.ground = ground;
+      // 5. paper scraps (foreground): big, blurred, fast
+      var fg = layer(1.7, "fg", false);
+      [0, L].forEach(function (off) {
+        // two big torn scraps per loop, rising from the bottom edge, close to the lens
+        for (var s = 0; s < 2; s++) {
+          var sx = off + (0.25 + s * 1.15) * W, sw = (0.34 + rnd() * 0.12) * W;
+          var topY = bh * (0.62 + rnd() * 0.08);
+          var d = "M" + sx + " " + bh * 1.1 + " L" + (sx + sw * 0.04) + " " + (topY + bh * 0.06);
+          for (var k = 1; k <= 12; k++) d += " L" + (sx + (k / 12) * sw) + " " + (topY + (rnd() - 0.5) * bh * 0.05 + Math.sin(k * 0.7) * bh * 0.03);
+          d += " L" + (sx + sw) + " " + bh * 1.1 + " Z";
+          S("path", { d: d, fill: s % 2 ? "#F3EDE0" : "#E2D3B4", opacity: 0.92 }, fg.g);
+        }
+      });
+      fg.svg.style.filter = "blur(" + 7 * u + "px)";
+      if (P.caption || P.key) {
+        var cap = RC.el("div", { class: "cap", style: { top: Math.max(RC.safe.top * 0.6, top - 260 * u) + "px" } }, [
+          P.caption ? RC.el("div", { text: P.caption, style: { fontSize: 76 * u + "px" } }) : null,
+          P.key ? RC.el("div", { text: P.key, style: { fontSize: 128 * u + "px", fontStyle: "italic" } }) : null,
+        ]);
+        stage.appendChild(cap);
+        PS.cap = cap;
+      }
+      PS.u = u;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t, T = time.T, W = RC.width;
+      var v = P.scroll * W;
+      PS.layers.forEach(function (ly) {
+        var off = -((T * v * ly.speed) % PS.L);
+        ly.svg.style.transform = "translate(" + off.toFixed(2) + "px,0)";
+      });
+      // hero rides in from the left, then holds with skate bumps
+      var inP = RC.progress(t, 0.1, 0.8, "snappy");
+      var bump = Math.abs(Math.sin(T * 6.5)) * PS.bh * 0.012 + (Math.floor(T * 2.2) % 3 === 0 ? Math.abs(Math.sin(T * 13)) * PS.bh * 0.02 : 0);
+      var hx = RC.mix(-0.5 * W, 0.38 * W, inP);
+      RC.set(PS.hero, { x: hx - PS.hh * 0.27, y: PS.ground - PS.hh * 0.98 - bump, rotate: Math.sin(T * 3.1) * 3 - (1 - inP) * 8 });
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      var open = RC.progress(t, 0, 0.35, "snappy");
+      PS.band.style.clipPath = "inset(" + ((1 - open) * 50).toFixed(2) + "% 0 " + ((1 - open) * 50).toFixed(2) + "% " + (out * 100).toFixed(2) + "%)";
+      if (PS.cap) RC.set(PS.cap, { y: (1 - RC.progress(t, 0.3, 0.5, "snappy")) * 30 * PS.u, opacity: RC.progress(t, 0.3, 0.4, "linear") * (1 - out) });
+    },
+  });
+</script>
+</body>
+</html>

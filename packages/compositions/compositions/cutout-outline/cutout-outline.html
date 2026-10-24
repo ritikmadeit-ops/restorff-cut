@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cut-out outline</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "cutout-outline",
+  "title": "Cut-out outline",
+  "description": "Collage kit: photo or drawing cut-outs (images with a transparent background, or a moving person matte) get a paper edge around their exact shape (white, or a thick red marker-style outline), an optional torn edge and a soft drop shadow, then slide and pop in with a small rotation settle and drift at different depths. Use for paper-collage explainers (EFFECTS.md FX-52); pair with paper-texture, map-route, parallax-strip.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["collage", "paper", "cut-out", "outline", "sticker", "kit", "explainer"],
+  "effect": {
+    "fx": ["FX-52"],
+    "stack": ["self"],
+    "inputs": {
+      "pieces": "images with alpha (PNG/SVG cut-outs; MCP cutout can cut a still out of a photo), or matte frames for a moving piece",
+      "background": "usually over paper-texture (background mode) or map-route, on a track below"
+    },
+    "note": "With matte frames (e.g. the speaker) render it under the person cutout (drawSubject false) or alone with drawSubject true."
+  },
+  "params": {
+    "pieces": {
+      "type": "list", "minItems": 0, "maxItems": 8, "label": "Pieces",
+      "description": "The cut-outs, in entrance order. x, y = centre as fractions of the frame; width = fraction of the frame width; from = where it slides in from; depth 0..1 = how fast it drifts (near pieces drift more: parallax).",
+      "of": { "type": "object", "fields": {
+        "image": { "type": "image", "description": "PNG or SVG with a transparent background." },
+        "x": { "type": "number", "default": 0.5, "min": -0.5, "max": 1.5 },
+        "y": { "type": "number", "default": 0.5, "min": -0.5, "max": 1.5 },
+        "width": { "type": "number", "default": 0.4, "min": 0.05, "max": 1.5 },
+        "rotate": { "type": "number", "default": 0, "min": -45, "max": 45 },
+        "at": { "type": "number", "default": 0, "min": 0, "max": 60, "description": "Entrance time, seconds." },
+        "from": { "type": "enum", "options": ["left", "right", "top", "bottom", "pop"], "default": "pop" },
+        "depth": { "type": "number", "default": 0.5, "min": 0, "max": 1 }
+      } },
+      "default": [
+        { "image": "assets/beans.svg", "x": 0.3, "y": 0.3, "width": 0.4, "rotate": -6, "at": 0.1, "from": "left", "depth": 0.3 },
+        { "image": "assets/bottle.svg", "x": 0.68, "y": 0.4, "width": 0.24, "rotate": 5, "at": 0.35, "from": "right", "depth": 0.7 },
+        { "image": "assets/glass.svg", "x": 0.32, "y": 0.62, "width": 0.3, "rotate": 4, "at": 0.6, "from": "pop", "depth": 0.5 },
+        { "image": "assets/cart.svg", "x": 0.6, "y": 0.78, "width": 0.56, "rotate": -3, "at": 0.85, "from": "bottom", "depth": 0.9 }
+      ]
+    },
+    "outline": { "type": "color", "default": "#FFFFFF", "label": "Outline colour", "description": "Paper edge colour: white = a scissor cut-out; #C8352B = the thick red outline of FX-52." },
+    "outlineWidth": { "type": "number", "default": 12, "min": 0, "max": 40, "step": 0.5, "unit": "px", "label": "Outline width", "description": "Edge width, px on a 1080 grid (FX-52: ~10)." },
+    "tear": { "type": "number", "default": 0.2, "min": 0, "max": 1, "step": 0.05, "label": "Tear", "description": "0 = clean, even edge; 1 = ragged torn paper." },
+    "shadow": { "type": "number", "default": 0.35, "min": 0, "max": 0.8, "step": 0.01, "label": "Shadow", "description": "Drop shadow opacity (0 = none)." },
+    "matte": { "type": "list", "of": { "type": "image" }, "minItems": 0, "maxItems": 1800, "default": [], "label": "Moving matte", "description": "Optional frames of a moving cut-out (PNG with alpha, e.g. the speaker from the person cutout), one per 1/matteFps s: outlined like the pieces." },
+    "matteFps": { "type": "number", "default": 30, "min": 1, "max": 60, "step": 1, "unit": "fps", "label": "Matte rate", "description": "Frames per second of the matte frames." },
+    "drawSubject": { "type": "boolean", "default": true, "label": "Draw the matte", "description": "Draw the matte frames inside their outline (off = only edge + shadow, for under a cutout track)." },
+    "drift": { "type": "number", "default": 1, "min": 0, "max": 4, "step": 0.1, "label": "Drift", "description": "Parallax drift strength while the pieces hold." },
+    "seed": { "type": "number", "default": 5, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the torn edge." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "ease": { "type": "easing", "default": "bouncy", "label": "Easing", "description": "How the pieces settle (rotation overshoot)." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Pieces pop out in reverse order over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .piece { position: absolute; left: 0; top: 0; }
+  .piece img { display: block; width: 100%; height: auto; }
+  .mt { position: absolute; inset: 0; }
+  .mt img { position: absolute; left: 0; top: 0; display: none; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="cut" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+    <feMorphology id="cuDil" in="SourceAlpha" operator="dilate" radius="12" result="d"/>
+    <feTurbulence id="cuNoise" type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="5" result="n"/>
+    <feDisplacementMap id="cuDisp" in="d" in2="n" scale="0" xChannelSelector="R" yChannelSelector="G" result="t"/>
+    <feFlood id="cuColor" flood-color="#FFFFFF"/>
+    <feComposite in2="t" operator="in" result="edge"/>
+    <feGaussianBlur id="cuBlur" in="t" stdDeviation="8" result="sb"/>
+    <feOffset id="cuOff" in="sb" dx="4" dy="10" result="so"/>
+    <feFlood id="cuShade" flood-color="#000000" flood-opacity="0.35"/>
+    <feComposite in2="so" operator="in" result="shadow"/>
+    <feMerge id="cuMerge"><feMergeNode in="shadow"/><feMergeNode in="edge"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs></svg>
+<script>
+  var CO = { pieces: [], mattes: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var W = RC.width, H = RC.height, u = RC.u;
+      var stage = document.getElementById("stage");
+      document.getElementById("cuDil").setAttribute("radius", String(Math.max(0.01, P.outlineWidth * u)));
+      document.getElementById("cuDisp").setAttribute("scale", String(P.tear * 40 * u));
+      document.getElementById("cuNoise").setAttribute("baseFrequency", String(0.05 / Math.max(0.25, u)));
+      document.getElementById("cuNoise").setAttribute("seed", String(P.seed));
+      document.getElementById("cuColor").setAttribute("flood-color", P.outline);
+      document.getElementById("cuBlur").setAttribute("stdDeviation", String(9 * u));
+      document.getElementById("cuOff").setAttribute("dx", String(4 * u));
+      document.getElementById("cuOff").setAttribute("dy", String(12 * u));
+      document.getElementById("cuShade").setAttribute("flood-opacity", String(P.shadow));
+      if (P.matte.length) {
+        var mt = RC.el("div", { class: "mt", style: { filter: "url(#cutM)" } });
+        P.matte.forEach(function (src) {
+          var im = RC.el("img", { src: src, style: { width: W + "px", height: H + "px" } });
+          mt.appendChild(im);
+          CO.mattes.push(im);
+        });
+        // the matte gets its own copy of the filter, with or without the subject drawn inside the edge
+        var f = document.getElementById("cut").cloneNode(true);
+        f.id = "cutM";
+        if (!P.drawSubject) { var last = f.querySelector("feMerge").lastElementChild; last.parentNode.removeChild(last); }
+        document.querySelector("defs").appendChild(f);
+        stage.appendChild(mt);
+        CO.mt = mt;
+      }
+      P.pieces.forEach(function (p, i) {
+        var w = p.width * W;
+        var el = RC.el("div", { class: "piece", style: { width: w + "px", filter: "url(#cut)" } }, [RC.el("img", { src: p.image })]);
+        stage.appendChild(el);
+        CO.pieces.push({ el: el, p: p, i: i, w: w });
+      });
+      return Promise.all(CO.pieces.map(function (c) { return c.el.firstChild.decode().catch(function () {}); })).then(function () {
+        CO.pieces.forEach(function (c) {
+          c.h = c.el.offsetHeight;
+          c.x = c.p.x * W - c.w / 2;
+          c.y = c.p.y * H - c.h / 2;
+          c.el.style.transformOrigin = "50% 60%";
+        });
+      });
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t, T = time.T, W = RC.width, H = RC.height;
+      var n = CO.pieces.length;
+      CO.pieces.forEach(function (c) {
+        var p = c.p;
+        var k = RC.progress(t, p.at, 0.45, P.ease);
+        var travel = RC.progress(t, p.at, 0.3, "snappy");
+        var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp((time.left - (n - 1 - c.i) * 0.06) / 0.28, 0, 1)) : 0;
+        var dx = 0, dy = 0, s = 1;
+        if (p.from === "left") dx = -(c.x + c.w + 40 * RC.u) * (1 - travel);
+        else if (p.from === "right") dx = (W - c.x + 40 * RC.u) * (1 - travel);
+        else if (p.from === "top") dy = -(c.y + c.h + 40 * RC.u) * (1 - travel);
+        else if (p.from === "bottom") dy = (H - c.y + 40 * RC.u) * (1 - travel);
+        else s = RC.mix(0.2, 1, k);
+        // parallax drift: nearer pieces (depth 1) drift further
+        var drift = (T - p.at) * (6 + 26 * p.depth) * RC.u * P.drift * (t >= p.at ? 1 : 0);
+        RC.set(c.el, {
+          x: c.x + dx + drift, y: c.y + dy - drift * 0.15,
+          rotate: p.rotate + (1 - k) * (c.i % 2 ? 6 : -6),
+          scale: s * (1 - out * 0.9),
+          opacity: t >= p.at ? 1 - out : 0,
+        });
+      });
+      if (CO.mt) {
+        var mi = Math.max(0, Math.min(CO.mattes.length - 1, Math.floor(T * P.matteFps + 1e-6)));
+        for (var m = 0; m < CO.mattes.length; m++) CO.mattes[m].style.display = m === mi ? "block" : "none";
+        var mo = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.3, 0, 1)) : 0;
+        CO.mt.style.opacity = String(RC.progress(t, 0, 0.2, "linear") * (1 - mo));
+      }
+    },
+  });
+</script>
+</body>
+</html>

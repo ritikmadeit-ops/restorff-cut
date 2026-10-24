@@ -1,0 +1,13 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/weight-wave); fictional.",
+  "text": "PRESSURE MOVES THROUGH TYPE",
+  "color": "#f5f5f7",
+  "background": "#0b0b0d",
+  "weightFrom": 400,
+  "weightTo": 1000,
+  "crestWidth": 4,
+  "sweepSpeed": 0.5,
+  "slant": -12,
+  "direction": "ltr",
+  "speed": 1
+}

@@ -24,8 +24,34 @@ pub struct CanvasClearDescriptor {
 pub enum FrameItemDescriptor {
     Layer(LayerDescriptor),
     SceneEffect {
+        /// `rename_all` on the enum renames the variant tags only, not the fields of a struct
+        /// variant, so upstream expected `effect_pass_groups` while TypeScript sends
+        /// `effectPassGroups`: every effect layer failed the whole frame ("Invalid frame
+        /// descriptor: missing field `effect_pass_groups`"). Fixed by the grade agent,
+        /// 2026-10-20 (the snake_case spelling is still accepted).
+        #[serde(rename = "effectPassGroups", alias = "effect_pass_groups")]
         effect_pass_groups: Vec<Vec<EffectPassDescriptor>>,
     },
+    /// A cut with a transition (Restorff). `from` and `to` are each composited over the
+    /// current scene, mixed by the transition shader, and the result replaces the scene.
+    Transition(TransitionDescriptor),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransitionDescriptor {
+    /// A transition shader id (`effects::TRANSITION_SHADERS`, e.g. "restorff-transition-whip").
+    pub shader: String,
+    /// 0 = only `from`, 1 = only `to`.
+    pub progress: f32,
+    #[serde(default)]
+    pub uniforms: HashMap<String, EffectUniformValueDescriptor>,
+    /// Layers of the outgoing side (usually one clip), bottom to top.
+    #[serde(default)]
+    pub from: Vec<LayerDescriptor>,
+    /// Layers of the incoming side.
+    #[serde(default)]
+    pub to: Vec<LayerDescriptor>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

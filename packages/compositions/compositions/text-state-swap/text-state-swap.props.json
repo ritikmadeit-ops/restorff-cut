@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/text-state-swap); fictional.",
+  "fromText": "Saving draft",
+  "toText": "Saved",
+  "distance": "standard",
+  "tone": "ink",
+  "speed": 1
+}

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon grid curve</title>
+<!-- neon-grid kit, piece 4 of 8 (composition-v3). An easing-curve editor panel over the grid: the title ignites, a
+     pill names the curve's character, the curve draws itself with bezier handles, a dot rides it from 0 to the end
+     with a live read-out, and tags mark points on it. Every word, number and time comes from the params. -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "neon-curve",
+  "title": "Neon grid curve",
+  "description": "Easing-curve editor panel over a dark grid: a big title ignites, a pill names the curve, the curve draws itself with graph-editor handles, a dot rides it from 0 to the end with a read-out, and up to three tags mark points on it. Use for 'it climbs fast, then eases out' beats. Times follow the voice-over's words.",
+  "duration": 6,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "kit": "neon-grid",
+  "opaque": true,
+  "tags": ["neon-grid", "curve", "easing", "graph", "chart", "function", "panel"],
+  "params": {
+    "t0": { "type": "number", "default": 0, "min": 0, "max": 600, "step": 0.01, "label": "Starts at", "description": "Where this clip starts on the timeline (s). Every other time here is TIMELINE seconds. composition write fills it from t.", "display": false },
+    "words": { "type": "list", "default": [], "label": "Voice words", "description": "The voice-over's words with timeline times [{w, s, e}]: they time every item whose time is -1 and draw the captions.", "of": { "type": "object", "fields": { "w": { "type": "string" }, "s": { "type": "number" }, "e": { "type": "number", "default": 0 } } } },
+    "captions": { "type": "boolean", "default": true, "label": "Captions", "description": "Show the voice word by word under the panel (needs words)." },
+    "keys": { "type": "list", "default": [], "of": { "type": "string" }, "label": "Key words", "description": "Caption words painted in the accent." },
+    "title": { "type": "string", "default": "TITLE", "maxLength": 14, "required": true, "label": "Title", "description": "The big word over the panel; ignites when said." },
+    "titleAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Title at", "description": "Timeline s; -1 = when its first word is said, else at the start." },
+    "tag": { "type": "string", "default": "", "maxLength": 18, "label": "Tag", "description": "Pill under the title naming the curve's character (blank: none)." },
+    "tagAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Tag at", "description": "Timeline s; -1 = on the tag's first word (a word that starts with it counts)." },
+    "curve": { "type": "object", "label": "Curve", "description": "What the panel plots: shape exp = 1 - e^(-x / tau) (climbs fast, eases out), ease-out, ease-in-out or linear, from 0 to `end` in `unit`; `ticks` labelled intervals on the x axis.",
+      "fields": {
+        "label": { "type": "string", "default": "", "maxLength": 24, "description": "top-left of the panel, e.g. a function name" },
+        "note": { "type": "string", "default": "", "maxLength": 24, "description": "top-right of the panel, e.g. the time constant" },
+        "shape": { "type": "enum", "options": ["exp", "ease-out", "ease-in-out", "linear"], "default": "exp" },
+        "tau": { "type": "number", "default": 6, "min": 0.01, "max": 1000, "description": "exp only: the time constant, in units of x" },
+        "end": { "type": "number", "default": 10, "min": 0.01, "max": 100000 },
+        "unit": { "type": "string", "default": "", "maxLength": 6 },
+        "ticks": { "type": "number", "default": 3, "min": 1, "max": 8, "step": 1 } },
+      "default": { "label": "", "note": "", "shape": "exp", "tau": 6, "end": 10, "unit": "", "ticks": 3 } },
+    "marks": { "type": "list", "default": [], "maxItems": 3, "label": "Tags on the curve", "description": "Pills at points of the curve; each pops when said.",
+      "of": { "type": "object", "fields": {
+        "text": { "type": "string", "maxLength": 14 },
+        "value": { "type": "number", "default": -1, "description": "x position in the curve's unit; -1 = spread (early, late, middle)" },
+        "tone": { "type": "enum", "options": ["bright", "dim"], "default": "bright" },
+        "at": { "type": "number", "default": -1, "min": -1, "max": 600, "description": "timeline s; -1 = when its first word is said" },
+        "word": { "type": "string", "default": "" } } } },
+    "readout": { "type": "string", "default": "", "maxLength": 32, "label": "Read-out", "description": "The riding dot's read-out: {x} = the dot's x, {y} = its value (0-1), {unit} = the curve's unit. Blank: none." },
+    "rideFrom": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Ride starts", "description": "Timeline s the dot sets off; -1 = 1 s in (longer when slower)." },
+    "rideTo": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Ride ends", "description": "Timeline s the dot reaches the end; -1 = 1 s before the clip ends. On the voice's clock: speed never moves it." },
+    "curveColor": { "type": "color", "default": "#F2EEE6", "label": "Curve colour", "description": "The curve itself." },
+    "dotColor": { "type": "color", "default": "#FF5A1F", "label": "Dot colour", "description": "The riding dot and its read-out." },
+    "accent": { "type": "color", "default": "#FF5A1F", "label": "Accent", "description": "Title ignite, pill outline, caption key words." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "label": "Speed", "description": "How fast the curve draws and the camera drifts (the words stay on the voice)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #07070A; }
+  .tag { position: absolute; font-family: "JetBrains Mono"; font-weight: 700; letter-spacing: .14em; white-space: nowrap; border-radius: 999px; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+var S = {};
+RC.composition({
+  build: function (RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, st = document.getElementById("stage");
+    var T = new KIT.Timing(P, RC.duration);
+    S.T = T;
+    var C = P.curve;
+    S.f = function (x) {
+      var k = RC.clamp(x / C.end, 0, 1);
+      if (C.shape === "linear") return k;
+      if (C.shape === "ease-out") return 1 - Math.pow(1 - k, 3);
+      if (C.shape === "ease-in-out") return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      return 1 - Math.exp(-x / C.tau);
+    };
+    S.cv = KIT.canvas(st); S.ctx = S.cv.getContext("2d");
+    S.cam = new KIT.Camera(W, H, 64);
+    S.title = KIT.big(st, P.title, 150 * u);
+    RC.fitText(S.title, W - RC.safe.left - RC.safe.right + 30 * u, 160 * u, 80 * u);
+    KIT.centre(S.title, 270 * u);
+    S.tag = P.tag ? KIT.pill(st, P.tag, 30 * u, P.accent, { padding: 10 * u + "px " + 24 * u + "px" }) : null;
+    if (S.tag) KIT.centre(S.tag, 270 * u + S.title.offsetHeight + 26 * u);
+    // the panel and its plot box
+    S.px0 = 70 * u; S.px1 = W - 70 * u; S.py0 = 560 * u; S.py1 = 1270 * u;
+    S.ax0 = 180 * u; S.ax1 = W - 120 * u; S.ay0 = 690 * u; S.ay1 = 1160 * u;
+    S.X = function (x) { return RC.mix(S.ax0, S.ax1, x / C.end); };
+    S.Y = function (v) { return RC.mix(S.ay1, S.ay0, v); };
+    var spread = [0.14, 0.62, 0.38];
+    S.marks = P.marks.map(function (m, i) {
+      var bright = m.tone !== "dim";
+      var n = RC.el("div", { class: "tag", text: m.text, style: { fontSize: 26 * u + "px", padding: 8 * u + "px " + 18 * u + "px",
+        border: 2 * u + "px solid " + (bright ? "rgba(242,238,230,.8)" : "rgba(140,140,149,.9)"), color: bright ? KIT.BONE : KIT.FOG, background: "rgba(7,7,10,.85)" } });
+      st.appendChild(n);
+      var x = m.value >= 0 ? m.value : C.end * spread[i];
+      n.style.left = Math.min(S.X(x) + (i === 0 ? 30 : 0) * u, S.px1 - n.offsetWidth - 16 * u) + "px";
+      n.style.top = S.Y(S.f(x)) + (i === 0 ? 10 : 56) * u + "px";
+      return n;
+    });
+    S.read = KIT.mono(st, "", 26 * u, { fontWeight: "700", color: P.dotColor, background: "rgba(7,7,10,.88)", padding: 6 * u + "px " + 12 * u + "px", borderRadius: 8 * u + "px" });
+    // times
+    S.titleAt = T.at({ at: P.titleAt, text: P.title }, T.t0 + 0.12);
+    S.tagAt = S.tag ? T.at({ at: P.tagAt, text: P.tag }, T.frac(0.34)) : null;
+    S.markAt = P.marks.map(function (m, i) { return T.at(m, T.frac(0.57 + 0.2 * i)); });
+    var sp = P.speed > 0 ? P.speed : 1;
+    S.rideFrom = P.rideFrom >= 0 ? P.rideFrom : T.t0 + Math.min(1.0 / sp, RC.duration * 0.4);
+    S.rideTo = P.rideTo >= 0 ? P.rideTo : Math.max(S.rideFrom + 0.5, T.end - 1.0);
+    KIT.cue(T, S.titleAt, "ignite", "title ignites");
+    if (S.tagAt != null) KIT.cue(T, S.tagAt, "pop", "tag");
+    S.markAt.forEach(function (t, i) { KIT.cue(T, t, "pop", "mark " + (i + 1)); });
+    KIT.cue(T, T.t0 + 0.3 / (RC.rate || 1), "draw", "curve draws");
+    KIT.cue(T, S.rideTo, "tick", "the dot lands");
+    S.cap = KIT.captionsFor(st, P, T);
+  },
+  render: function (time, RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, ctx = S.ctx, A = P.accent, T = S.T, C = P.curve;
+    var g = T.t0 + time.T, lt = time.t;
+    S.cam.set(0.4 * Math.sin(lt * 0.3), 2.2, 40 + 0.45 * lt, 6 * Math.sin(lt * 0.25), -16, 0);
+    KIT.backdrop(ctx, W, H);
+    KIT.drawGrid(ctx, S.cam, { color: KIT.BONE, alpha: 0.16, lw: 1.5, reach: 26, accent: A, axes: 0, glow: 0.7, u: u });
+    KIT.vignette(ctx, W, H, 0.55);
+    // the panel scales in, already part-way up on the cut (a bare dark frame reads as black to the export gate)
+    var pin = RC.progress(time.T, -0.1, 0.35, "snappy");
+    ctx.save();
+    ctx.globalAlpha = pin;
+    ctx.translate(W / 2, (S.py0 + S.py1) / 2); ctx.scale(0.94 + 0.06 * pin, 0.94 + 0.06 * pin); ctx.translate(-W / 2, -(S.py0 + S.py1) / 2);
+    ctx.fillStyle = "rgba(14,14,18,.93)"; ctx.strokeStyle = "rgba(242,238,230,.2)"; ctx.lineWidth = 2 * u;
+    ctx.beginPath(); ctx.roundRect(S.px0, S.py0, S.px1 - S.px0, S.py1 - S.py0, 28 * u); ctx.fill(); ctx.stroke();
+    ctx.font = "700 " + 26 * u + "px 'JetBrains Mono'"; ctx.fillStyle = "rgba(242,238,230,.55)"; ctx.textBaseline = "middle";
+    ctx.textAlign = "left"; ctx.fillText(C.label, S.px0 + 34 * u, S.py0 + 52 * u);
+    ctx.textAlign = "right"; ctx.fillText(C.note, S.px1 - 34 * u, S.py0 + 52 * u);
+    // axes, grid lines, tick labels
+    ctx.strokeStyle = "rgba(242,238,230,.35)"; ctx.lineWidth = 2 * u;
+    ctx.beginPath(); ctx.moveTo(S.ax0, S.ay0); ctx.lineTo(S.ax0, S.ay1); ctx.lineTo(S.ax1, S.ay1); ctx.stroke();
+    ctx.strokeStyle = "rgba(242,238,230,.08)";
+    ctx.beginPath();
+    for (var k = 1; k <= 4; k++) { var yy = RC.mix(S.ay1, S.ay0, k / 4); ctx.moveTo(S.ax0, yy); ctx.lineTo(S.ax1, yy); }
+    ctx.stroke();
+    ctx.fillStyle = "rgba(242,238,230,.6)"; ctx.font = "600 " + 24 * u + "px 'JetBrains Mono'";
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    var nt = Math.max(1, Math.round(C.ticks));
+    for (var i = 0; i <= nt; i++) {
+      var xv = (C.end * i) / nt;
+      ctx.fillText(String(+xv.toFixed(1)) + (i === nt && C.unit ? " " + C.unit : ""), S.X(xv), S.ay1 + 16 * u);
+    }
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.fillText((1).toFixed(1), S.ax0 - 16 * u, S.ay0); ctx.fillText(String(0), S.ax0 - 16 * u, S.ay1);
+    // the curve draws itself
+    var d = RC.progress(lt, 0.3, 1.1, "smooth");
+    if (d > 0) {
+      ctx.strokeStyle = P.curveColor; ctx.lineWidth = 6 * u; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.shadowColor = P.curveColor; ctx.shadowBlur = 14 * u;
+      ctx.beginPath();
+      var N = 90;
+      for (var j = 0; j <= N * d; j++) { var h = (j / N) * C.end; var x = S.X(h), y = S.Y(S.f(h)); if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.stroke(); ctx.shadowBlur = 0;
+    }
+    // bezier handles, as in a graph editor
+    var hd = RC.progress(lt, 1.2, 0.4, "smooth");
+    if (hd > 0) {
+      ctx.globalAlpha = pin * hd;
+      var p0 = [S.X(0), S.Y(S.f(0))], p3 = [S.X(C.end), S.Y(S.f(C.end))];
+      var h1 = [S.X(C.end * 0.2), RC.mix(p0[1], p3[1], 0.72)], h2 = [S.X(C.end * 0.55), p3[1]];
+      ctx.strokeStyle = "rgba(242,238,230,.45)"; ctx.lineWidth = 2 * u;
+      ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(h1[0], h1[1]); ctx.moveTo(p3[0], p3[1]); ctx.lineTo(h2[0], h2[1]); ctx.stroke();
+      ctx.fillStyle = "#07070A"; ctx.strokeStyle = KIT.BONE; ctx.lineWidth = 3 * u;
+      [h1, h2].forEach(function (q) { ctx.beginPath(); ctx.rect(q[0] - 9 * u, q[1] - 9 * u, 18 * u, 18 * u); ctx.fill(); ctx.stroke(); });
+      [p0, p3].forEach(function (q) { ctx.beginPath(); ctx.arc(q[0], q[1], 9 * u, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+    }
+    ctx.restore();
+    // the riding dot + read-out (on the voice's clock)
+    var r = RC.progress(g, S.rideFrom, S.rideTo - S.rideFrom, "linear");
+    var hh = r * C.end, dx = S.X(hh), dy = S.Y(S.f(hh));
+    var on = RC.progress(g, S.rideFrom - 0.15, 0.2, "smooth");
+    if (on > 0) {
+      ctx.save(); ctx.fillStyle = P.dotColor; ctx.shadowColor = P.dotColor; ctx.shadowBlur = 30 * u; ctx.globalAlpha = on;
+      ctx.beginPath(); ctx.arc(dx, dy, 16 * u, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = RC.alpha(P.dotColor, 0.5); ctx.lineWidth = 2 * u; ctx.setLineDash([6 * u, 8 * u]); ctx.shadowBlur = 0;
+      ctx.beginPath(); ctx.moveTo(dx, dy); ctx.lineTo(dx, S.ay1); ctx.stroke();
+      ctx.restore();
+    }
+    if (P.readout) {
+      var xs = (hh < 10 ? "0" : "") + hh.toFixed(1);
+      S.read.textContent = P.readout.split("{x}").join(xs).split("{y}").join(S.f(hh).toFixed(2)).split("{unit}").join(C.unit);
+      S.read.style.left = Math.max(S.ax0, Math.min(dx - S.read.offsetWidth - 26 * u, S.ax1 - S.read.offsetWidth)) + "px";
+      S.read.style.top = dy - 70 * u + "px";
+      S.read.style.opacity = String(on);
+    } else S.read.style.opacity = "0";
+    // type
+    KIT.reveal(S.title, RC.progress(g, S.titleAt, 0.32, "smooth"));
+    KIT.ignite(S.title, g, S.titleAt, A, u);
+    if (S.tag) KIT.pop(S.tag, g, S.tagAt);
+    S.marks.forEach(function (n, i) { KIT.pop(n, g, S.markAt[i]); });
+    S.cap.render(g);
+  },
+});
+</script>
+</body>
+</html>

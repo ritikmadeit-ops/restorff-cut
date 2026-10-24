@@ -1,0 +1,309 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/beat-pulse-background@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-id="beat-pulse-background"
+  data-composition-duration="4"
+  data-composition-variables='[
+    { "id": "beats", "type": "string", "role": "timing", "label": "Beats", "description": "Comma-separated beat times in seconds. Invalid entries are ignored and numeric values are clamped to the composition duration.", "default": "0.5,1.0,1.5,2.0,2.5,3.0,3.5" },
+    { "id": "accent", "type": "enum", "role": "style", "label": "Accent", "description": "Accent token family used by the pulsing glow.", "default": "green", "options": [{ "value": "green", "label": "Green" }, { "value": "blue", "label": "Blue" }, { "value": "violet", "label": "Violet" }] },
+    { "id": "intensity", "type": "enum", "role": "style", "label": "Intensity", "description": "Strength of the glow and saturation pulse.", "default": "subtle", "options": [{ "value": "subtle", "label": "Subtle" }, { "value": "club", "label": "Club" }] }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "beat-pulse-background",
+  "title": "Beat Pulse Background",
+  "description": "An accent-derived backdrop pulses its glow intensity and saturation on a deterministic, supplied beat grid. Imported from a HyperFrames component (backgrounds; provenance below).",
+  "duration": 4,
+  "size": [
+    1440,
+    756
+  ],
+  "fps": 30,
+  "tags": [
+    "backgrounds",
+    "motion-primitive",
+    "background",
+    "beat",
+    "pulse",
+    "rhythmic",
+    "reactive",
+    "imported",
+    "hyperframes"
+  ],
+  "opaque": true,
+  "kit": "hf-compat",
+  "params": {
+    "beats": {
+      "type": "string",
+      "default": "0.5,1.0,1.5,2.0,2.5,3.0,3.5",
+      "label": "Beats",
+      "description": "Comma-separated beat times in seconds. Invalid entries are ignored and numeric values are clamped to the composition duration.",
+      "display": false
+    },
+    "accent": {
+      "type": "enum",
+      "options": [
+        "green",
+        "blue",
+        "violet"
+      ],
+      "default": "green",
+      "label": "Accent",
+      "description": "Accent token family used by the pulsing glow."
+    },
+    "intensity": {
+      "type": "enum",
+      "options": [
+        "subtle",
+        "club"
+      ],
+      "default": "subtle",
+      "label": "Intensity",
+      "description": "Strength of the glow and saturation pulse."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1440x756 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "beats": "beats",
+      "accent": "accent",
+      "intensity": "intensity"
+    },
+    "width": 1440,
+    "height": 756,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/beat-pulse-background",
+    "path": "registry/components/beat-pulse-background",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="beat-pulse-background" data-start="0" data-duration="4" data-width="1440" data-height="756" style="position:absolute;left:0;top:0;width:1440px;height:756px">
+
+      <div id="root" data-composition-id="beat-pulse-background" data-duration="4" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            container-type: size;
+            isolation: isolate;
+            pointer-events: none;
+          }
+
+          .bpb-clip,
+          .bpb-base,
+          .bpb-pulse,
+          .bpb-vignette {
+            position: absolute;
+            inset: 0;
+          }
+
+          .bpb-clip {
+            overflow: hidden;
+          }
+
+          .bpb-base {
+            background:
+              radial-gradient(
+                ellipse at 50% 42%,
+                color-mix(in srgb, var(--bpb-accent) 10%, var(--bg, #070a12)) 0%,
+                var(--bg, #070a12) 70%
+              ),
+              var(--bg, #070a12);
+          }
+
+          .bpb-pulse {
+            background:
+              radial-gradient(
+                ellipse at 24% 30%,
+                color-mix(in srgb, var(--bpb-accent) 74%, transparent) 0%,
+                color-mix(in srgb, var(--bpb-accent) 28%, transparent) 34%,
+                transparent 66%
+              ),
+              radial-gradient(
+                ellipse at 76% 68%,
+                color-mix(in srgb, var(--bpb-accent) 60%, var(--accent-2, #a78bfa)) 0%,
+                color-mix(in srgb, var(--bpb-accent) 20%, transparent) 38%,
+                transparent 70%
+              );
+            filter: saturate(var(--bpb-saturation, 1));
+            mix-blend-mode: screen;
+            opacity: 0.2;
+            
+          }
+
+          .bpb-vignette {
+            background: radial-gradient(
+              ellipse at center,
+              transparent 34%,
+              color-mix(in srgb, var(--bg, #000000) 58%, transparent) 100%
+            );
+          }
+        </style>
+
+        <div
+          id="beat-pulse-background-clip"
+          class="bpb-clip clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="0"
+        >
+          <div class="bpb-base"></div>
+          <div class="bpb-pulse"></div>
+          <div class="bpb-vignette"></div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var pulse = root.querySelector(".bpb-pulse");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            var accentTokens = {
+              green: "var(--brand, #34d399)",
+              blue: "var(--accent, #38bdf8)",
+              violet: "var(--accent-2, #a78bfa)",
+            };
+            var intensityLevels = {
+              subtle: { baseOpacity: 0.2, peakOpacity: 0.5, peakSaturation: 1.3 },
+              club: { baseOpacity: 0.26, peakOpacity: 0.72, peakSaturation: 1.65 },
+            };
+            var accent = Object.prototype.hasOwnProperty.call(accentTokens, vars.accent)
+              ? vars.accent
+              : "green";
+            var intensity = vars.intensity === "club" ? "club" : "subtle";
+            var level = intensityLevels[intensity];
+
+            root.style.setProperty("--bpb-accent", accentTokens[accent]);
+
+            var durationValue = Number(root.dataset.duration);
+            var duration = Number.isFinite(durationValue) && durationValue > 0 ? durationValue : 4;
+            var defaultBeats = "0.5,1.0,1.5,2.0,2.5,3.0,3.5";
+            var beatsValue = vars.beats == null ? defaultBeats : String(vars.beats);
+            var beats = beatsValue.split(",").reduce(function (result, token) {
+              var trimmed = token.trim();
+              if (trimmed === "") return result;
+
+              var seconds = Number(trimmed);
+              if (!Number.isFinite(seconds)) return result;
+
+              result.push(Math.max(0, Math.min(duration, seconds)));
+              return result;
+            }, []);
+
+            var ATTACK = 0.08;
+            var DECAY = 0.36;
+
+            gsap.set(pulse, { opacity: level.baseOpacity, "--bpb-saturation": 1 });
+
+            var tl = gsap.timeline({ paused: true });
+
+            beats.forEach(function (beat) {
+              tl.to(
+                pulse,
+                {
+                  opacity: level.peakOpacity,
+                  "--bpb-saturation": level.peakSaturation,
+                  duration: ATTACK,
+                  ease: "expo.out",
+                },
+                beat,
+              );
+              tl.to(
+                pulse,
+                {
+                  opacity: level.baseOpacity,
+                  "--bpb-saturation": 1,
+                  duration: DECAY,
+                  ease: "power2.in",
+                },
+                beat + ATTACK,
+              );
+            });
+
+            tl.seek(0);
+
+            window.__timelines = window.__timelines || {};
+            window.__timelines["beat-pulse-background"] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

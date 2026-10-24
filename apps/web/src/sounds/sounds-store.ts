@@ -227,7 +227,8 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
 
 			const element = buildLibraryAudioElement({
 				sourceUrl: audioUrl,
-				name: sound.name,
+				// "SFX …" so the R23 timeline check can see a designed sound (EXPORT-GATE.md)
+				name: `SFX ${sound.name}`,
 				duration: mediaTimeFromSeconds({ seconds: sound.duration }),
 				startTime: currentTime,
 				buffer,

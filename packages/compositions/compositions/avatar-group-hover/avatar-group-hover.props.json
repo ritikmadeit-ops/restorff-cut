@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/avatar-group-hover); fictional.",
+  "size": "standard",
+  "overlap": "standard",
+  "accent": "blue",
+  "speed": 1
+}

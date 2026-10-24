@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/transitions-dissolve); fictional.",
+  "titleLabel": "TRANSITION CATALOG",
+  "titleMain": "Dissolve Transitions",
+  "titleCount": "4 transitions",
+  "outroLabel": "DISSOLVE TRANSITIONS",
+  "outroMain": "4 Transitions",
+  "speed": 1
+}

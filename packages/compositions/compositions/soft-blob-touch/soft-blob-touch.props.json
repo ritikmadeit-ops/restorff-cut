@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/soft-blob-touch); fictional.",
+  "touchX": 30,
+  "touchY": 62,
+  "touchAt": 1.4,
+  "grain": "coarse",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

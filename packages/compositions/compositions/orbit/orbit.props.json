@@ -1,0 +1,14 @@
+{
+  "$comment": "Fictional Halcyon Cold Brew content. Six earlier Halcyon reels circle the speaker; stats are the fictional brand's own view counts. In the editor: render with layer back (between the clip and its cutout) and layer front (above it).",
+  "cards": [
+    { "label": "12-hour steep", "stat": "1.2M", "color": "#2F4A3A" },
+    { "label": "Oat vanilla", "stat": "534K", "color": "#C8553D" },
+    { "label": "Pour over ice", "stat": "133K", "color": "#3E5A6E" },
+    { "label": "Bean to bottle", "stat": "88K", "color": "#7A5638" },
+    { "label": "No sugar, ever", "stat": "61K", "color": "#9C8466" },
+    { "label": "Small batch", "stat": "47K", "color": "#24242A" }
+  ],
+  "face": { "x": 0.5, "y": 0.43, "w": 0.26, "h": 0.17 },
+  "caption": "every bottle is",
+  "script": "slow-steeped"
+}

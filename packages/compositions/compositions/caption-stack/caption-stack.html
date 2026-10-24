@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Caption stack</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "caption-stack",
+  "title": "Caption stack",
+  "description": "A mixed-type caption stack that builds block by block, each on its word: heavy caps on a coloured box, an italic serif word that wipes in, small caps on little boxes word by word, and a big serif word on a bone label. Two typefaces, three sizes. Use for the one sentence that should look designed, not subtitled (EFFECTS.md FX-21).",
+  "duration": 3.5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["captions", "type", "editorial", "aesthetic"],
+  "params": {
+    "blocks": {
+      "type": "list",
+      "of": { "type": "object", "fields": {
+        "text": { "type": "string", "maxLength": 28, "description": "The words of this block." },
+        "style": { "type": "enum", "options": ["box-sans", "serif-italic", "small-caps", "serif-box"], "description": "box-sans = heavy caps on the box colour; serif-italic = italic serif in the accent; small-caps = mono caps on small boxes, word by word; serif-box = big serif on a bone label." },
+        "at": { "type": "number", "min": -1, "max": 60, "default": -1, "description": "Seconds the block arrives (its spoken word); -1 = evenly after the previous one." }
+      } },
+      "minItems": 1, "maxItems": 5,
+      "default": [ { "text": "COLDER", "style": "box-sans" }, { "text": "brewing.", "style": "serif-italic" }, { "text": "THAT'S THE WHOLE", "style": "small-caps" }, { "text": "secret.", "style": "serif-box" } ],
+      "label": "Blocks", "description": "The stack, top to bottom." },
+    "gap": { "type": "number", "default": 0.45, "min": 0.1, "max": 3, "step": 0.05, "unit": "s", "label": "Block gap", "description": "Delay between blocks that have no time of their own." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Speed of each block's entrance and of the gaps between untimed blocks. Timed blocks stay on their spoken times." },
+    "box": { "type": "color", "default": "#2F5D3A", "label": "Box", "description": "Colour of the heavy caps box." },
+    "accent": { "type": "color", "default": "#E2B84A", "label": "Serif accent", "description": "Colour of the italic serif blocks." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "align": { "type": "enum", "options": ["left", "center"], "default": "left", "label": "Align", "description": "Stack alignment." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "center", "label": "Anchor", "description": "Vertical placement." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.3 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .stack { position: absolute; display: flex; flex-direction: column; }
+  .b { white-space: nowrap; }
+  .bs { font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 112%; text-transform: uppercase; color: #F4E9DA; line-height: 1; display: inline-block; }
+  .si { font-family: "Instrument Serif", serif; font-style: italic; line-height: .95; text-shadow: 0 4px 22px rgba(0,0,0,.45); display: inline-block; }
+  .sc { display: flex; flex-wrap: nowrap; }
+  .scw { font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; background: #0C0C0E; color: #EDEBE6; display: inline-block; }
+  .sb { font-family: "Instrument Serif", serif; background: #EDEBE6; color: #0C0C0E; line-height: 1; display: inline-block; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var CSK = { items: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var stack = RC.el("div", { class: "stack", style: { left: RC.safe.left + "px", right: RC.safe.right + "px", alignItems: P.align === "left" ? "flex-start" : "center", gap: 12 * u + "px" } });
+      stage.appendChild(stack);
+      // a block's own time stays on the voice (fitted only if it falls past a shortened clip); the gap between
+      // untimed blocks is animation time, so speed and fit-to-duration close it up
+      var at = 0.05;
+      var ats = RC.cues(P.blocks.map(function (b) { return b.at; }));
+      P.blocks.forEach(function (b, bi) {
+        var start = b.at >= 0 ? ats[bi] : at;
+        at = start + P.gap / RC.rate;
+        var wrap = RC.el("div", { class: "b" });
+        var node;
+        var words = null;
+        if (b.style === "box-sans") node = RC.el("span", { class: "bs", text: b.text, style: { background: P.box, fontSize: 120 * u + "px", padding: 8 * u + "px " + 20 * u + "px " + 4 * u + "px" } });
+        else if (b.style === "serif-italic") node = RC.el("span", { class: "si", text: b.text, style: { color: P.accent, fontSize: 150 * u + "px", paddingRight: 20 * u + "px" } });
+        else if (b.style === "serif-box") node = RC.el("span", { class: "sb", text: b.text, style: { fontSize: 170 * u + "px", padding: 4 * u + "px " + 22 * u + "px " + 14 * u + "px" } });
+        else {
+          node = RC.el("span", { class: "sc", style: { gap: 8 * u + "px" } });
+          words = b.text.split(/\s+/).map(function (w) {
+            var s = RC.el("span", { class: "scw", text: w, style: { fontSize: 40 * u + "px", padding: 6 * u + "px " + 12 * u + "px" } });
+            node.appendChild(s);
+            return s;
+          });
+        }
+        wrap.appendChild(node);
+        stack.appendChild(wrap);
+        CSK.items.push({ node: node, words: words, style: b.style, at: start });
+      });
+      // keep every block inside the width
+      var maxW = RC.width - RC.safe.left - RC.safe.right;
+      CSK.items.forEach(function (it) {
+        var w = it.node.offsetWidth;
+        if (w > maxW) it.node.style.zoom = String(maxW / w);
+      });
+      var h = stack.offsetHeight;
+      var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - h : (RC.height - h) / 2;
+      stack.style.top = top + P.offsetY * RC.u + "px";
+      CSK.stack = stack;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var T = time.T;
+      var out = P.exit ? 1 - RC.clamp(time.left / 0.3, 0, 1) : 0;
+      CSK.items.forEach(function (it) {
+        var local = RC.since(T, it.at);
+        if (it.style === "box-sans") {
+          var p = RC.progress(local, 0, 0.25, "bouncy");
+          RC.set(it.node, { opacity: local >= 0 ? 1 : 0, scale: 0.6 + 0.4 * p, y: (1 - p) * 40 * RC.u });
+        } else if (it.style === "serif-italic") {
+          var w = RC.progress(local, 0, 0.35, "smooth");
+          RC.set(it.node, { opacity: local >= 0 ? 1 : 0, clip: "inset(-20% " + (1 - w) * 100 + "% -20% 0)" });
+        } else if (it.style === "serif-box") {
+          var q = RC.progress(local, 0, 0.3, "snappy");
+          RC.set(it.node, { opacity: q, y: (1 - q) * 50 * RC.u, rotate: -1.5 * q });
+        } else {
+          it.words.forEach(function (s, i) {
+            var r = RC.progress(local - i * 0.12, 0, 0.16, "snappy");
+            RC.set(s, { opacity: r, y: (1 - r) * 16 * RC.u });
+          });
+        }
+      });
+      CSK.stack.style.opacity = String(1 - out);
+    },
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/badge-pop); fictional.",
+  "count": "3",
+  "accent": "red",
+  "surface": "light",
+  "speed": 1
+}

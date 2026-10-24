@@ -6,7 +6,7 @@ import {
 	toElementDurationTicks,
 } from "@/timeline/creation";
 import { BASE_TIMELINE_PIXELS_PER_SECOND } from "@/timeline/scale";
-import type { FrameRate } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
 import {
 	buildTextElement,
 	buildGraphicElement,

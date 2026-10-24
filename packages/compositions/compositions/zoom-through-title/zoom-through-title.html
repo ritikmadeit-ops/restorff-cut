@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zoom-through title</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "zoom-through-title",
+  "title": "Zoom-through title",
+  "description": "A title rushes at the camera out of a burst of radial speed streaks, lands with a kick, holds, then flies through the lens on the way out. The overlay half of the reel's Zoom Through Cut (FX-09): use it on a cut between two shots or as a chapter title.",
+  "duration": 2.6,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["title", "transition", "speed", "reels"],
+  "params": {
+    "title": { "type": "string", "required": true, "default": "18 HOURS", "maxLength": 18, "label": "Title", "description": "The words that rush in. Short and loud; fitted to the width." },
+    "kicker": { "type": "string", "default": "STEEPED FOR", "maxLength": 32, "label": "Kicker", "description": "Small mono line above the title. Empty to hide." },
+    "color": { "type": "color", "default": "#EDEBE6", "label": "Title colour", "description": "Colour of the title." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Colour of the streak burst's brightest lines: the isolate." },
+    "streaks": { "type": "number", "default": 48, "min": 0, "max": 120, "step": 1, "label": "Streaks", "description": "How many radial speed lines burst from the centre. 0 = none." },
+    "seed": { "type": "number", "default": 7, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the pattern of the streaks." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "ease": { "type": "easing", "default": "snappy", "label": "Landing", "description": "How the title lands after the rush." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the centre, px on a 1080 grid. Negative = up." },
+    "exit": { "type": "boolean", "default": true, "label": "Fly through", "description": "The title flies through the lens over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+  .streak { position: absolute; left: 0; top: 0; transform-origin: 0 50%; border-radius: 999px; }
+  .group { position: absolute; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .kick { font-family: "JetBrains Mono", monospace; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--bone); text-shadow: 0 2px 14px rgba(0,0,0,.6); }
+  .title { font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 125%; text-transform: uppercase; line-height: .92; white-space: nowrap; text-shadow: 0 10px 50px rgba(0,0,0,.45), 0 0 2px rgba(0,0,0,.4); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var ZT = { streaks: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var burst = RC.el("div", { class: "burst", style: { top: RC.height / 2 + P.offsetY * RC.u + "px" } });
+      var rnd = RC.random(P.seed * 7919 + 13);
+      var diag = Math.sqrt(RC.width * RC.width + RC.height * RC.height) / 2;
+      for (var i = 0; i < P.streaks; i++) {
+        var ang = (i / P.streaks) * 360 + rnd() * (360 / P.streaks);
+        var len = diag * (0.25 + rnd() * 0.45);
+        var th = (2 + rnd() * 5) * RC.u;
+        var bright = rnd() < 0.18;
+        var col = bright ? P.accent : "#EDEBE6";
+        var s = RC.el("div", { class: "streak", style: { width: len + "px", height: th + "px", marginTop: -th / 2 + "px", background: "linear-gradient(90deg, " + RC.alpha(col, 0) + ", " + RC.alpha(col, bright ? 0.95 : 0.6) + " 70%, " + RC.alpha(col, 0) + ")" } });
+        burst.appendChild(s);
+        ZT.streaks.push({ node: s, ang: ang, start: diag * (0.05 + rnd() * 0.25), len: len, phase: rnd() * 0.12 });
+      }
+      stage.appendChild(burst);
+      var group = RC.el("div", { class: "group" });
+      if (P.kicker) {
+        ZT.kick = RC.el("div", { class: "kick", text: P.kicker, style: { fontSize: 40 * u + "px", marginBottom: 18 * u + "px" } });
+        group.appendChild(ZT.kick);
+      }
+      ZT.title = RC.el("div", { class: "title", text: P.title, style: { color: P.color } });
+      group.appendChild(ZT.title);
+      stage.appendChild(group);
+      RC.fitText(ZT.title, RC.width - 2 * RC.safe.left, 300 * u, 60 * RC.u);
+      var gh = group.offsetHeight;
+      group.style.top = (RC.height - gh) / 2 + P.offsetY * RC.u + "px";
+      ZT.group = group;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var outRaw = P.exit ? 1 - RC.clamp(time.left / 0.4, 0, 1) : 0;
+      var out = RC.ease("ease-in", outRaw);
+      // rush in: from far (small, blurred) to slightly past full size, then settle
+      var rush = RC.progress(t, 0, 0.32, "ease-in");
+      var land = RC.progress(t, 0.32, 0.35, P.ease);
+      var sc = t < 0.32 ? RC.mix(0.05, 1.12, rush) : RC.mix(1.12, 1, land);
+      sc *= 1 + out * 5;
+      RC.set(ZT.group, { scale: sc, opacity: RC.clamp(t / 0.08, 0, 1) * (1 - RC.clamp((outRaw - 0.55) / 0.45, 0, 1)), blur: (t < 0.32 ? (1 - rush) * 14 : 0) * RC.u + out * 26 * RC.u });
+      if (ZT.kick) RC.set(ZT.kick, { opacity: RC.progress(t, 0.4, 0.25, "linear") });
+      // streaks: fly outward during the rush in and the fly-through, invisible while the title holds
+      var energy = Math.max(1 - RC.clamp((t - 0.3) / 0.35, 0, 1), out);
+      for (var i = 0; i < ZT.streaks.length; i++) {
+        var s = ZT.streaks[i];
+        var local = (t * 2.6 + s.phase) % 1;
+        var d = s.start + local * s.len * 1.4 + out * s.len;
+        s.node.style.transform = "rotate(" + s.ang + "deg) translate(" + d + "px, 0px) scale(" + (0.6 + local) + ", 1)";
+        s.node.style.opacity = String(energy * Math.sin(local * Math.PI));
+      }
+    },
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/touch-indicator@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-variables='[
+    {"id":"gesture","type":"enum","label":"Gesture","default":"tap","options":[{"value":"tap","label":"Tap"},{"value":"swipe","label":"Swipe"}]},
+    {"id":"polarity","type":"enum","label":"Polarity","default":"light","options":[{"value":"light","label":"Light (on dark UI)"},{"value":"dark","label":"Dark (on light UI)"}]},
+    {"id":"targetX","type":"number","label":"Target X","default":50,"min":0,"max":100,"unit":"%"},
+    {"id":"targetY","type":"number","label":"Target Y","default":55,"min":0,"max":100,"unit":"%"}
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "touch-indicator",
+  "title": "Touch Indicator",
+  "description": "A translucent contact-circle gesture actor for mobile UI scenes: it touches the glass on the frame the host target responds, then lifts. Tap or swipe, picked by variable. Imported from a HyperFrames component (ui-product; provenance below).",
+  "duration": 1.1,
+  "size": [
+    380,
+    760
+  ],
+  "fps": 30,
+  "tags": [
+    "ui-product",
+    "cursor",
+    "motion-primitive",
+    "mobile",
+    "gesture",
+    "touch",
+    "pointer",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "gesture": {
+      "type": "enum",
+      "options": [
+        "tap",
+        "swipe"
+      ],
+      "default": "tap",
+      "label": "Gesture",
+      "description": "Gesture"
+    },
+    "polarity": {
+      "type": "enum",
+      "options": [
+        "light",
+        "dark"
+      ],
+      "default": "light",
+      "label": "Polarity",
+      "description": "Polarity"
+    },
+    "targetX": {
+      "type": "number",
+      "default": 50,
+      "label": "Target X",
+      "description": "Target X",
+      "min": 0,
+      "max": 100
+    },
+    "targetY": {
+      "type": "number",
+      "default": 55,
+      "label": "Target Y",
+      "description": "Target Y",
+      "min": 0,
+      "max": 100
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 380x760 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    }
+  },
+  "hf": {
+    "vars": {
+      "gesture": "gesture",
+      "polarity": "polarity",
+      "targetX": "targetX",
+      "targetY": "targetY"
+    },
+    "width": 380,
+    "height": 760,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/touch-indicator",
+    "path": "registry/components/touch-indicator",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="touch-indicator" data-start="0" data-duration="1.1" data-width="380" data-height="760" style="position:absolute;left:0;top:0;width:380px;height:760px">
+
+      <style>
+        /* INVARIANT: root fills the host's box, position-blind, elastic to
+           whatever size a host slot gives it. No data-width/data-height on
+           the root -- the host slot owns the size (see mount contract).
+           Root is styled by #root, never a class (sub-compositions.md,
+           Pitfall 3). */
+        #root {
+          position: absolute;
+          inset: 0;
+          container-type: inline-size;
+          isolation: isolate;
+          pointer-events: none;
+        }
+
+        .hf-touch-indicator__actor {
+          /* sized to 18cqw of the host box, meant to be the phone screen,
+             with a 46px floor and a 111px cap for wide hosts. */
+          --hf-gesture-size: clamp(46px, 18cqw, 111px);
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: var(--hf-gesture-size);
+          height: var(--hf-gesture-size);
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+          
+        }
+
+        .hf-touch-indicator__core {
+          position: absolute;
+          inset: 0;
+          box-sizing: border-box;
+          /* INVARIANT: circle geometry, hardcoded 50%, not var(--radius) -
+             that token is for rectangular UI corners, not this actor's
+             fixed disc. */
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.35);
+          border: 1px solid rgba(255, 255, 255, 0.6);
+          transform-origin: 50% 50%;
+          
+        }
+
+        .hf-touch-indicator__actor--dark .hf-touch-indicator__core {
+          background: rgba(0, 0, 0, 0.22);
+          border-color: rgba(0, 0, 0, 0.45);
+        }
+      </style>
+
+      <div
+        id="root"
+        data-composition-id="touch-indicator"
+        data-composition-variables='[
+          {"id":"gesture","type":"enum","label":"Gesture","default":"tap","options":[{"value":"tap","label":"Tap"},{"value":"swipe","label":"Swipe"}]},
+          {"id":"polarity","type":"enum","label":"Polarity","default":"light","options":[{"value":"light","label":"Light (on dark UI)"},{"value":"dark","label":"Dark (on light UI)"}]},
+          {"id":"targetX","type":"number","label":"Target X","default":50,"min":0,"max":100,"unit":"%"},
+          {"id":"targetY","type":"number","label":"Target Y","default":55,"min":0,"max":100,"unit":"%"}
+        ]'
+      >
+        <div class="hf-touch-indicator__actor">
+          <div class="hf-touch-indicator__core"></div>
+        </div>
+      </div>
+
+      <script type="text/x-rc-deferred">
+        (function () {
+          const FPS = 60;
+          const q = (s) => Math.max(1, Math.round(s * FPS)) / FPS;
+          const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+          // The actor owns x/y and opacity, the core owns scale.
+          function buildTouchIndicator(tl, root, { at = 0, elasticity = 1 } = {}) {
+            const defaults = { gesture: "tap", polarity: "light", targetX: 50, targetY: 55 };
+            // Per-instance overrides (a host's data-variable-values) land in
+            // window.__hfVariablesByComp, scoped by composition id. Reading
+            // window.__hfVariables directly here would silently ignore every
+            // host override -- window.__hyperframes.getVariables() is the
+            // scoped accessor, per the registry convention (see
+            // lower-third-bild.html, caption-texture.html).
+            const resolved =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : window.__hfVariables || {};
+            const vars = Object.assign({}, defaults, resolved);
+            const actor = root.querySelector(".hf-touch-indicator__actor");
+            const core = root.querySelector(".hf-touch-indicator__core");
+            if (vars.polarity === "dark") actor.classList.add("hf-touch-indicator__actor--dark");
+
+            // Compute layout geometry once at setup, never inside an ease/callback.
+            const hostW = root.clientWidth || 1;
+            const hostH = root.clientHeight || 1;
+            const x0 = (vars.targetX / 100) * hostW;
+            const y0 = (vars.targetY / 100) * hostH;
+
+            // --- IN: fixed, never stretched. ---
+            const appear = q(0.06);
+            tl.fromTo(
+              actor,
+              { x: x0, y: y0, xPercent: -50, yPercent: -50, autoAlpha: 0 },
+              {
+                x: x0,
+                y: y0,
+                xPercent: -50,
+                yPercent: -50,
+                autoAlpha: 1,
+                duration: appear,
+                ease: "power2.out",
+                immediateRender: false,
+              },
+              at,
+            );
+            tl.fromTo(
+              core,
+              { scale: 0.9 },
+              { scale: 1, duration: appear, ease: "power2.out", immediateRender: false },
+              at,
+            );
+            const touchDown = at + appear;
+
+            // --- HOLD: the only elastic phase. Stretch it, never gsap.timeScale(). ---
+            let holdEnd;
+            if (vars.gesture === "swipe") {
+              // a swipe lasts 0.28s to 0.52s; elasticity scales its pacing.
+              const swipeDuration = q(clamp(0.34 * elasticity, 0.28, 0.52));
+              const travel = hostH * 0.4; // vertical scroll, 40% of host height (32-68% allowed)
+              const accel = q(swipeDuration * 0.41);
+              const decel = swipeDuration - accel;
+              const bendY = y0 - travel * 0.41;
+              const endY = y0 - travel;
+              tl.fromTo(
+                actor,
+                { x: x0, y: y0 },
+                { x: x0, y: bendY, duration: accel, ease: "power2.in", immediateRender: false },
+                touchDown,
+              );
+              tl.to(
+                actor,
+                { x: x0, y: endY, duration: decel, ease: "power3.out" },
+                touchDown + accel,
+              );
+              holdEnd = touchDown + swipeDuration;
+            } else {
+              // a tap touches for 0.08s to 0.2s; any longer reads as a long-press.
+              holdEnd = touchDown + q(clamp(0.12 * elasticity, 0.08, 0.2));
+            }
+
+            // --- OUT: fixed, never stretched. ---
+            const lift = q(0.2);
+            tl.to(actor, { autoAlpha: 0, duration: lift, ease: "power1.in" }, holdEnd);
+          }
+
+          // Self-driving mount: build the paused timeline and register it
+          // under this file's own data-composition-id, matching the host's
+          // data-composition-src wiring (sub-compositions.md, Pitfall 2).
+          const root = document.querySelector('[data-composition-id="touch-indicator"]');
+          const tl = gsap.timeline({ paused: true });
+          window.__timelines = window.__timelines || {};
+          window.__timelines["touch-indicator"] = tl;
+          buildTouchIndicator(tl, root, { at: 0 });
+        })();
+      </script>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

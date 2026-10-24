@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cover story</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "cover-story",
+  "title": "Cover story",
+  "description": "Turns the shot into a magazine cover: a thin frame draws in, a big serif wordmark settles letter by letter at the top, an issue line runs under it (\"... · Edited by Claude\"), and coverlines rise in at the bottom. Use as an intro or a style moment over a clean talking-head shot.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["title", "editorial", "magazine", "intro", "matte", "named-effect"],
+  "effect": {
+    "fx": ["FX-16"],
+    "stack": ["plate", "self:back", "cutout", "self:front"],
+    "inputs": {
+      "cutout": "the clip's person cutout on the track above it (editor: Cut out person; MCP: cutout): the head covers part of the masthead",
+      "face": "set props.mastheadOffset so the masthead's lower third sits behind the top of the head (face box top minus ~5 % of the height)"
+    },
+    "note": "Layer back = the masthead letters and issue line; layer front = frame, kicker and coverlines. Layer all (default) = the old one-overlay cover."
+  },
+  "params": {
+    "wordmark": { "type": "string", "required": true, "default": "HALCYON", "maxLength": 14, "label": "Wordmark", "description": "The magazine's name: the brand or the topic. Fitted to the width." },
+    "issue": { "type": "string", "default": "ISSUE 014 · OCTOBER 2026", "maxLength": 40, "label": "Issue line", "description": "Mono line under the wordmark: issue, date." },
+    "credit": { "type": "string", "default": "Edited by Claude", "maxLength": 32, "label": "Credit", "description": "Appended to the issue line after a dot. Empty to hide." },
+    "kicker": { "type": "string", "default": "THE SLOW COFFEE ISSUE", "maxLength": 40, "label": "Kicker", "description": "Small caps label above the coverlines. Empty to hide." },
+    "coverlines": { "type": "list", "of": { "type": "string", "maxLength": 40 }, "minItems": 0, "maxItems": 4, "default": ["The 12-hour cup", "Inside the small-batch roastery", "Why we skip the sugar"], "label": "Coverlines", "description": "Two to four short story lines, set in serif italic at the bottom left." },
+    "color": { "type": "color", "default": "#EDEBE6", "label": "Ink", "description": "Colour of the frame, wordmark and lines (bone by default; use #0C0C0E over bright footage)." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Marker before the first coverline: the one isolate." },
+    "frameInset": { "type": "number", "default": 32, "min": 0, "max": 140, "step": 1, "unit": "px", "label": "Frame inset", "description": "Distance of the thin frame from the edges, px on a 1080 grid (32 = 3 % of the width). 0 hides the frame." },
+    "stagger": { "type": "number", "default": 0.08, "min": 0.01, "max": 0.5, "step": 0.01, "unit": "s", "label": "Letter stagger", "description": "Delay between wordmark letters (the reel builds one every 80 ms)." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier for the lines (the wordmark always fits the width)." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed. 0.8 = slower, 1.25 = faster." },
+    "ease": { "type": "easing", "default": "smooth", "label": "Easing", "description": "How letters and lines settle. Editorial = calm: smooth or gentle." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Everything fades over the last 0.5 s." },
+    "layer": { "type": "enum", "options": ["all", "back", "front"], "default": "all", "label": "Layer", "description": "back = the masthead (under the person cutout, so the head overlaps it), front = frame + lines (above the cutout), all = everything in one overlay." },
+    "mastheadOffset": { "type": "number", "default": 0, "min": -400, "max": 900, "step": 1, "unit": "px", "label": "Masthead offset", "description": "Move the masthead and issue line down (px on a 1080 grid) so the head overlaps the letters' lower part." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .line { position: absolute; }
+  .wm { position: absolute; left: 0; width: 100%; text-align: center; font-family: "Instrument Serif", serif; font-weight: 400; line-height: .82; letter-spacing: -.02em; white-space: nowrap; text-shadow: 0 6px 40px rgba(0,0,0,.25); }
+  .wm span { display: inline-block; }
+  .issue { position: absolute; left: 0; width: 100%; display: flex; justify-content: center; align-items: center; font-family: "JetBrains Mono", monospace; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; text-shadow: 0 2px 12px rgba(0,0,0,.45); }
+  .bottom { position: absolute; display: flex; flex-direction: column; }
+  .kick { font-family: "Archivo", sans-serif; font-weight: 800; font-stretch: 125%; letter-spacing: .14em; text-transform: uppercase; text-shadow: 0 2px 12px rgba(0,0,0,.45); }
+  .cl { display: flex; align-items: center; font-family: "Instrument Serif", serif; font-style: italic; line-height: 1.04; text-shadow: 0 3px 20px rgba(0,0,0,.45); }
+  .mk { flex: none; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var CV = { letters: [], lines: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var ins = P.frameInset * RC.u;
+      var lw = Math.max(2, Math.round(3 * RC.u));
+      if (P.frameInset > 0) {
+        var W = RC.width - 2 * ins;
+        var H = RC.height - 2 * ins;
+        CV.frame = [
+          RC.el("div", { class: "line", style: { left: ins + "px", top: ins + "px", width: W + "px", height: lw + "px", background: P.color, transformOrigin: "50% 50%" } }),
+          RC.el("div", { class: "line", style: { left: ins + "px", top: ins + "px", width: lw + "px", height: H + "px", background: P.color, transformOrigin: "50% 0" } }),
+          RC.el("div", { class: "line", style: { left: ins + W - lw + "px", top: ins + "px", width: lw + "px", height: H + "px", background: P.color, transformOrigin: "50% 0" } }),
+          RC.el("div", { class: "line", style: { left: ins + "px", top: ins + H - lw + "px", width: W + "px", height: lw + "px", background: P.color, transformOrigin: "50% 50%" } }),
+        ];
+        CV.frame.forEach(function (f) { stage.appendChild(f); });
+      }
+      // wordmark: one span per letter, fitted inside the frame
+      var wm = RC.el("div", { class: "wm", style: { color: P.color } });
+      P.wordmark.split("").forEach(function (ch) {
+        var s = RC.el("span", { text: ch === " " ? " " : ch });
+        wm.appendChild(s);
+        CV.letters.push(s);
+      });
+      stage.appendChild(wm);
+      RC.fitText(wm, Math.min(RC.width * 0.9, RC.width - 2 * ins - 40 * RC.u), 360 * RC.u, 80 * RC.u);
+      wm.style.width = "100%";
+      var top = Math.max(RC.safe.top * 0.7, ins + 70 * RC.u) + P.mastheadOffset * RC.u;
+      wm.style.top = top + "px";
+      CV.wm = wm;
+      var issueText = P.issue + (P.credit ? "  ·  " + P.credit : "");
+      CV.issue = RC.el("div", { class: "issue", text: issueText, style: { color: P.color, fontSize: 24 * u + "px", top: top + wm.offsetHeight + 26 * RC.u + "px" } });
+      stage.appendChild(CV.issue);
+      // bottom block: kicker + coverlines, above the bottom safe area
+      var bottom = RC.el("div", { class: "bottom", style: { left: ins + 46 * RC.u + "px", gap: 14 * u + "px", color: P.color, maxWidth: RC.width - 2 * ins - 92 * RC.u - RC.safe.right + "px" } });
+      if (P.kicker) {
+        CV.kick = RC.el("div", { class: "kick", text: P.kicker, style: { fontSize: 24 * u + "px", marginBottom: 10 * u + "px" } });
+        bottom.appendChild(CV.kick);
+      }
+      P.coverlines.forEach(function (text, i) {
+        var line = RC.el("div", { class: "cl", style: { fontSize: 64 * u + "px", gap: 20 * u + "px" } }, [
+          i === 0 ? RC.el("span", { class: "mk", style: { width: 22 * u + "px", height: 22 * u + "px", borderRadius: "50%", background: P.accent } }) : null,
+          text,
+        ]);
+        bottom.appendChild(line);
+        CV.lines.push(line);
+      });
+      stage.appendChild(bottom);
+      bottom.style.top = RC.height - Math.max(RC.safe.bottom, ins + 60 * RC.u) - bottom.offsetHeight + "px";
+      CV.u = u;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var u = CV.u;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.5, 0, 1)) : 0;
+      // layers: the masthead goes behind the person cutout, everything else in front of it
+      // (the issue line belongs to the masthead: in front it would cross the forehead)
+      var bv = P.layer === "front" ? "hidden" : "visible";
+      CV.wm.style.visibility = bv;
+      CV.issue.style.visibility = bv;
+      var fv = P.layer === "back" ? "hidden" : "visible";
+      (CV.frame || []).concat([CV.kick].concat(CV.lines)).forEach(function (n) { if (n) n.style.visibility = fv; });
+      if (CV.frame) {
+        var top = RC.progress(t, 0, 0.6, "smooth");
+        var sides = RC.progress(t, 0.25, 0.7, "smooth");
+        var bot = RC.progress(t, 0.6, 0.55, "smooth");
+        RC.set(CV.frame[0], { sx: top, opacity: 1 - out });
+        RC.set(CV.frame[1], { sy: sides, opacity: 1 - out });
+        RC.set(CV.frame[2], { sy: sides, opacity: 1 - out });
+        RC.set(CV.frame[3], { sx: bot, opacity: 1 - out });
+      }
+      var n = CV.letters.length;
+      CV.letters.forEach(function (s, i) {
+        var t0 = 0.2 + i * P.stagger;
+        var k = RC.progress(t, t0, 0.7, P.ease);
+        RC.set(s, { y: (1 - k) * -60 * RC.u, opacity: RC.progress(t, t0, 0.35, "linear"), blur: (1 - k) * 10 * RC.u });
+      });
+      var spread = RC.progress(t, 0.2, 0.9 + n * P.stagger, "gentle");
+      CV.wm.style.letterSpacing = RC.mix(0.03, -0.02, spread) + "em";
+      CV.wm.style.opacity = String(1 - out);
+      var il = RC.progress(t, 0.75, 0.5, P.ease);
+      RC.set(CV.issue, { y: (1 - il) * 14 * u, opacity: il * (1 - out) });
+      if (CV.kick) {
+        var kk = RC.progress(t, 0.95, 0.45, P.ease);
+        RC.set(CV.kick, { y: (1 - kk) * 24 * u, opacity: kk * (1 - out) });
+      }
+      CV.lines.forEach(function (l, i) {
+        var k = RC.progress(t, 1.05 + i * 0.16, 0.55, P.ease);
+        RC.set(l, { y: (1 - k) * 40 * u, opacity: k * (1 - out) });
+      });
+    },
+  });
+</script>
+</body>
+</html>

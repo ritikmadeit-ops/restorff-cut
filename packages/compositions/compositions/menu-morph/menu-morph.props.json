@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/menu-morph); fictional.",
+  "actions": "Text, Image, Audio",
+  "tone": "ink",
+  "size": 68,
+  "speed": 1
+}

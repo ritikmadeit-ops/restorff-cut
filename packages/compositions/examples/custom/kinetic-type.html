@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kinetic type</title>
+<!-- Custom composition example (motion-code agent, 2026-10-20). Written as Claude would for the prompt:
+     "kinetic type for Halcyon: 'cold brewed for twenty hours', one word per beat, TWENTY on a neon box". -->
+<script type="application/json" id="params">
+{
+  "name": "kinetic-type",
+  "title": "Kinetic type",
+  "description": "A short line set one word per beat in huge extended caps: each word rises out of its own mask with a small tilt, the key word lands on a neon box, then the stack lifts out word by word. Use it for the one sentence the viewer must remember.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["kinetic", "type", "words", "custom"],
+  "params": {
+    "kicker": { "type": "string", "default": "HALCYON COLD BREW", "maxLength": 40, "label": "Kicker", "description": "Small mono line above the words: who is speaking or what this is about." },
+    "lines": { "type": "list", "of": { "type": "string", "maxLength": 14 }, "minItems": 1, "maxItems": 6, "default": ["COLD", "BREWED", "FOR", "TWENTY", "HOURS"], "label": "Words", "description": "The sentence, one word (or two short ones) per line, in reading order." },
+    "highlight": { "type": "string", "default": "TWENTY", "maxLength": 14, "label": "Key word", "description": "The word that lands on the neon box: the one the viewer must remember. Empty = none." },
+    "beat": { "type": "number", "default": 0.3, "min": 0.1, "max": 1, "step": 0.01, "unit": "s", "label": "Beat", "description": "Seconds between words." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "The key word's box: the one isolate in the frame." },
+    "ease": { "type": "easing", "default": "snappy", "label": "Motion", "description": "How each word lands." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "center", "label": "Anchor", "description": "Vertical placement inside the safe area." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Words drop back into their masks over the last 0.45 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .wrap { position: absolute; }
+  .kicker { font-family: "JetBrains Mono", monospace; font-weight: 700; text-transform: uppercase; color: #EDEBE6; white-space: nowrap; text-shadow: 0 2px 14px rgba(0,0,0,.7); }
+  .kicker b { display: inline-block; border-radius: 999px; vertical-align: middle; }
+  /* each line clips only its bottom edge: the word rises out of it; the key word's box may poke out left/right */
+  .line { position: relative; line-height: 1; clip-path: inset(-60% -400px 0 -400px); }
+  .word { display: inline-block; position: relative; font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 125%; text-transform: uppercase; letter-spacing: -0.01em; color: #EDEBE6; white-space: nowrap; transform-origin: 0% 100%; text-shadow: 0 4px 26px rgba(0,0,0,.5); }
+  .box { position: absolute; left: 0; top: 0; transform-origin: 0% 50%; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var K = {};
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var maxW = RC.width - RC.safe.left - RC.safe.right;
+      var wrap = RC.el("div", { class: "wrap", style: { left: RC.safe.left + "px", width: maxW + "px" } });
+      K.kicker = RC.el("div", { class: "kicker", style: { fontSize: 30 * u + "px", letterSpacing: ".2em", marginBottom: 22 * u + "px" } }, [
+        RC.el("b", { style: { width: 14 * u + "px", height: 14 * u + "px", marginRight: 16 * u + "px", background: P.accent } }),
+        P.kicker,
+      ]);
+      if (P.kicker) wrap.appendChild(K.kicker);
+      K.lines = P.lines.map(function (text) {
+        var line = RC.el("div", { class: "line" });
+        var hl = !!P.highlight && text.trim().toUpperCase() === P.highlight.trim().toUpperCase();
+        var box = hl ? RC.el("div", { class: "box", style: { background: P.accent, borderRadius: 12 * u + "px" } }) : null;
+        var word = RC.el("span", { class: "word", text: text });
+        if (box) line.appendChild(box);
+        line.appendChild(word);
+        wrap.appendChild(line);
+        return { line: line, word: word, box: box };
+      });
+      document.getElementById("stage").appendChild(wrap);
+      // Measure only once everything is in the document (fonts are loaded before build runs).
+      K.lines.forEach(function (L) {
+        RC.fitText(L.word, maxW - 40 * u, 200 * u, 64 * RC.u);
+        L.h = L.word.offsetHeight;
+        if (L.box) {
+          var padX = 18 * u;
+          L.box.style.left = -padX + "px";
+          L.box.style.top = L.h * 0.06 + "px";
+          L.box.style.width = L.word.offsetWidth + 2 * padX + "px";
+          L.box.style.height = L.h * 0.9 + "px";
+        }
+      });
+      var h = wrap.offsetHeight;
+      var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - h : (RC.height - h) / 2;
+      wrap.style.top = top + P.offsetY * RC.u + "px";
+      K.u = u;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var n = K.lines.length;
+      var k = RC.progress(t, 0, 0.35, "smooth");
+      var kOut = P.exit ? RC.progress(0.45 - time.left, 0, 0.3, "ease-in") : 0;
+      RC.set(K.kicker, { opacity: k * (1 - kOut), x: (1 - k) * -24 * K.u });
+      K.lines.forEach(function (L, i) {
+        var start = 0.15 + i * P.beat;
+        var p = RC.progress(t, start, 0.5, P.ease);
+        // exit: last word leaves first, 0.05 s apart, each over 0.3 s
+        var o = P.exit ? RC.progress(0.45 - time.left, (n - 1 - i) * 0.03, 0.3, "ease-in") : 0;
+        // in: rise out of the mask; out: drop back into it (the mask clips the bottom edge only)
+        var y = (1 - p) * L.h * 1.05 + o * L.h * 1.1;
+        RC.set(L.word, { y: y, rotate: (1 - p) * 8 + o * 6 });
+        if (L.box) {
+          var b = RC.progress(t, start + 0.28, 0.32, "snappy");
+          RC.set(L.box, { y: y, sx: b });
+          var c = RC.clamp((b - 0.35) / 0.4, 0, 1);
+          L.word.style.color = RC.mixColor("#EDEBE6", "#0C0C0E", c);
+          L.word.style.textShadow = c > 0.5 ? "none" : "";
+        }
+      });
+    },
+  });
+</script>
+</body>
+</html>

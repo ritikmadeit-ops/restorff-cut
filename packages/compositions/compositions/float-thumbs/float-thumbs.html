@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Floating thumbnails</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "float-thumbs",
+  "title": "Floating thumbnails",
+  "description": "Two to five portrait thumbnails pop in one after another above the speaker's head, slightly rotated, and drift upward (under 3 % of the height per second), each with a mono label and a stat. Use for 'my best videos', earlier ads, a product range (EFFECTS.md FX-42). Send real stills as images (data: URLs or files); without images the cards are drawn from colours and labels.",
+  "duration": 3.5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["thumbnails", "cards", "gallery", "reels", "images"],
+  "params": {
+    "images": { "type": "list", "of": { "type": "image" }, "minItems": 0, "maxItems": 5, "default": [], "label": "Images", "description": "Real portrait stills (covers, frames of earlier ads), left to right: data: URLs, or files next to the props. Card i shows images[i]; its label and stat come from cards[i] when given." },
+    "cards": {
+      "type": "list", "required": true, "requiredUnless": "images",
+      "of": { "type": "object", "fields": {
+        "label": { "type": "string", "maxLength": 18, "default": "", "description": "Title on the card." },
+        "stat": { "type": "string", "maxLength": 14, "default": "", "description": "Small mono stat under it (must be real), e.g. 1.2M views." },
+        "color": { "type": "color", "default": "#C8553D", "description": "Card colour (a gradient is made from it) when there is no image." }
+      } },
+      "minItems": 0, "maxItems": 5,
+      "default": [ { "label": "OAT VANILLA", "stat": "AD-011", "color": "#C8553D" }, { "label": "ORIGINAL", "stat": "AD-012", "color": "#2F5D50" }, { "label": "NIGHT ROAST", "stat": "AD-013", "color": "#3A3A70" } ],
+      "label": "Cards", "description": "The thumbnails, left to right: label, stat, colour. Needed unless images are sent (then they only label the images)." },
+    "style": { "type": "enum", "options": ["card", "framed"], "default": "card", "label": "Style", "description": "card = label and stat inside the thumbnail; framed = a bone border around the picture with the label under it (reads best over real stills)." },
+    "stagger": { "type": "number", "default": 0.18, "min": 0.04, "max": 1, "step": 0.01, "unit": "s", "label": "Stagger", "description": "Delay between cards." },
+    "drift": { "type": "number", "default": 2.5, "min": 0, "max": 3, "step": 0.1, "unit": "% h/s", "label": "Drift", "description": "Upward drift, percent of the frame height per second (EFFECTS.md: at most 3)." },
+    "seed": { "type": "number", "default": 2, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the tilts." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Card size multiplier." },
+    "offsetY": { "type": "number", "default": 0, "min": -400, "max": 900, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge down from the top third, px on a 1080 grid." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "ease": { "type": "easing", "default": "bouncy", "label": "Pop easing", "description": "How each card pops in." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Cards float off and fade over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .card { position: absolute; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; box-shadow: 0 calc(14px * var(--u)) calc(30px * var(--u)) rgba(0,0,0,.45); }
+  .card img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card .shade { position: absolute; left: 0; right: 0; bottom: 0; height: 45%; background: linear-gradient(180deg, rgba(12,12,14,0), rgba(12,12,14,.78)); }
+  .card .txt { position: relative; }
+  .bottle { position: absolute; left: 50%; border-radius: 18% 18% 10% 10%; }
+  .lbl { font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 112%; color: #F4E9DA; text-transform: uppercase; line-height: 1; }
+  .stat { font-family: "JetBrains Mono", monospace; font-weight: 600; color: rgba(244,233,218,.8); letter-spacing: .1em; }
+  .play { position: absolute; border-radius: 50%; background: rgba(244,233,218,.9); display: flex; align-items: center; justify-content: center; }
+  .framed { position: absolute; transform-origin: 50% 100%; }
+  .framed .frame { position: relative; background: #EDEBE6; overflow: hidden; box-shadow: 0 calc(18px * var(--u)) calc(50px * var(--u)) rgba(0,0,0,.45); }
+  .framed .pic { position: absolute; overflow: hidden; }
+  .framed .pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .framed .cap { font-family: "JetBrains Mono", monospace; font-weight: 700; color: #EDEBE6; text-align: center; letter-spacing: .18em; text-transform: uppercase; text-shadow: 0 2px 12px rgba(0,0,0,.8); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var FT = { cards: [] };
+  function shade(hex, f) {
+    var n = parseInt(hex.replace("#", "").slice(0, 6), 16);
+    return "rgb(" + Math.min(255, Math.round(((n >> 16) & 255) * f)) + "," + Math.min(255, Math.round(((n >> 8) & 255) * f)) + "," + Math.min(255, Math.round((n & 255) * f)) + ")";
+  }
+  var COLORS = ["#C8553D", "#2F5D50", "#3A3A70", "#7A5638", "#3E5A6E"];
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var rnd = RC.random(P.seed * 2741 + 5);
+      var stage = document.getElementById("stage");
+      var images = P.images || [];
+      var n = Math.min(5, Math.max(images.length, P.cards.length));
+      if (!n) return;
+      var avail = RC.width - RC.safe.left - RC.safe.right;
+      var cw = Math.min(260 * u, (avail - (n - 1) * 24 * u) / n);
+      var ch = cw * 16 / 9;
+      var total = n * cw + (n - 1) * 24 * u;
+      var x0 = RC.safe.left + (avail - total) / 2;
+      var y0 = RC.safe.top + 40 * RC.u + P.offsetY * RC.u;
+      for (var i = 0; i < n; i++) {
+        var c = P.cards[i] || { label: "", stat: "", color: COLORS[i % COLORS.length] };
+        var src = images[i];
+        var left = x0 + i * (cw + 24 * u), top = y0 + (i % 2 ? 50 * u : 0);
+        var node;
+        if (P.style === "framed") {
+          // bone border, the picture inside, a mono caption under it (warm-moody recreation's look)
+          var pad = 9 * u;
+          var pic = RC.el("div", { class: "pic", style: { left: pad + "px", top: pad + "px", right: pad + "px", bottom: pad + "px", borderRadius: 12 * u + "px", background: src ? "#111" : "linear-gradient(160deg, " + shade(c.color, 1.35) + ", " + c.color + " 55%, " + shade(c.color, 0.55) + ")" } });
+          if (src) pic.appendChild(RC.el("img", { src: src }));
+          var frame = RC.el("div", { class: "frame", style: { width: cw + "px", height: ch + "px", borderRadius: 18 * u + "px" } }, [pic]);
+          var capText = [c.label, c.stat].filter(Boolean).join(" · ");
+          node = RC.el("div", { class: "framed", style: { left: left + "px", top: top + "px", width: cw + "px" } }, [frame]);
+          if (capText) node.appendChild(RC.el("div", { class: "cap", text: capText, style: { fontSize: 20 * u + "px", marginTop: 14 * u + "px" } }));
+        } else {
+          node = RC.el("div", { class: "card", style: { left: left + "px", top: top + "px", width: cw + "px", height: ch + "px", borderRadius: 18 * u + "px", padding: 16 * u + "px", background: src ? "#111" : "linear-gradient(160deg, " + shade(c.color, 1.35) + ", " + c.color + " 55%, " + shade(c.color, 0.55) + ")" } });
+          if (src) {
+            node.appendChild(RC.el("img", { src: src }));
+            if (c.label || c.stat) node.appendChild(RC.el("div", { class: "shade" }));
+          } else {
+            // a simple product silhouette so a drawn card reads as a thumbnail
+            node.appendChild(RC.el("div", { class: "bottle", style: { width: cw * 0.3 + "px", height: ch * 0.42 + "px", marginLeft: -cw * 0.15 + "px", top: ch * 0.16 + "px", background: "rgba(12,12,14,.55)", boxShadow: "inset 0 " + 10 * u + "px 0 rgba(244,233,218,.6)" } }));
+          }
+          node.appendChild(RC.el("div", { class: "play", html: "&#9654;", style: { width: 44 * u + "px", height: 44 * u + "px", right: 12 * u + "px", top: 12 * u + "px", fontSize: 18 * u + "px", color: "#0C0C0E" } }));
+          // over an image the words must paint above the (absolutely placed) picture and its shade
+          if (c.label) node.appendChild(RC.el("div", { class: src ? "lbl txt" : "lbl", text: c.label, style: { fontSize: 30 * u + "px" } }));
+          if (c.stat) node.appendChild(RC.el("div", { class: src ? "stat txt" : "stat", text: c.stat, style: { fontSize: 18 * u + "px", marginTop: 6 * u + "px" } }));
+        }
+        stage.appendChild(node);
+        FT.cards.push({ node: node, rot: (rnd() - 0.5) * 12, i: i });
+      }
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      for (var k = 0; k < FT.cards.length; k++) {
+        var c = FT.cards[k];
+        var p = RC.progress(t, 0.05 + c.i * P.stagger, 0.35, P.ease);
+        var drift = -time.T * RC.height * P.drift / 100;
+        RC.set(c.node, { y: drift + (1 - p) * 60 * RC.u - out * 200 * RC.u, scale: 0.5 + 0.5 * p, rotate: c.rot * p, opacity: (p > 0 ? Math.min(1, p * 2.5) : 0) * (1 - out) });
+      }
+    },
+  });
+</script>
+</body>
+</html>

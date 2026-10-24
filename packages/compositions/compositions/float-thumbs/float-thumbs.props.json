@@ -1,0 +1,8 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew); the stats are ad ids, not invented view counts.",
+  "cards": [
+    { "label": "OAT VANILLA", "stat": "AD-011", "color": "#C8553D" },
+    { "label": "ORIGINAL", "stat": "AD-012", "color": "#2F5D50" },
+    { "label": "NIGHT ROAST", "stat": "AD-013", "color": "#3A3A70" }
+  ]
+}

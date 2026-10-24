@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/halftone-dissolve); fictional.",
+  "dotSize": "large",
+  "direction": "center",
+  "dissolveAt": 1,
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

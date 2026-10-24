@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/curtain-reveal); fictional.",
+  "tone": "burgundy",
+  "pelmet": "off",
+  "spotlight": "on",
+  "speed": 1
+}

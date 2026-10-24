@@ -17,7 +17,7 @@ import {
 	ZERO_MEDIA_TIME,
 } from "@/wasm";
 import { TIMELINE_DRAG_THRESHOLD_PX } from "@/timeline/components/interaction";
-import type { FrameRate } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
 import { computeDropTarget } from "@/timeline/components/drop-target";
 import { getMouseTimeFromClientX } from "@/timeline/drag-utils";
 import { generateUUID } from "@/utils/id";

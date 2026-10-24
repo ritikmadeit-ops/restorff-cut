@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/facet-morph); fictional.",
+  "forms": "badge,blob,mark",
+  "holdLast": false,
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

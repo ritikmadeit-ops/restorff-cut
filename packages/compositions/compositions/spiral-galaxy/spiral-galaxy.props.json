@@ -1,0 +1,11 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/spiral-galaxy); fictional.",
+  "stars": 20000,
+  "arms": 3,
+  "rate": 0.25,
+  "glow": 1.9,
+  "size": 10,
+  "core": "#ffa575",
+  "rim": "#311599",
+  "speed": 1
+}

@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/telemetry-hud); fictional.",
+  "readouts": "build:snowline-42,fps:59.94,frames:135,latency:11.8 ms,heap:412 MB",
+  "emphasize": 1,
+  "cues": "0.9,1.15,1.4,1.65,1.9",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

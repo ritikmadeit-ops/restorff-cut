@@ -1,0 +1,317 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/panel-reveal@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html lang="en">
+  <head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "panel-reveal",
+  "title": "Panel Reveal",
+  "description": "A panel reveal primitive with height expansion and content fade. Imported from a HyperFrames component (transitions; provenance below).",
+  "duration": 5,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "tags": [
+    "transitions",
+    "transition-primitive",
+    "transitions-dev-port",
+    "panel",
+    "reveal",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "title": {
+      "type": "string",
+      "default": "Motion tokens",
+      "label": "Title",
+      "description": "The header line that sits above the folded body.",
+      "required": true
+    },
+    "width": {
+      "type": "enum",
+      "options": [
+        "narrow",
+        "standard",
+        "wide"
+      ],
+      "default": "standard",
+      "label": "Width",
+      "description": "How wide the panel sits, 280, 360 or 480 px."
+    },
+    "tone": {
+      "type": "enum",
+      "options": [
+        "paper",
+        "ink"
+      ],
+      "default": "paper",
+      "label": "Tone",
+      "description": "Surface family: paper is the white card for light frames, ink inverts it for dark frames."
+    },
+    "reveal": {
+      "type": "enum",
+      "options": [
+        "fade",
+        "solid"
+      ],
+      "default": "fade",
+      "label": "Reveal",
+      "description": "Whether the body fades in with the height. fade is the shipped motion, solid opens the height only."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1920x1080 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    }
+  },
+  "hf": {
+    "vars": {
+      "title": "title",
+      "width": "width",
+      "tone": "tone",
+      "reveal": "reveal"
+    },
+    "width": 1920,
+    "height": 1080,
+    "mode": "demo",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/panel-reveal",
+    "path": "registry/components/panel-reveal",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+    
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Panel Reveal - Demo</title>
+    
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+      #demo {
+        width: 1920px;
+        height: 1080px;
+        display: grid;
+        place-items: center;
+        background: #f7f7f8;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      .demo-frame {
+        display: grid;
+        place-items: center;
+        min-width: 760px;
+        min-height: 480px;
+        padding: 56px;
+        /* ponytail: scale wrapper — GSAP targets .hf-transition-panel-reveal, not this element */
+        transform: scale(2.6);
+        transform-origin: center center;
+      }
+      .hf-transition-panel-reveal {
+        --hf-panel-open: 1;
+        width: 380px;
+        overflow: hidden;
+        border: 1px solid #e4e4e7;
+        border-radius: 14px;
+        background: #fff;
+        color: #18181b;
+        font-family: Inter, system-ui, sans-serif;
+        box-shadow: 0 24px 70px rgba(24, 24, 27, 0.1);
+      }
+      .hf-transition-panel-reveal header {
+        padding: 18px 20px 14px;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .hf-transition-panel-reveal div {
+        max-height: calc(var(--hf-panel-open) * 120px);
+        opacity: var(--hf-panel-open);
+        padding: 0 20px calc(var(--hf-panel-open) * 20px);
+        overflow: hidden;
+      }
+      .hf-transition-panel-reveal p {
+        margin: 0 0 8px;
+        color: #71717a;
+        font-size: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="demo"
+      data-composition-id="panel-reveal-demo"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-duration="5"
+    >
+      <div class="demo-frame">
+        <section
+          class="hf-transition-panel-reveal"
+          data-composition-variables='[
+    { "id": "title", "type": "string", "role": "content", "label": "Title", "description": "The header line that sits above the folded body.", "default": "Motion tokens" },
+    { "id": "width", "type": "enum", "role": "layout", "label": "Width", "description": "How wide the panel sits, 280, 360 or 480 px.", "default": "standard", "options": [{ "value": "narrow", "label": "Narrow" }, { "value": "standard", "label": "Standard" }, { "value": "wide", "label": "Wide" }] },
+    { "id": "tone", "type": "enum", "role": "style", "label": "Tone", "description": "Surface family: paper is the white card for light frames, ink inverts it for dark frames.", "default": "paper", "options": [{ "value": "paper", "label": "Paper" }, { "value": "ink", "label": "Ink" }] },
+    { "id": "reveal", "type": "enum", "role": "motion", "label": "Reveal", "description": "Whether the body fades in with the height. fade is the shipped motion, solid opens the height only.", "default": "fade", "options": [{ "value": "fade", "label": "Fade" }, { "value": "solid", "label": "Solid" }] }
+  ]'
+        >
+          <header>Motion tokens</header>
+          <div>
+            <p>Duration 420ms</p>
+            <p>Easing power3.out</p>
+          </div>
+        </section>
+      </div>
+      <script type="text/x-rc-deferred">
+        (function () {
+          "use strict";
+
+          var vars =
+            window.__hyperframes && window.__hyperframes.getVariables
+              ? window.__hyperframes.getVariables()
+              : {};
+
+          // Unrecognised overrides return to their declared defaults.
+          var widths = { narrow: "280px", standard: "360px", wide: "480px" };
+          var tones = {
+            paper: {
+              surface: "#fff",
+              border: "#e4e4e7",
+              text: "#18181b",
+              muted: "#71717a",
+            },
+            ink: {
+              surface: "#18181b",
+              border: "#3f3f46",
+              text: "#fafafa",
+              muted: "#a1a1aa",
+            },
+          };
+          var reveals = { fade: 1, solid: 0 };
+
+          function pick(table, value, fallback) {
+            return Object.prototype.hasOwnProperty.call(table, value) ? value : fallback;
+          }
+
+          var width = widths[pick(widths, vars.width, "standard")];
+          var tone = tones[pick(tones, vars.tone, "paper")];
+          var fade = reveals[pick(reveals, vars.reveal, "fade")];
+
+          var title = typeof vars.title === "string" ? vars.title.trim() : "";
+          if (!title) {
+            title = "Motion tokens";
+          }
+
+          var roots = document.querySelectorAll(".hf-transition-panel-reveal");
+          for (var i = 0; i < roots.length; i += 1) {
+            var root = roots[i];
+            root.style.setProperty("--hf-panel-width", width);
+            root.style.setProperty("--hf-panel-surface", tone.surface);
+            root.style.setProperty("--hf-panel-border", tone.border);
+            root.style.setProperty("--hf-panel-text", tone.text);
+            root.style.setProperty("--hf-panel-muted", tone.muted);
+            root.style.setProperty("--hf-panel-fade", String(fade));
+
+            var header = root.querySelector("header");
+            if (header) {
+              header.textContent = title;
+            }
+          }
+        })();
+      </script>
+      <script type="text/x-rc-deferred">
+        const tl = gsap.timeline({ paused: true });
+        const startTime = 0.5;
+        tl.fromTo(
+          ".hf-transition-panel-reveal",
+          { "--hf-panel-open": 0 },
+          { "--hf-panel-open": 1, duration: 0.44, ease: "power3.inOut" },
+          startTime,
+        );
+        tl.set({}, {}, 5);
+        window.__timelines = window.__timelines || {};
+        window.__timelines["panel-reveal-demo"] = tl;
+      </script>
+    </div>
+    <style>
+      .hf-transition-panel-reveal {
+        --hf-panel-open: 1;
+        width: var(--hf-panel-width, 360px);
+        overflow: hidden;
+        border: 1px solid var(--hf-panel-border, #e4e4e7);
+        border-radius: 14px;
+        background: var(--hf-panel-surface, #fff);
+        color: var(--hf-panel-text, #18181b);
+        font-family: Inter, system-ui, sans-serif;
+        box-shadow: 0 20px 56px rgba(24, 24, 27, 0.1);
+      }
+      .hf-transition-panel-reveal header {
+        padding: 15px 17px;
+        font-weight: 900;
+      }
+      .hf-transition-panel-reveal div {
+        max-height: calc(var(--hf-panel-open) * 120px);
+        opacity: calc(1 - var(--hf-panel-fade, 1) * (1 - var(--hf-panel-open)));
+        padding: 0 17px calc(var(--hf-panel-open) * 17px);
+        overflow: hidden;
+      }
+      .hf-transition-panel-reveal p {
+        margin: 0 0 8px;
+        color: var(--hf-panel-muted, #71717a);
+        font-size: 14px;
+      }
+    </style>
+  <script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

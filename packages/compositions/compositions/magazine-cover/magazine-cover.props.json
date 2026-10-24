@@ -1,0 +1,12 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew). Figures on the cover must be true (NFR-04): 18-hour steep is the brand's own claim in this fixture.",
+  "masthead": "STEEP",
+  "dateline": "NO. 01 · OCTOBER 2026",
+  "price": "$4.50",
+  "seal": "NEW · 18-HOUR STEEP · ",
+  "sealCenter": "18h",
+  "coverlines": [
+    { "big": "18", "line": "hours of steeping, zero bitterness" },
+    { "big": "", "line": "Inside the small-batch roastery" }
+  ]
+}

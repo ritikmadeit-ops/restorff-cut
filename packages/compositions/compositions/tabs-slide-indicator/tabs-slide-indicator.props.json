@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/tabs-slide-indicator); fictional.",
+  "accent": "ink",
+  "width": "standard",
+  "shape": "pill",
+  "labels": "Plan,Debug,Ask",
+  "speed": 1
+}

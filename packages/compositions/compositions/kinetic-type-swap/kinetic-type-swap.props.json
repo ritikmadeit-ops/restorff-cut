@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/kinetic-type-swap); fictional.",
+  "prefix": "Make",
+  "options": "motion,meaning,momentum",
+  "suffix": "visible",
+  "cues": "",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

@@ -1,0 +1,598 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/cut-the-curve@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-variables='[
+    { "id": "subject", "type": "enum", "role": "content", "label": "Subject", "description": "Visual payload used on both sides of the cut.", "default": "cursor", "options": [{ "value": "cursor", "label": "Cursor" }, { "value": "card", "label": "Card" }, { "value": "scene", "label": "Scene" }] },
+    { "id": "direction", "type": "enum", "role": "motion", "label": "Direction", "description": "Shared screen direction for outgoing and incoming travel.", "default": "left", "options": [{ "value": "left", "label": "Left" }, { "value": "right", "label": "Right" }, { "value": "up", "label": "Up" }, { "value": "down", "label": "Down" }] },
+    { "id": "cutFraction", "type": "number", "role": "timing", "label": "Cut fraction", "description": "Normalized point where the hard cut swaps subjects.", "default": 0.33, "min": 0, "max": 1, "step": 0.01 },
+    { "id": "blurPx", "type": "number", "role": "style", "label": "Cut blur", "description": "Blur in pixels shared by both subjects at the cut seam.", "default": 12, "min": 0, "max": 40, "step": 1, "unit": "px" },
+    { "id": "exit", "type": "enum", "role": "timing", "label": "Exit", "description": "Optional departure of the incoming subject. Default none: it rests until the frame cuts.", "default": "none", "options": [{ "value": "none", "label": "None" }, { "value": "fade", "label": "Fade" }, { "value": "up", "label": "Up" }] }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "cut-the-curve",
+  "title": "Cut the Curve",
+  "description": "A velocity-matched directional hard cut: the outgoing subject accelerates with power4.in, swaps at peak velocity, and the incoming subject continues in the same direction with power4.out. Imported from a HyperFrames component (transitions; provenance below).",
+  "duration": 1,
+  "size": [
+    1344,
+    756
+  ],
+  "fps": 30,
+  "tags": [
+    "transitions",
+    "transition",
+    "directional-cut",
+    "velocity-match",
+    "whip",
+    "bridge",
+    "demonstrate",
+    "imported",
+    "hyperframes"
+  ],
+  "opaque": true,
+  "kit": "hf-compat",
+  "params": {
+    "subject": {
+      "type": "enum",
+      "options": [
+        "cursor",
+        "card",
+        "scene"
+      ],
+      "default": "cursor",
+      "label": "Subject",
+      "description": "Visual payload used on both sides of the cut."
+    },
+    "direction": {
+      "type": "enum",
+      "options": [
+        "left",
+        "right",
+        "up",
+        "down"
+      ],
+      "default": "left",
+      "label": "Direction",
+      "description": "Shared screen direction for outgoing and incoming travel."
+    },
+    "cutFraction": {
+      "type": "number",
+      "default": 0.33,
+      "label": "Cut fraction",
+      "description": "Normalized point where the hard cut swaps subjects.",
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    "blurPx": {
+      "type": "number",
+      "default": 12,
+      "label": "Cut blur",
+      "description": "Blur in pixels shared by both subjects at the cut seam.",
+      "min": 0,
+      "max": 40,
+      "step": 1
+    },
+    "exit": {
+      "type": "enum",
+      "options": [
+        "none",
+        "fade",
+        "up"
+      ],
+      "default": "none",
+      "label": "Exit",
+      "description": "Optional departure of the incoming subject. Default none: it rests until the frame cuts."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1344x756 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "subject": "subject",
+      "direction": "direction",
+      "cutFraction": "cutFraction",
+      "blurPx": "blurPx",
+      "exit": "exit"
+    },
+    "width": 1344,
+    "height": 756,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/cut-the-curve",
+    "path": "registry/components/cut-the-curve",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="cut-the-curve" data-start="0" data-duration="1" data-width="1344" data-height="756" style="position:absolute;left:0;top:0;width:1344px;height:756px">
+
+      <div id="root" data-composition-id="cut-the-curve" data-duration="1" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            position: absolute;
+            inset: 0;
+            container-type: size;
+            isolation: isolate;
+            overflow: hidden;
+            color: var(--fg, #f8fafc);
+            font-family: var(--font-body, Inter, system-ui, sans-serif);
+          }
+
+          .ctc-clip,
+          .ctc-backdrop,
+          .ctc-subject {
+            position: absolute;
+            inset: 0;
+          }
+
+          .ctc-clip {
+            overflow: hidden;
+          }
+
+          .ctc-backdrop {
+            background:
+              radial-gradient(
+                circle at var(--ctc-glow-x, 24%) var(--ctc-glow-y, 28%),
+                color-mix(
+                  in srgb,
+                  var(--fg, #f8fafc) var(--ctc-glow-strength, 18%),
+                  var(--transparent, transparent)
+                ),
+                var(--transparent, transparent) var(--ctc-glow-radius, 42%)
+              ),
+              var(--bg, #0b1120);
+          }
+
+          .ctc-subject {
+            display: grid;
+            place-items: center;
+            opacity: 0;
+            
+          }
+
+          .ctc-subject.is-outgoing {
+            opacity: 1;
+            --ctc-primary: color-mix(in srgb, var(--fg, #f8fafc) 45%, transparent);
+            --ctc-secondary: color-mix(in srgb, var(--fg, #f8fafc) 18%, transparent);
+          }
+
+          .ctc-subject.is-incoming {
+            --ctc-primary: color-mix(in srgb, var(--fg, #f8fafc) 72%, transparent);
+            --ctc-secondary: color-mix(in srgb, var(--fg, #f8fafc) 45%, transparent);
+          }
+
+          .ctc-art {
+            display: none;
+          }
+
+          #root[data-subject="cursor"] .ctc-cursor,
+          #root[data-subject="card"] .ctc-card,
+          #root[data-subject="scene"] .ctc-scene {
+            display: block;
+          }
+
+          .ctc-cursor {
+            position: relative;
+            width: var(--ctc-cursor-width, 15cqw);
+            height: var(--ctc-cursor-height, 24cqh);
+          }
+
+          .ctc-cursor svg {
+            width: var(--ctc-cursor-svg-width, 100%);
+            height: var(--ctc-cursor-svg-height, 100%);
+            overflow: visible;
+            filter: drop-shadow(
+              var(--ctc-shadow-x, 0cqw) var(--ctc-shadow-y, 1cqh) var(--ctc-shadow-blur, 1.6cqw)
+                color-mix(
+                  in srgb,
+                  var(--bg, #0b1120) var(--ctc-shadow-strength, 65%),
+                  var(--transparent, transparent)
+                )
+            );
+          }
+
+          .ctc-cursor-shape {
+            fill: var(--ctc-primary, var(--fg, #f8fafc));
+            stroke: var(--fg, #f8fafc);
+            stroke-width: var(--ctc-cursor-stroke, 1.8);
+            stroke-linejoin: round;
+          }
+
+          .ctc-cursor-pulse {
+            position: absolute;
+            left: var(--ctc-pulse-left, -5cqw);
+            top: var(--ctc-pulse-top, -5cqh);
+            width: var(--ctc-pulse-size, 11cqw);
+            aspect-ratio: var(--ctc-pulse-ratio, 1);
+            border: var(--ctc-pulse-border, 0.25cqw) solid
+              color-mix(
+                in srgb,
+                var(--ctc-secondary, var(--fg, #f8fafc)) var(--ctc-pulse-strength, 58%),
+                var(--transparent, transparent)
+              );
+            border-radius: var(--ctc-round, 50%);
+          }
+
+          .ctc-card {
+            width: var(--ctc-card-width, 42cqw);
+            min-height: var(--ctc-card-height, 34cqh);
+            padding: var(--ctc-card-padding-y, var(--space-3, 4.5cqh))
+              var(--ctc-card-padding-x, var(--space-3, 4cqw));
+            border: var(--ctc-border-width, 0.22cqw) solid var(--border, #334155);
+            border-radius: var(--radius, 2cqw);
+            background: var(--surface, #1e293b);
+            box-shadow: var(--ctc-shadow-x, 0cqw) var(--ctc-card-shadow-y, 2.4cqh)
+              var(--ctc-card-shadow-blur, 5cqw)
+              color-mix(
+                in srgb,
+                var(--bg, #0b1120) var(--ctc-card-shadow-strength, 55%),
+                var(--transparent, transparent)
+              );
+          }
+
+          .ctc-card-chip {
+            width: var(--ctc-chip-width, 9cqw);
+            height: var(--ctc-chip-height, 2.2cqh);
+            border-radius: var(--ctc-pill-radius, 99cqw);
+            background: var(--ctc-primary, var(--fg, #f8fafc));
+            margin-bottom: var(--ctc-card-gap, var(--space-3, 3.2cqh));
+          }
+
+          .ctc-card-line,
+          .ctc-scene-line {
+            height: var(--ctc-line-height, 1.8cqh);
+            border-radius: var(--ctc-pill-radius, 99cqw);
+            background: var(--fg, #f8fafc);
+          }
+
+          .ctc-card-line + .ctc-card-line {
+            margin-top: var(--ctc-line-gap, var(--space-2, 2.2cqh));
+          }
+
+          .ctc-card-line:first-of-type {
+            width: var(--ctc-line-long, 88%);
+          }
+
+          .ctc-card-line:last-of-type {
+            width: var(--ctc-line-short, 58%);
+            opacity: var(--ctc-muted-opacity, 0.42);
+          }
+
+          .ctc-scene {
+            width: var(--ctc-scene-width, 68cqw);
+            height: var(--ctc-scene-height, 58cqh);
+            overflow: hidden;
+            border: var(--ctc-border-width, 0.22cqw) solid var(--border, #334155);
+            border-radius: var(--radius, 2cqw);
+            background: var(--surface, #1e293b);
+            box-shadow: var(--ctc-shadow-x, 0cqw) var(--ctc-card-shadow-y, 2.4cqh)
+              var(--ctc-card-shadow-blur, 5cqw)
+              color-mix(
+                in srgb,
+                var(--bg, #0b1120) var(--ctc-card-shadow-strength, 55%),
+                var(--transparent, transparent)
+              );
+          }
+
+          .ctc-scene-bar {
+            display: flex;
+            align-items: center;
+            gap: var(--ctc-dot-gap, var(--space-1, 1cqw));
+            height: var(--ctc-scene-bar-height, 8cqh);
+            padding-inline: var(--ctc-scene-pad, var(--space-2, 2cqw));
+            border-bottom: var(--ctc-border-width, 0.22cqw) solid var(--border, #334155);
+          }
+
+          .ctc-scene-dot {
+            width: var(--ctc-dot-size, 1.4cqw);
+            aspect-ratio: var(--ctc-pulse-ratio, 1);
+            border-radius: var(--ctc-round, 50%);
+            background: var(--ctc-primary, var(--fg, #f8fafc));
+          }
+
+          .ctc-scene-body {
+            display: grid;
+            grid-template-columns: var(--ctc-scene-columns, 1fr 2fr);
+            gap: var(--ctc-scene-gap, var(--space-3, 3cqw));
+            padding: var(--ctc-scene-body-pad, var(--space-3, 5cqh))
+              var(--ctc-scene-pad, var(--space-3, 3cqw));
+          }
+
+          .ctc-scene-panel {
+            min-height: var(--ctc-panel-height, 34cqh);
+            border-radius: var(--ctc-panel-radius, var(--radius, 1.2cqw));
+            background: color-mix(
+              in srgb,
+              var(--ctc-primary, var(--fg, #f8fafc)) var(--ctc-panel-strength, 24%),
+              var(--surface, #1e293b)
+            );
+          }
+
+          .ctc-scene-copy {
+            padding-top: var(--ctc-copy-top, var(--space-2, 2cqh));
+          }
+
+          .ctc-scene-line + .ctc-scene-line {
+            margin-top: var(--ctc-scene-line-gap, var(--space-3, 3cqh));
+          }
+
+          .ctc-scene-line:nth-child(1) {
+            width: var(--ctc-scene-line-one, 92%);
+          }
+
+          .ctc-scene-line:nth-child(2) {
+            width: var(--ctc-scene-line-two, 68%);
+            opacity: var(--ctc-muted-opacity, 0.42);
+          }
+
+          .ctc-scene-line:nth-child(3) {
+            width: var(--ctc-scene-line-three, 78%);
+            background: var(--ctc-secondary, var(--fg, #f8fafc));
+          }
+        </style>
+
+        <div
+          id="cut-the-curve-clip"
+          class="ctc-clip clip"
+          data-start="0"
+          data-duration="1"
+          data-track-index="0"
+        >
+          <div class="ctc-backdrop"></div>
+
+          <div class="ctc-subject is-outgoing" aria-hidden="true">
+            <div class="ctc-art ctc-cursor">
+              <span class="ctc-cursor-pulse"></span>
+              <svg viewBox="0 0 64 88" aria-hidden="true">
+                <path
+                  class="ctc-cursor-shape"
+                  d="M8 5 L54 43 L34 47 L45 75 L30 82 L19 53 L8 68 Z"
+                />
+              </svg>
+            </div>
+            <div class="ctc-art ctc-card">
+              <div class="ctc-card-chip"></div>
+              <div class="ctc-card-line"></div>
+              <div class="ctc-card-line"></div>
+            </div>
+            <div class="ctc-art ctc-scene">
+              <div class="ctc-scene-bar">
+                <span class="ctc-scene-dot"></span><span class="ctc-scene-dot"></span
+                ><span class="ctc-scene-dot"></span>
+              </div>
+              <div class="ctc-scene-body">
+                <div class="ctc-scene-panel"></div>
+                <div class="ctc-scene-copy">
+                  <div class="ctc-scene-line"></div>
+                  <div class="ctc-scene-line"></div>
+                  <div class="ctc-scene-line"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ctc-subject is-incoming" aria-hidden="true">
+            <div class="ctc-art ctc-cursor">
+              <span class="ctc-cursor-pulse"></span>
+              <svg viewBox="0 0 64 88" aria-hidden="true">
+                <path
+                  class="ctc-cursor-shape"
+                  d="M8 5 L54 43 L34 47 L45 75 L30 82 L19 53 L8 68 Z"
+                />
+              </svg>
+            </div>
+            <div class="ctc-art ctc-card">
+              <div class="ctc-card-chip"></div>
+              <div class="ctc-card-line"></div>
+              <div class="ctc-card-line"></div>
+            </div>
+            <div class="ctc-art ctc-scene">
+              <div class="ctc-scene-bar">
+                <span class="ctc-scene-dot"></span><span class="ctc-scene-dot"></span
+                ><span class="ctc-scene-dot"></span>
+              </div>
+              <div class="ctc-scene-body">
+                <div class="ctc-scene-panel"></div>
+                <div class="ctc-scene-copy">
+                  <div class="ctc-scene-line"></div>
+                  <div class="ctc-scene-line"></div>
+                  <div class="ctc-scene-line"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var outgoing = root.querySelector(".is-outgoing");
+            var incoming = root.querySelector(".is-incoming");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            var subject =
+              vars.subject === "card" || vars.subject === "scene" ? vars.subject : "cursor";
+            var direction =
+              vars.direction === "right" || vars.direction === "up" || vars.direction === "down"
+                ? vars.direction
+                : "left";
+            var rawCut = Number(vars.cutFraction);
+            var cutFraction = Number.isFinite(rawCut) ? Math.max(0, Math.min(1, rawCut)) : 0.33;
+            var rawBlur = Number(vars.blurPx);
+            var blurPx = Number.isFinite(rawBlur) ? Math.max(0, rawBlur) : 12;
+            var exit = vars.exit === "fade" || vars.exit === "up" ? vars.exit : "none";
+
+            root.dataset.subject = subject;
+
+            // Direction is the single owner of axis, sign, unit, and base travel.
+            var vectors = {
+              left: { axis: "x", sign: -1, unit: "cqw", distance: 34 },
+              right: { axis: "x", sign: 1, unit: "cqw", distance: 34 },
+              up: { axis: "y", sign: -1, unit: "cqh", distance: 26 },
+              down: { axis: "y", sign: 1, unit: "cqh", distance: 26 },
+            };
+            var vector = vectors[direction];
+            var duration = Math.max(0.001, parseFloat(root.dataset.duration || "1"));
+            // Exit none keeps the whole duration for the cut profile. An
+            // enabled exit reserves a short tail after the incoming lands.
+            var EXIT = exit === "none" ? 0 : Math.min(0.35, duration * 0.25);
+            var TRAVEL = Math.max(0.001, duration - EXIT);
+            var CUT_AT = TRAVEL * cutFraction;
+            var ENTRY_DURATION = TRAVEL - CUT_AT;
+            var entryDistance =
+              CUT_AT > 0 ? vector.distance * (ENTRY_DURATION / CUT_AT) : vector.distance * 2;
+            var seamBlur = "blur(" + blurPx + "px)";
+            var clearBlur = "blur(0px)";
+            var seamOpacity = 0.72;
+
+            var outgoingEnd = { opacity: seamOpacity, filter: seamBlur };
+            outgoingEnd[vector.axis] = vector.sign * vector.distance + vector.unit;
+
+            var incomingStart = { x: 0, y: 0, opacity: 0, filter: seamBlur };
+            incomingStart[vector.axis] = -vector.sign * entryDistance + vector.unit;
+
+            var incomingEnd = { opacity: 1, filter: clearBlur };
+            incomingEnd[vector.axis] = 0;
+
+            gsap.set(outgoing, { x: 0, y: 0, opacity: 1, filter: clearBlur });
+            gsap.set(incoming, incomingStart);
+
+            var tl = gsap.timeline({ paused: true });
+
+            if (CUT_AT > 0) {
+              tl.to(
+                outgoing,
+                Object.assign({}, outgoingEnd, { duration: CUT_AT, ease: "power4.in" }),
+                0,
+              );
+            }
+
+            // CUT: one visibility owner, matched blur and opacity on both sides.
+            tl.set(outgoing, { opacity: 0 }, CUT_AT);
+            tl.set(incoming, { opacity: seamOpacity }, CUT_AT);
+            tl.call(
+              function () {
+                root.dispatchEvent(
+                  new CustomEvent("hf:sfx", {
+                    detail: { id: "whip-cut", t: CUT_AT },
+                    bubbles: true,
+                  }),
+                );
+              },
+              [],
+              CUT_AT,
+            );
+
+            if (ENTRY_DURATION > 0) {
+              tl.to(
+                incoming,
+                Object.assign({}, incomingEnd, {
+                  duration: ENTRY_DURATION,
+                  ease: "power4.out",
+                }),
+                CUT_AT,
+              );
+            } else {
+              tl.set(incoming, incomingEnd, CUT_AT);
+            }
+
+            // Optional departure; exit none rests until the frame cuts.
+            if (exit === "fade") {
+              tl.to(incoming, { opacity: 0, duration: EXIT, ease: "power2.in" }, TRAVEL);
+            } else if (exit === "up") {
+              tl.to(
+                incoming,
+                { opacity: 0, y: "-6cqh", duration: EXIT, ease: "power2.in" },
+                TRAVEL,
+              );
+            }
+
+            tl.seek(0);
+
+            window.__timelines = window.__timelines || {};
+            window.__timelines["cut-the-curve"] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

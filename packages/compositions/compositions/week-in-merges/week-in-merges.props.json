@@ -1,0 +1,13 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/week-in-merges); fictional.",
+  "eyebrow": "ACME / WEEK IN MERGES",
+  "title": "Pull requests merged this week",
+  "period": "1 September - 7 September 2026 · America/Los_Angeles",
+  "total": "12 PRs",
+  "footer": "Speed proportional to merges · By PR author",
+  "source": "Example org · 1 repo · Bots · 0",
+  "rows": "[{\"name\":\"Ada\",\"merges\":12,\"avatar\":\"\"},{\"name\":\"Bao\",\"merges\":7,\"avatar\":\"\"},{\"name\":\"Cam\",\"merges\":4,\"avatar\":\"\"},{\"name\":\"Dee\",\"merges\":2,\"avatar\":\"\"},{\"name\":\"Eli\",\"merges\":1,\"avatar\":\"\"}]",
+  "rowsMax": 12,
+  "overflow": "",
+  "speed": 1
+}

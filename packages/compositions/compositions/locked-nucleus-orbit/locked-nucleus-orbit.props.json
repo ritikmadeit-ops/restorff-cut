@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/locked-nucleus-orbit); fictional.",
+  "label": "anchor",
+  "accent": "violet",
+  "satellites": 6,
+  "speed": 1
+}

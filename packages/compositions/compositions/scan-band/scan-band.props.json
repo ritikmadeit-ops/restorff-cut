@@ -1,0 +1,6 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/scan-band); fictional.",
+  "wordmark": "SCAN MODE",
+  "bandAngle": -18,
+  "speed": 1
+}

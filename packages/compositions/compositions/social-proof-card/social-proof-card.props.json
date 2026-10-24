@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/social-proof-card); fictional.",
+  "brand": "Halcyon",
+  "proof": "12,000+ creators",
+  "cta": "Start rendering free",
+  "f1": "Write|plain HTML",
+  "f2": "Render|pixel-perfect",
+  "f3": "Own|every line",
+  "speed": 1
+}

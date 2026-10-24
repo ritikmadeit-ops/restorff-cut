@@ -8,12 +8,12 @@ import {
 	mediaTimeToSeconds as _mediaTimeToSeconds,
 	type FrameRate,
 	type TimeCodeFormat,
-} from "opencut-wasm";
+} from "restorffcut-wasm";
 
 /**
  * Integer-tick time. Mirrors `MediaTime(i64)` in `rust/crates/time/src/media_time.rs`.
  *
- * `opencut-wasm` exposes `MediaTime` as a bare `number` alias because tsify
+ * `restorffcut-wasm` exposes `MediaTime` as a bare `number` alias because tsify
  * collapses tuple structs. The brand here is the TS-side discipline that
  * recovers the invariant: a `MediaTime` is an integer count of ticks, and the
  * only legal way to construct one from a fractional `number` is `roundMediaTime`

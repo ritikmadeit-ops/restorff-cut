@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/beat-pulse-background); fictional.",
+  "beats": "0.25,0.75,1.5,2.25,3.25",
+  "accent": "violet",
+  "intensity": "club",
+  "speed": 1
+}

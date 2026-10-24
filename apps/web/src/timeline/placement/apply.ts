@@ -11,6 +11,7 @@ import type {
 } from "@/timeline";
 import { generateUUID } from "@/utils/id";
 import { buildEmptyTrack } from "./track-factory";
+import { getDefaultTrackName } from "@/timeline/tracks";
 import type { PlacementResult } from "./types";
 import { updateTrackInSceneTracks } from "@/timeline/track-element-update";
 
@@ -57,6 +58,7 @@ export function applyPlacement({
 						track: buildPlacedAudioTrack({
 							id: newTrackId,
 							elements,
+							name: getDefaultTrackName({ tracks, type: "audio" }),
 						}),
 					}),
 				}
@@ -69,6 +71,10 @@ export function applyPlacement({
 							id: newTrackId,
 							type: placementResult.trackType,
 							elements,
+							name: getDefaultTrackName({
+								tracks,
+								type: placementResult.trackType,
+							}),
 						}),
 					}),
 				};
@@ -114,12 +120,14 @@ function insertIntoAudioTracks({
 function buildPlacedAudioTrack({
 	id,
 	elements,
+	name,
 }: {
 	id: string;
 	elements: TimelineElement[];
+	name?: string;
 }): AudioTrack {
 	return {
-		...buildEmptyTrack({ id, type: "audio" }),
+		...buildEmptyTrack({ id, type: "audio", name }),
 		elements: elements as AudioTrack["elements"],
 	};
 }
@@ -128,30 +136,32 @@ function buildPlacedOverlayTrack({
 	id,
 	type,
 	elements,
+	name,
 }: {
 	id: string;
 	type: Exclude<OverlayTrack["type"], "audio">;
 	elements: TimelineElement[];
+	name?: string;
 }): OverlayTrack {
 	switch (type) {
 		case "video":
 			return {
-				...buildEmptyTrack({ id, type: "video" }),
+				...buildEmptyTrack({ id, type: "video", name }),
 				elements: elements as VideoTrack["elements"],
 			};
 		case "text":
 			return {
-				...buildEmptyTrack({ id, type: "text" }),
+				...buildEmptyTrack({ id, type: "text", name }),
 				elements: elements as TextTrack["elements"],
 			};
 		case "graphic":
 			return {
-				...buildEmptyTrack({ id, type: "graphic" }),
+				...buildEmptyTrack({ id, type: "graphic", name }),
 				elements: elements as GraphicTrack["elements"],
 			};
 		case "effect":
 			return {
-				...buildEmptyTrack({ id, type: "effect" }),
+				...buildEmptyTrack({ id, type: "effect", name }),
 				elements: elements as EffectTrack["elements"],
 			};
 	}

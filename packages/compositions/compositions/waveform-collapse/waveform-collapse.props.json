@@ -1,0 +1,8 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew): a 14.2 s raw take of the steeping line with two pauses (1.4 s and 1.2 s) cut out — 2.6 s in total, matching the caption.",
+  "total": 14.2,
+  "gaps": [ { "start": 3.6, "end": 5.0 }, { "start": 9.1, "end": 10.3 } ],
+  "label": "RAW TAKE · 14.2 S",
+  "caption": "TIGHT · −2.6 S",
+  "gapLabel": "DEAD"
+}

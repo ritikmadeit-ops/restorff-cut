@@ -10,3 +10,8 @@ gpu = { version = "0.1.0", path = "../gpu" }
 masks = { version = "0.1.0", path = "../masks" }
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
+
+[dev-dependencies]
+# Host-only: drive a headless GPU and parse frame descriptors exactly as TypeScript sends them.
+pollster = "0.2.5"
+serde_json = "1.0.149"

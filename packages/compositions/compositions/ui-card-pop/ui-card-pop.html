@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UI card pop</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "ui-card-pop",
+  "title": "UI card pop",
+  "description": "A screenshot or image in a rounded card with a deep drop shadow that flies in with a 3D tilt and lands with a bounce, then floats gently; an optional caption chip sits above it. Use to show a product page, app screen, tweet or document while the speaker talks about it.",
+  "duration": 3.5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["image", "screenshot", "card", "reels"],
+  "params": {
+    "image": { "type": "image", "display": true, "required": true, "default": "assets/halcyon-shop.png", "label": "Image", "description": "The screenshot or image to show. Path relative to the props file (or this composition), absolute, or a data: URL." },
+    "caption": { "type": "string", "default": "THE NEW ORDER PAGE", "maxLength": 40, "label": "Caption chip", "description": "Short mono label in a chip above the card. Empty to hide." },
+    "width": { "type": "number", "default": 0.74, "min": 0.3, "max": 1, "step": 0.01, "label": "Card width", "description": "Card width as a share of the frame width (before scale)." },
+    "radius": { "type": "number", "default": 36, "min": 0, "max": 120, "step": 1, "unit": "px", "label": "Corner radius", "description": "Corner rounding, px on a 1080 grid." },
+    "shadow": { "type": "number", "default": 0.7, "min": 0, "max": 1, "step": 0.05, "label": "Shadow", "description": "Drop-shadow strength." },
+    "from": { "type": "enum", "options": ["bottom", "left", "right", "none"], "default": "bottom", "label": "Enter from", "description": "Side the card flies in from; none = a quiet pop in place (scale 0.92 to 1, 0.2 s), the reel's FX-27 look." },
+    "tilt": { "type": "number", "default": 18, "min": 0, "max": 45, "step": 1, "unit": "deg", "label": "Tilt", "description": "3D tilt the card starts with before settling flat." },
+    "float": { "type": "boolean", "default": true, "label": "Idle float", "description": "Slow bob after landing so the card never looks frozen." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Dot colour in the caption chip." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed. 0.8 = slower, 1.25 = faster." },
+    "ease": { "type": "easing", "default": "bouncy", "label": "Landing easing", "description": "How the card lands. bouncy overshoots once; springy wobbles; smooth just arrives." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "center", "label": "Anchor", "description": "Vertical placement inside the safe area." },
+    "offsetY": { "type": "number", "default": 0, "min": -900, "max": 900, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Card drops back out over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; perspective: 1600px; }
+  .group { position: absolute; display: flex; flex-direction: column; align-items: center; transform-style: preserve-3d; }
+  .chip {
+    display: inline-flex; align-items: center; white-space: nowrap; border-radius: 999px; font-family: "JetBrains Mono", monospace;
+    font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--bone); background: rgba(22,22,26,.86);
+    box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 0 2px rgba(237,235,230,.16);
+  }
+  .dot { border-radius: 50%; flex: none; }
+  .card { position: relative; overflow: hidden; background: #16161A; }
+  .card img { display: block; width: 100%; height: auto; }
+  .card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 2px rgba(255,255,255,.10); pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var K = {};
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var group = RC.el("div", { class: "group", style: { gap: 28 * u + "px" } });
+      if (P.caption) {
+        K.chip = RC.el("div", { class: "chip", style: { fontSize: 34 * u + "px", padding: 18 * u + "px " + 32 * u + "px", gap: 16 * u + "px" } }, [
+          RC.el("span", { class: "dot", style: { width: 14 * u + "px", height: 14 * u + "px", background: P.accent } }),
+          P.caption,
+        ]);
+        group.appendChild(K.chip);
+      }
+      var cw = Math.min(RC.width * 0.96, RC.width * P.width * P.scale);
+      var img = RC.el("img", { src: P.image, alt: "" });
+      K.card = RC.el("div", { class: "card", style: {
+        width: cw + "px", borderRadius: P.radius * u + "px",
+        boxShadow: "0 " + 50 * u + "px " + 110 * u + "px rgba(0,0,0," + 0.55 * P.shadow + "), 0 " + 14 * u + "px " + 34 * u + "px rgba(0,0,0," + 0.4 * P.shadow + ")",
+      } }, [img]);
+      group.appendChild(K.card);
+      stage.appendChild(group);
+      K.group = group;
+      K.u = u;
+      // layout needs the image's height: wait for it to decode, then place the group
+      return img.decode().catch(function () {}).then(function () {
+        var maxH = RC.height - RC.safe.top - RC.safe.bottom;
+        if (group.offsetHeight > maxH) {
+          var k = maxH / group.offsetHeight;
+          K.card.style.width = Math.floor(cw * k) + "px";
+        }
+        var w = group.offsetWidth;
+        var h = group.offsetHeight;
+        group.style.left = (RC.width - w) / 2 + "px";
+        var y = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - h : (RC.height - h) / 2;
+        group.style.top = y + P.offsetY * RC.u + "px";
+        K.h = h;
+      });
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var u = K.u;
+      var t = time.t;
+      // travel never overshoots (a long trip would overshoot by ~140 px and hit the chip); the bounce lives in scale
+      var quiet = P.from === "none";
+      var k = quiet ? 1 : RC.progress(t, 0.05, 0.6, "snappy");
+      var lin = k;
+      // scale = mix(0.82, 1, pop): the quiet pop starts at 0.92, i.e. pop = (0.92 - 0.82) / 0.18
+      var pop = quiet ? RC.mix(0.1 / 0.18, 1, RC.progress(t, 0, 0.2, "gentle")) : RC.progress(t, 0.05, 0.75, P.ease);
+      var dist = P.from === "bottom" ? RC.height * 0.75 : RC.width * 1.05;
+      var dx = P.from === "left" ? -dist : P.from === "right" ? dist : 0;
+      var dy = P.from === "bottom" ? dist : 0;
+      var bob = P.float ? Math.sin(Math.max(0, t - 0.8) * 1.9) * 7 * u * RC.progress(t, 0.8, 0.6, "smooth") : 0;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      RC.set(K.card, {
+        x: dx * (1 - k) + dx * 0.5 * out,
+        y: dy * (1 - k) + bob + (P.from === "bottom" ? RC.height * 0.5 * out : 0),
+        rx: P.from === "bottom" ? P.tilt * (1 - lin) : 0,
+        ry: P.from === "left" ? -P.tilt * (1 - lin) : P.from === "right" ? P.tilt * (1 - lin) : 0,
+        rotate: (P.from === "left" ? -1 : P.from === "right" ? 1 : 0.4) * P.tilt * 0.25 * (1 - lin),
+        scale: RC.mix(0.82, 1, pop),
+        opacity: RC.progress(t, 0.05, 0.12, "linear") * (1 - out * out),
+      });
+      if (K.chip) {
+        var c = RC.progress(t, 0.55, 0.35, "bouncy");
+        RC.set(K.chip, { y: (1 - c) * 30 * u + bob * 0.5, scale: RC.mix(0.8, 1, c), opacity: RC.progress(t, 0.55, 0.12, "linear") * (1 - out) });
+      }
+    },
+  });
+</script>
+</body>
+</html>

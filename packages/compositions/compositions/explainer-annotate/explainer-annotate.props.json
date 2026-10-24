@@ -1,0 +1,11 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/vox-annotate); fictional.",
+  "text": "Numbers need context to land",
+  "keyword": "context",
+  "note": "this is the point",
+  "style": "circle",
+  "drawAt": 1.2,
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

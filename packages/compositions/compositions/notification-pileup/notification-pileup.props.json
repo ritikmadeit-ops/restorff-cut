@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/notification-pileup); fictional.",
+  "count": 9,
+  "speedVar": 0.75,
+  "showBadges": "no",
+  "speed": 1
+}

@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/ordered-dither-pass); fictional.",
+  "matrix": "8",
+  "direction": "in",
+  "levels": 3,
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

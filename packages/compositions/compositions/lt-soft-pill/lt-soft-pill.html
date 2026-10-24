@@ -1,0 +1,216 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/blocks/lt-soft-pill@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html lang="en">
+  <head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "lt-soft-pill",
+  "title": "Lower Third — Soft Pill",
+  "description": "Rounded white pill lower third for podcasts/interviews: status dot, name + role, scale-pop entrance. Imported from a HyperFrames block (ui-product; provenance below).",
+  "duration": 4.8,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "tags": [
+    "ui-product",
+    "lower-third",
+    "overlay",
+    "podcast",
+    "interview",
+    "minimal",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "ltName": {
+      "type": "string",
+      "default": "Dr. Maya Chen",
+      "label": "Lt Name",
+      "description": "The text of #lt-name (div), \"Dr. Maya Chen\" in the upstream example.",
+      "required": true
+    },
+    "ltRole": {
+      "type": "string",
+      "default": "Host · Neuroscientist",
+      "label": "Lt Role",
+      "description": "The text of #lt-role (div), \"Host · Neuroscientist\" in the upstream example."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1920x1080 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "keep",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    }
+  },
+  "hf": {
+    "vars": {
+      "ltName": "rc_text_lt-name",
+      "ltRole": "rc_text_lt-role"
+    },
+    "width": 1920,
+    "height": 1080,
+    "mode": "page",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "blocks/lt-soft-pill",
+    "path": "registry/blocks/lt-soft-pill",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Montserrat";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/montserrat-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/montserrat-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+    
+    
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        background: transparent;
+        overflow: hidden;
+      }
+      body {
+        width: 1920px;
+        height: 1080px;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      #root .lt {
+        position: absolute;
+        left: 120px;
+        bottom: 120px;
+      }
+      #root .lt-pill {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        background: #ffffff;
+        border-radius: 999px;
+        padding: 20px 40px 20px 26px;
+        box-shadow: 0 16px 46px rgba(15, 17, 21, 0.2);
+        transform-origin: 0% 100%;
+        
+      }
+      #root .lt-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ff5a36;
+        flex-shrink: 0;
+      }
+      #root .lt-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      #root .lt-name {
+        font-size: 46px;
+        font-weight: 700;
+        color: #0f1115;
+        line-height: 1.04;
+        letter-spacing: -0.015em;
+        white-space: nowrap;
+      }
+      #root .lt-role {
+        font-size: 25px;
+        font-weight: 400;
+        color: #5a6170;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="lt-soft-pill"
+      data-width="1920"
+      data-height="1080"
+      data-start="0"
+      data-duration="4.8"
+    >
+      <div id="lt-clip" class="clip" data-start="0" data-duration="4.8" data-track-index="0">
+        <div id="lt" class="lt">
+          <div id="lt-pill" class="lt-pill">
+            <div id="lt-dot" class="lt-dot"></div>
+            <div class="lt-text">
+              <div id="lt-name" data-var-text="rc_text_lt-name" class="lt-name">Dr. Maya Chen</div>
+              <div id="lt-role" data-var-text="rc_text_lt-role" class="lt-role">Host · Neuroscientist</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/x-rc-deferred">
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      var wrap = document.getElementById("lt");
+      var pill = document.getElementById("lt-pill");
+      var dot = document.getElementById("lt-dot");
+      var nameEl = document.getElementById("lt-name");
+      var role = document.getElementById("lt-role");
+
+      // Pill scales up from the lower-left anchor, dot pulses in, text settles.
+      gsap.set(pill, { scale: 0.88, y: 18, opacity: 0 });
+      gsap.set(dot, { scale: 0 });
+      gsap.set([nameEl, role], { opacity: 0, x: -10 });
+
+      tl.to(pill, { scale: 1, y: 0, opacity: 1, duration: 0.55, ease: "back.out(1.7)" }, 0.1);
+      tl.to(dot, { scale: 1, duration: 0.4, ease: "back.out(3)" }, 0.4);
+      tl.to(nameEl, { opacity: 1, x: 0, duration: 0.45, ease: "power3.out" }, 0.42);
+      tl.to(role, { opacity: 1, x: 0, duration: 0.45, ease: "power3.out" }, 0.5);
+
+      // Exit: settle down + hard kill.
+      tl.to(pill, { scale: 0.94, y: 14, opacity: 0, duration: 0.35, ease: "power2.in" }, 4.3);
+      tl.set(wrap, { visibility: "hidden" }, 4.75);
+
+      window.__timelines["lt-soft-pill"] = tl;
+    </script>
+  <script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

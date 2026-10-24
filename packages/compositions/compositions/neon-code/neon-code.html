@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon grid code</title>
+<!-- neon-grid kit, piece 6 of 8 (composition-v3). Back on the grid: a title ignites, a code panel types its lines
+     with syntax colours (the keyword identifier in the accent), and a preview strip counts up to a value. Every
+     word, number and time comes from the params. -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "neon-code",
+  "title": "Neon grid code",
+  "description": "A code panel over a dark grid: a big title (with a lighter suffix) ignites, up to eight lines of code type in with syntax colours and the keyword identifier in the accent, and a preview strip counts up to a value. Use for 'so we wrote it as a function' beats. Times follow the voice-over's words.",
+  "duration": 2.1,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "kit": "neon-grid",
+  "opaque": true,
+  "tags": ["neon-grid", "code", "terminal", "typing", "function", "panel"],
+  "params": {
+    "t0": { "type": "number", "default": 0, "min": 0, "max": 600, "step": 0.01, "label": "Starts at", "description": "Where this clip starts on the timeline (s). Every other time here is TIMELINE seconds. composition write fills it from t.", "display": false },
+    "words": { "type": "list", "default": [], "label": "Voice words", "description": "The voice-over's words with timeline times [{w, s, e}]: they time every item whose time is -1 and draw the captions.", "of": { "type": "object", "fields": { "w": { "type": "string" }, "s": { "type": "number" }, "e": { "type": "number", "default": 0 } } } },
+    "captions": { "type": "boolean", "default": true, "label": "Captions", "description": "Show the voice word by word under the panel (needs words)." },
+    "keys": { "type": "list", "default": [], "of": { "type": "string" }, "label": "Key words", "description": "Caption words painted in the accent." },
+    "title": { "type": "string", "default": "TITLE", "maxLength": 12, "required": true, "label": "Title", "description": "The big word over the panel; ignites when said." },
+    "suffix": { "type": "string", "default": "", "maxLength": 6, "label": "Title suffix", "description": "Lighter text right after the title, e.g. an argument list (blank: none)." },
+    "titleAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Title at", "description": "Timeline s; -1 = when its first word is said." },
+    "file": { "type": "string", "default": "", "maxLength": 24, "label": "File name", "description": "The panel's tab name (blank: none)." },
+    "code": { "type": "list", "minItems": 1, "maxItems": 8, "required": true, "of": { "type": "string", "maxLength": 40 }, "label": "Code lines", "description": "The lines the panel types, top to bottom. // or # starts a comment (grey).", "default": [ "f(x)" ] },
+    "keyword": { "type": "string", "default": "", "maxLength": 24, "label": "Keyword", "description": "The identifier painted in the accent wherever it appears in the code." },
+    "typeFrom": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Typing starts", "description": "Timeline s; -1 = as the clip opens." },
+    "typeTo": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Typing ends", "description": "Timeline s; -1 = three quarters into the clip." },
+    "preview": { "type": "string", "default": "", "maxLength": 32, "label": "Preview label", "description": "The label of the strip under the panel, where a number counts up (blank: no strip)." },
+    "previewValue": { "type": "number", "default": 1, "label": "Preview value", "description": "Where the number lands.", "display": false },
+    "previewDecimals": { "type": "number", "default": 2, "min": 0, "max": 4, "step": 1, "label": "Decimals", "description": "Decimals of the counting number." },
+    "previewAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Count at", "description": "Timeline s the count starts; -1 = just before the typing ends." },
+    "accent": { "type": "color", "default": "#FF5A1F", "label": "Accent", "description": "Title ignite, the keyword, the caret, the landed number." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "label": "Speed", "description": "How fast the camera drifts (the words stay on the voice)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #07070A; }
+  .code { position: absolute; font-family: "JetBrains Mono"; font-weight: 600; white-space: pre; color: #F2EEE6; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+var S = {};
+RC.composition({
+  build: function (RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, st = document.getElementById("stage"), A = P.accent;
+    var T = new KIT.Timing(P, RC.duration);
+    S.T = T;
+    S.cv = KIT.canvas(st); S.ctx = S.cv.getContext("2d");
+    S.cam = new KIT.Camera(W, H, 64);
+    S.title = RC.el("div", { style: { position: "absolute", whiteSpace: "nowrap", fontFamily: "Archivo", fontWeight: "900", fontStretch: "125%",
+      fontSize: 130 * u + "px", lineHeight: "1", color: KIT.BONE, textTransform: "uppercase" } });
+    S.main = RC.el("span", { text: P.title });
+    S.suffix = RC.el("span", { text: P.suffix, style: { fontStretch: "100%", fontWeight: "500", textTransform: "none" } });
+    S.title.appendChild(S.main); S.title.appendChild(S.suffix); st.appendChild(S.title);
+    RC.fitText(S.title, W - RC.safe.left - RC.safe.right + 30 * u, 140 * u, 70 * u);
+    KIT.centre(S.title, 290 * u);
+    S.panel = RC.el("div", { style: { position: "absolute", left: 70 * u + "px", top: 470 * u + "px", width: W - 140 * u + "px", height: 560 * u + "px",
+      boxSizing: "border-box", borderRadius: 26 * u + "px", border: 2 * u + "px solid rgba(242,238,230,.2)", background: "rgba(14,14,18,.94)" } });
+    st.appendChild(S.panel);
+    var bar = RC.el("div", { style: { position: "absolute", left: "0", top: "0", right: "0", height: 64 * u + "px", borderBottom: 2 * u + "px solid rgba(242,238,230,.1)" } });
+    [0, 1, 2].forEach(function (i) { bar.appendChild(RC.el("div", { style: { position: "absolute", left: (28 + i * 30) * u + "px", top: 23 * u + "px",
+      width: 18 * u + "px", height: 18 * u + "px", borderRadius: "50%", background: "rgba(242,238,230,.18)" } })); });
+    if (P.file) {
+      var fname = KIT.mono(bar, P.file, 24 * u, { color: KIT.FOG, fontWeight: "700" });
+      fname.style.left = 150 * u + "px"; fname.style.top = 16 * u + "px";
+    }
+    S.panel.appendChild(bar);
+    S.segs = []; S.total = 0;
+    P.code.forEach(function (line, li) {
+      var row = RC.el("div", { class: "code", text: line, style: { left: 40 * u + "px", top: (96 + li * 58) * u + "px", fontSize: 32 * u + "px", lineHeight: 58 * u + "px" } });
+      S.panel.appendChild(row);
+      RC.fitText(row, W - 140 * u - 80 * u, 32 * u, 18 * u); // a long line shrinks to fit the panel
+      row.textContent = "";
+      KIT.highlight(line, P.keyword, A).forEach(function (sg) {
+        var sp = RC.el("span", { style: { color: sg[1] } });
+        row.appendChild(sp);
+        S.segs.push({ node: sp, text: sg[0], from: S.total });
+        S.total += sg[0].length;
+      });
+      S.total += 1; // the newline
+    });
+    S.caret = RC.el("span", { style: { display: "inline-block", width: 18 * u + "px", height: 36 * u + "px", verticalAlign: "-6%", background: A,
+      boxShadow: "0 0 " + 14 * u + "px " + A } });
+    // the preview strip
+    if (P.preview) {
+      S.prev = RC.el("div", { style: { position: "absolute", left: 70 * u + "px", top: 1070 * u + "px", width: W - 140 * u + "px", height: 250 * u + "px",
+        boxSizing: "border-box", borderRadius: 26 * u + "px", border: 2 * u + "px dashed rgba(242,238,230,.22)" } });
+      st.appendChild(S.prev);
+      var pl = KIT.mono(S.prev, P.preview, 24 * u, { color: KIT.FOG, fontWeight: "700", letterSpacing: ".12em" });
+      pl.style.left = 32 * u + "px"; pl.style.top = 24 * u + "px";
+      S.num = KIT.big(S.prev, Number(P.previewValue).toFixed(P.previewDecimals), 130 * u, { fontStretch: "110%" });
+      S.num.style.left = W - 140 * u - 40 * u - S.num.offsetWidth + "px"; S.num.style.top = 72 * u + "px";
+    }
+    // times
+    S.titleAt = T.at({ at: P.titleAt, text: P.title }, T.t0 + 0.34);
+    S.typeFrom = P.typeFrom >= 0 ? P.typeFrom : T.t0 + 0.05;
+    S.typeTo = P.typeTo >= 0 ? P.typeTo : Math.max(S.typeFrom + 0.3, T.frac(0.76));
+    S.previewAt = P.previewAt >= 0 ? P.previewAt : S.typeTo - 0.25;
+    KIT.cue(T, S.typeFrom, "type", "code types");
+    KIT.cue(T, S.titleAt, "ignite", "title ignites");
+    if (P.preview) KIT.cue(T, S.previewAt + 0.5, "tick", "the value lands");
+    S.cap = KIT.captionsFor(st, P, T);
+  },
+  render: function (time, RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, ctx = S.ctx, A = P.accent, T = S.T;
+    var g = T.t0 + time.T, lc = time.t;
+    S.cam.set(-1.5 + 0.25 * lc, 3.0, 52 + 0.7 * lc, 10 - 2 * lc, -24, 0);
+    KIT.backdrop(ctx, W, H);
+    KIT.drawGrid(ctx, S.cam, { color: KIT.BONE, alpha: 0.24, lw: 1.7, reach: 26, accent: A, axes: 0, glow: 0.9, u: u });
+    KIT.vignette(ctx, W, H, 0.6);
+    // the panel is already up on the cut (no fade from nothing)
+    var pin = RC.progress(time.T, -0.12, 0.3, "snappy");
+    RC.set(S.panel, { y: (1 - pin) * 60 * u, opacity: 0.6 + 0.4 * pin });
+    if (S.prev) RC.set(S.prev, { y: (1 - pin) * 60 * u, opacity: 0.6 + 0.4 * pin });
+    KIT.reveal(S.title, RC.progress(g, S.titleAt - 0.05, 0.3, "smooth"));
+    KIT.ignite(S.main, g, S.titleAt, A, u);
+    S.suffix.style.color = KIT.BONE;
+    // typing, segment by segment, the caret after the last typed character
+    var n = Math.floor(RC.clamp((g - S.typeFrom) / Math.max(0.05, S.typeTo - S.typeFrom), 0, 1) * S.total);
+    var last = null;
+    S.segs.forEach(function (sg) {
+      var k = RC.clamp(n - sg.from, 0, sg.text.length);
+      sg.node.textContent = sg.text.slice(0, k);
+      if (k > 0) last = sg.node;
+    });
+    if (last) last.parentNode.appendChild(S.caret);
+    S.caret.style.opacity = g > S.typeTo && Math.floor(g * 2.4) % 2 === 1 ? "0" : "1";
+    if (S.num) {
+      var p = RC.progress(g, S.previewAt, 0.5, "smooth");
+      S.num.textContent = (P.previewValue * p).toFixed(P.previewDecimals);
+      S.num.style.color = p >= 1 ? RC.mixColor(A, KIT.BONE, RC.progress(g, S.previewAt + 0.7, 0.4, "smooth")) : KIT.BONE;
+    }
+    S.cap.render(g);
+  },
+});
+</script>
+</body>
+</html>

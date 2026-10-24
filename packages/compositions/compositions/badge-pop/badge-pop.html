@@ -1,0 +1,360 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/badge-pop@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html lang="en">
+  <head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "badge-pop",
+  "title": "Badge Pop",
+  "description": "A transitions.dev-inspired notification badge pop with elastic scale and count reveal. Imported from a HyperFrames component (transitions; provenance below).",
+  "duration": 5,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "tags": [
+    "transitions",
+    "video-primitive",
+    "transition-primitive",
+    "transitions-dev-port",
+    "badge",
+    "microinteraction",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "count": {
+      "type": "string",
+      "default": "3",
+      "label": "Count",
+      "description": "Text shown inside the notification badge, up to four characters.",
+      "maxLength": 4,
+      "display": false
+    },
+    "accent": {
+      "type": "enum",
+      "options": [
+        "red",
+        "blue",
+        "green",
+        "violet"
+      ],
+      "default": "red",
+      "label": "Accent",
+      "description": "Colour family of the badge."
+    },
+    "surface": {
+      "type": "enum",
+      "options": [
+        "light",
+        "dark"
+      ],
+      "default": "light",
+      "label": "Surface",
+      "description": "Chrome of the button and the badge ring: light for bright frames, dark for dark ones."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1920x1080 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "count": "count",
+      "accent": "accent",
+      "surface": "surface"
+    },
+    "width": 1920,
+    "height": 1080,
+    "mode": "demo",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/badge-pop",
+    "path": "registry/components/badge-pop",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+    
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Badge Pop - Demo</title>
+    
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+      #demo {
+        width: 1920px;
+        height: 1080px;
+        display: grid;
+        place-items: center;
+        background: #f4f4f5;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      .demo-frame {
+        display: grid;
+        place-items: center;
+        padding: 56px;
+        transform: scale(
+          3
+        ); /* ponytail: scale wrapper (hugs content — no min-width inflation), not GSAP targets */
+        transform-origin: center;
+      }
+      .hf-transition-badge-pop {
+        position: relative;
+        display: inline-grid;
+        place-items: center;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      .hf-transition-badge-button {
+        display: grid;
+        place-items: center;
+        width: 76px;
+        height: 76px;
+        border: 1px solid #e4e4e7;
+        border-radius: 22px;
+        background: #ffffff;
+        color: #18181b;
+        box-shadow: 0 20px 58px rgba(0, 0, 0, 0.12);
+      }
+      .hf-transition-badge-button svg {
+        width: 30px;
+        height: 30px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .hf-transition-badge-count {
+        position: absolute;
+        right: -8px;
+        top: -8px;
+        display: grid;
+        place-items: center;
+        min-width: 30px;
+        height: 30px;
+        padding: 0 8px;
+        border: 3px solid #ffffff;
+        border-radius: 999px;
+        background: #ef4444;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 900;
+        transform-origin: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="demo"
+      data-composition-id="badge-pop-demo"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-duration="5"
+    >
+      <div class="demo-frame">
+        <div
+          class="hf-transition-badge-pop"
+          data-composition-variables='[
+    { "id": "count", "type": "string", "role": "style", "label": "Count", "description": "Text shown inside the notification badge, up to four characters.", "default": "3", "maxLength": 4 },
+    { "id": "accent", "type": "enum", "role": "style", "label": "Accent", "description": "Colour family of the badge.", "default": "red", "options": [{ "value": "red", "label": "Red" }, { "value": "blue", "label": "Blue" }, { "value": "green", "label": "Green" }, { "value": "violet", "label": "Violet" }] },
+    { "id": "surface", "type": "enum", "role": "style", "label": "Surface", "description": "Chrome of the button and the badge ring: light for bright frames, dark for dark ones.", "default": "light", "options": [{ "value": "light", "label": "Light" }, { "value": "dark", "label": "Dark" }] }
+  ]'
+        >
+          <button class="hf-transition-badge-button" type="button" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
+              <path d="M10 20a2 2 0 004 0" />
+            </svg>
+          </button>
+          <span class="hf-transition-badge-count">3</span>
+        </div>
+      </div>
+      <script type="text/x-rc-deferred">
+        (function () {
+          "use strict";
+
+          var vars =
+            window.__hyperframes && window.__hyperframes.getVariables
+              ? window.__hyperframes.getVariables()
+              : {};
+
+          // Unrecognised overrides return to their declared defaults.
+          function pick(table, value, fallback) {
+            return Object.prototype.hasOwnProperty.call(table, value) ? value : fallback;
+          }
+
+          // The badge is the one accent-carrying element here. red is the literal
+          // notification convention and stays; the decorative options ride the
+          // composition's own tokens and fall back to ink.
+          var accents = {
+            red: "#ef4444",
+            blue: "var(--accent, #18181b)",
+            green: "var(--brand, #18181b)",
+            violet: "var(--accent-2, #18181b)",
+          };
+          var surfaces = {
+            light: { surface: "#ffffff", border: "#e4e4e7", ink: "#18181b" },
+            dark: { surface: "#101014", border: "#2a2a32", ink: "#fafafa" },
+          };
+
+          var accent = accents[pick(accents, vars.accent, "red")];
+          var surface = surfaces[pick(surfaces, vars.surface, "light")];
+          var count =
+            typeof vars.count === "string" && vars.count.trim()
+              ? vars.count.trim().slice(0, 4)
+              : "3";
+
+          var roots = document.querySelectorAll(".hf-transition-badge-pop");
+          for (var i = 0; i < roots.length; i += 1) {
+            var root = roots[i];
+            root.style.setProperty("--hf-badge-pop-accent", accent);
+            root.style.setProperty("--hf-badge-pop-surface", surface.surface);
+            root.style.setProperty("--hf-badge-pop-border", surface.border);
+            root.style.setProperty("--hf-badge-pop-ink", surface.ink);
+            var label = root.querySelector(".hf-transition-badge-count");
+            if (label) {
+              label.textContent = count;
+            }
+          }
+        })();
+      </script>
+      <script type="text/x-rc-deferred">
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo(
+          ".hf-transition-badge-button",
+          { y: 18, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.34, ease: "power2.out" },
+          0.35,
+        );
+        tl.fromTo(
+          ".hf-transition-badge-count",
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.42, ease: "back.out(2.4)" },
+          0.7,
+        );
+        tl.to(
+          ".hf-transition-badge-count",
+          { scale: 1.18, duration: 0.12, yoyo: true, repeat: 1, ease: "power1.inOut" },
+          1.15,
+        );
+        tl.set({}, {}, 5);
+        window.__timelines = window.__timelines || {};
+        window.__timelines["badge-pop-demo"] = tl;
+      </script>
+    </div>
+    <style>
+      .hf-transition-badge-pop {
+        --hf-badge-pop-accent: #ef4444;
+        --hf-badge-pop-surface: #ffffff;
+        --hf-badge-pop-border: #e4e4e7;
+        --hf-badge-pop-ink: #18181b;
+        position: relative;
+        display: inline-grid;
+        place-items: center;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      .hf-transition-badge-button {
+        display: grid;
+        place-items: center;
+        width: 76px;
+        height: 76px;
+        border: 1px solid var(--hf-badge-pop-border);
+        border-radius: 22px;
+        background: var(--hf-badge-pop-surface);
+        color: var(--hf-badge-pop-ink);
+        box-shadow: 0 20px 58px rgba(0, 0, 0, 0.12);
+      }
+      .hf-transition-badge-button svg {
+        width: 30px;
+        height: 30px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .hf-transition-badge-count {
+        position: absolute;
+        right: -8px;
+        top: -8px;
+        display: grid;
+        place-items: center;
+        min-width: 30px;
+        height: 30px;
+        padding: 0 8px;
+        border: 3px solid var(--hf-badge-pop-surface);
+        border-radius: 999px;
+        background: var(--hf-badge-pop-accent);
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 900;
+        transform-origin: center;
+      }
+    </style>
+  <script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

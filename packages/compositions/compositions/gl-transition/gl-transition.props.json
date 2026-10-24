@@ -1,0 +1,7 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew). Cover mode: centre this 1 s clip on a cut; the star wipe covers the frame in Halcyon yellow, the cut happens under it, and it wipes off. For a product carousel use mode images with from/to pictures.",
+  "transition": "star-wipe",
+  "mode": "cover",
+  "accent": "#F6FF00",
+  "hold": 0.07
+}

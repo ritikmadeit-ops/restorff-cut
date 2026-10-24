@@ -1,5 +1,5 @@
 import type { Bookmark } from "@/timeline";
-import type { FrameRate } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
 import { addMediaTime, roundFrameTime, type MediaTime } from "@/wasm";
 
 function bookmarkTimeEqual({

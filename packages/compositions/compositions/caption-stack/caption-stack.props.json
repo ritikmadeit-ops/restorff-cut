@@ -1,0 +1,9 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew). Give each block its spoken start (`at`) when word timings exist.",
+  "blocks": [
+    { "text": "COLDER", "style": "box-sans" },
+    { "text": "brewing.", "style": "serif-italic" },
+    { "text": "THAT'S THE WHOLE", "style": "small-caps" },
+    { "text": "secret.", "style": "serif-box" }
+  ]
+}

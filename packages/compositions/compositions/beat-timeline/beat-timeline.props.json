@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/beat-timeline); fictional.",
+  "beatCount": 5,
+  "interval": 0.5,
+  "labels": "Capture,Draft,Review,Ship,Iterate",
+  "speed": 1
+}

@@ -1,0 +1,14 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/bar-chart-race); fictional.",
+  "title": "Streaming Subscribers by Service",
+  "subtitle": "Ranked by reported subscribers",
+  "periods": "2019, 2020, 2021, 2022, 2023, 2024",
+  "series": "Northwind: 42, 58, 71, 96, 118, 131\nCobalt: 30, 46, 68, 92, 126, 168\nFerry: 55, 62, 66, 70, 74, 79\nMarlow: 18, 33, 52, 61, 88, 104\nAster: 25, 28, 44, 58, 63, 72\nPell: 12, 20, 39, 47, 55, 90\nQuill: 8, 11, 15, 24, 40, 66\nDunmore: 35, 37, 38, 40, 42, 44",
+  "barCount": 6,
+  "periodDuration": 2,
+  "valuePrefix": "$",
+  "valueSuffix": "M",
+  "valueDecimals": 0,
+  "accent": "#c8452d",
+  "speed": 1
+}

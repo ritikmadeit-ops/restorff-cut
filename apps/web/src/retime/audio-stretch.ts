@@ -5,6 +5,27 @@ import { getSourceTimeAtClipTime } from "./resolve";
 
 const RATE_EPSILON = 1e-6;
 
+/** Longer than any clip this editor makes; a bigger "seconds" value is almost certainly ticks (120 000 per second). */
+export const MAX_CLIP_SECONDS = 6 * 60 * 60;
+
+/**
+ * Frames for `seconds` of audio at `sampleRate`, checked. RestorffCut (ui-fix-render, QA 2026-10-20 #5): Web Audio
+ * takes buffer lengths as a WebIDL `unsigned long`, so an absurd length is silently wrapped mod 2^32 —
+ * `createBuffer(2, 2618995712, 48000)` was 2,559,960 TICKS read as seconds × 48 000 — and then fails with a
+ * NotSupportedError that says nothing about the cause. Refuse it here with the cause instead.
+ */
+export function audioFrameCount({ seconds, sampleRate }: { seconds: number; sampleRate: number }): number {
+	if (!Number.isFinite(seconds) || !Number.isFinite(sampleRate) || sampleRate <= 0) {
+		throw new RangeError(`audio span ${seconds} s at ${sampleRate} Hz is not a number`);
+	}
+	if (seconds > MAX_CLIP_SECONDS) {
+		throw new RangeError(
+			`audio span of ${Math.round(seconds)} s is longer than ${MAX_CLIP_SECONDS / 3600} h: the clip's times are probably ticks, not seconds`,
+		);
+	}
+	return Math.max(1, Math.ceil(seconds * sampleRate));
+}
+
 function sampleLinear({
 	channelData,
 	position,
@@ -39,7 +60,7 @@ function buildResampledBuffer({
 	targetSampleRate: number;
 	retime?: RetimeConfig;
 }): AudioBuffer {
-	const outputLength = Math.max(1, Math.ceil(clipDuration * targetSampleRate));
+	const outputLength = audioFrameCount({ seconds: clipDuration, sampleRate: targetSampleRate });
 	const numChannels = Math.max(1, Math.min(2, sourceBuffer.numberOfChannels));
 	const outputBuffer = audioContext.createBuffer(
 		numChannels,
@@ -81,6 +102,7 @@ async function buildPitchPreservedBuffer({
 	targetSampleRate: number;
 }): Promise<AudioBuffer> {
 	const nativeSampleRate = sourceBuffer.sampleRate;
+	audioFrameCount({ seconds: clipDuration, sampleRate: targetSampleRate }); // refuses ticks-as-seconds (QA #5)
 	const sourceDuration = clipDuration * rate;
 	const startSample = Math.max(0, Math.floor(trimStart * nativeSampleRate));
 	const numSourceSamples = Math.max(

@@ -19,6 +19,7 @@ import {
 	SectionTitle,
 } from "@/components/section";
 import { BackgroundContent } from "./background";
+import { DeliverySettings } from "@/export/components/delivery-settings";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { NumberField } from "@/components/ui/number-field";
@@ -32,10 +33,10 @@ import { formatNumberForDisplay } from "@/utils/math";
 import { OcSquarePlusIcon } from "@/components/icons";
 import type { TCanvasSize } from "@/project/types";
 
-type SettingsView = "project-info" | "background";
+type SettingsView = "project-info" | "background" | "delivery";
 
 function isSettingsView(value: string): value is SettingsView {
-	return value === "project-info" || value === "background";
+	return value === "project-info" || value === "background" || value === "delivery";
 }
 
 const PRESET_LABELS: Record<string, string> = {
@@ -224,6 +225,7 @@ export function SettingsView() {
 					<TabsList>
 						<TabsTrigger value="project-info">Project info</TabsTrigger>
 						<TabsTrigger value="background">Background</TabsTrigger>
+						<TabsTrigger value="delivery">Delivery</TabsTrigger>
 					</TabsList>
 				</Tabs>
 			}
@@ -231,9 +233,13 @@ export function SettingsView() {
 			{view === "project-info" && (
 				<div className="flex flex-col">
 					<Section showTopBorder={false}>
+						{/* ui-fix-panels (QA #24): label, gap, value — "NAME" ran into the name */}
 						<SectionHeader>
-							<SectionTitle className="flex-1">Name</SectionTitle>
-							<span className="text-sm truncate">
+							<SectionTitle className="shrink-0">Name</SectionTitle>
+							<span
+								className="min-w-0 flex-1 truncate pl-4 text-right text-sm"
+								title={activeProject.metadata.name}
+							>
 								{activeProject.metadata.name}
 							</span>
 						</SectionHeader>
@@ -317,6 +323,7 @@ export function SettingsView() {
 				</div>
 			)}
 			{view === "background" && <BackgroundContent />}
+			{view === "delivery" && <DeliverySettings />}
 		</PanelView>
 	);
 }

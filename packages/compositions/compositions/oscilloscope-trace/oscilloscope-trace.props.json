@@ -1,0 +1,11 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/oscilloscope-trace); fictional.",
+  "waveform": "sine",
+  "frequency": 12,
+  "amplitude": 3,
+  "persistenceMs": 100,
+  "phosphorColor": "#5dff8f",
+  "sweepRate": 5,
+  "dataSeries": "",
+  "speed": 1
+}

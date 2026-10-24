@@ -32,7 +32,7 @@ import {
 	type TimelineTrack,
 } from "@/timeline";
 import type { ElementRef } from "@/timeline/types";
-import type { FrameRate } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
 
 // --- Session ---
 

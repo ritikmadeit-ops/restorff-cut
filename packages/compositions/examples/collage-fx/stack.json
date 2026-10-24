@@ -1,0 +1,29 @@
+{
+  "$comment": "Fixture extras per composition for stack.ts (the stand-in subject). The production recipe (stack order, plate keys) is in each composition's manifest `effect` block; this file only says what the fixture feeds in.",
+  "orbit": {},
+  "couch-wall": {},
+  "frame-break": {},
+  "ui-world": {},
+  "pullback-window": {},
+  "cutout-outline": {},
+  "parallax-strip": {},
+  "triptych": {},
+  "halftone-push": {},
+  "retro-tv": {},
+  "map-route": { "stack": ["plate", "self"] },
+  "paper-texture": { "stack": ["plate", "self"], "props": { "mode": "overlay", "kind": "old", "amount": 0.8, "folds": true } },
+  "green-screen": { "matte": true, "matteFps": 30 },
+  "cover-story": { "props": { "wordmark": "STEEP", "issue": "NO. 01 · OCTOBER 2026", "mastheadOffset": 240 } },
+  "doodle-boil": { "matte": true, "matteFps": 30 },
+  "paper-cut": { "matte": true, "matteFps": 30, "props": { "layout": "full", "scale": 0.7, "offsetY": -590 } },
+  "headline-wall": { "props": { "layout": "wall", "stagger": 0.14, "headlines": [
+    { "source": "GRINDSTONE GAZETTE", "headline": "Halcyon's third drop sells out in 40 minutes", "date": "OCT 2026" },
+    { "source": "@brewweekly", "headline": "This cold brew steeps for 12 hours. We timed it.", "date": "2h", "kind": "post" },
+    { "source": "", "headline": "is halcyon cold brew worth it", "kind": "search" },
+    { "source": "Maya, Café Lumen", "headline": "Re-ordered 3 cases this week!", "kind": "note" },
+    { "source": "THE MORNING LEDGER", "headline": "Small-batch coffee goes big, without the sugar", "date": "AUG 2026" },
+    { "source": "@slowcoffeeclub", "headline": "No sugar and still the best thing in my fridge", "date": "1d", "kind": "post" }
+  ] } },
+  "glass-type": { "stills": { "background": { "layer": "background", "t": 0 } } },
+  "vertigo": { "stills": { "plate": { "layer": "plate", "t": 0 }, "matte": { "layer": "cutout", "t": 0, "list": true } } }
+}

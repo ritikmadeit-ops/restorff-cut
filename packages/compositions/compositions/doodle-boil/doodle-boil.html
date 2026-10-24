@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Doodle boil</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "doodle-boil",
+  "title": "Doodle boil",
+  "description": "Hand-drawn white doodles (a heart, a clapperboard with pink hatching, a star, an arrow, sparkles, a circle) draw on around the speaker and 'boil': every line is redrawn with a new wobble a few times a second, like stop-motion marker. With the person matte, a boiling hand-drawn outline also hugs the speaker's body. Use for a playful, handmade beat (EFFECTS.md FX-14).",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["doodle", "handmade", "playful", "boil", "reels", "matte", "named-effect"],
+  "effect": {
+    "fx": ["FX-14"],
+    "stack": ["plate", "self"],
+    "inputs": {
+      "matte": "props.matte = the speaker's cutout as PNG frames (alpha) at props.matteFps from the effect's start (MCP cutout can write them; or ffmpeg -c:v libvpx-vp9 -i cutout.webm -vf fps=30,scale=540:-2 f_%04d.png): the outline follows the body",
+      "face": "doodles take fixed spots around the edges, clear of the centre where the face usually is"
+    },
+    "note": "One overlay above the clip: the outline is drawn just outside the body, so no cutout track is needed."
+  },
+  "params": {
+    "doodles": { "type": "list", "of": { "type": "enum", "options": ["heart", "clapper", "star", "arrow", "sparkle", "circle", "square", "underline"] }, "minItems": 1, "maxItems": 8, "default": ["heart", "clapper", "star", "sparkle", "arrow", "square"], "label": "Doodles", "description": "Which doodles, in drawing order. They take fixed spots around the frame's edges, clear of the centre where the face usually is." },
+    "word": { "type": "string", "default": "", "maxLength": 18, "label": "Scrawled word", "description": "Optional word scrawled under the face in a handwritten serif. Empty to hide." },
+    "color": { "type": "color", "default": "#FFFFFF", "label": "Line colour", "description": "Colour of the doodle lines." },
+    "accent": { "type": "color", "default": "#FF5FA2", "label": "Hatching", "description": "Fill hatching of the clapperboard and heart: the accent." },
+    "lineWidth": { "type": "number", "default": 9, "min": 2, "max": 30, "step": 0.5, "unit": "px", "label": "Line width", "description": "Stroke width, px on a 1080 grid (the reel's outline is ~4 px at 1080 p; doodles are bolder)." },
+    "boilFps": { "type": "number", "default": 12, "min": 1, "max": 30, "step": 1, "unit": "fps", "label": "Boil rate", "description": "How often the wobble changes per second (12 = every 2 frames at 24/30 fps)." },
+    "wobble": { "type": "number", "default": 5, "min": 0, "max": 20, "step": 0.5, "unit": "px", "label": "Wobble", "description": "How far each point jitters, px on a 1080 grid." },
+    "drawTime": { "type": "number", "default": 0.35, "min": 0.05, "max": 2, "step": 0.05, "unit": "s", "label": "Draw time", "description": "Seconds to draw each doodle." },
+    "seed": { "type": "number", "default": 3, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the wobble pattern." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier for the doodles." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Drawing speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Doodles shrink away over the last 0.35 s." },
+    "matte": { "type": "list", "of": { "type": "image" }, "minItems": 0, "maxItems": 1800, "default": [], "label": "Person matte", "description": "Frames of the speaker cut-out (PNG with alpha, or black/white masks with matteChannel luma), one per 1/matteFps s from the effect's start. Empty = doodles only." },
+    "matteFps": { "type": "number", "default": 30, "min": 1, "max": 60, "step": 1, "unit": "fps", "label": "Matte rate", "description": "Frames per second of the matte frames (match the clip)." },
+    "matteChannel": { "type": "enum", "options": ["alpha", "luma"], "default": "alpha", "label": "Matte channel", "description": "alpha = cut-out PNGs; luma = white-on-black masks." },
+    "outline": { "type": "number", "default": 7, "min": 1, "max": 30, "step": 0.5, "unit": "px", "label": "Body outline", "description": "Width of the line around the body, px on a 1080 grid (the reel: ~4-6 px)." },
+    "outlineGap": { "type": "number", "default": 7, "min": 0, "max": 40, "step": 0.5, "unit": "px", "label": "Outline gap", "description": "Distance of the outline from the body, px on a 1080 grid (the reel hugs within 6 px)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; filter: drop-shadow(0 calc(3px * var(--u)) calc(6px * var(--u)) rgba(0,0,0,.35)); }
+  .word { position: absolute; left: 0; width: 100%; text-align: center; font-family: "Instrument Serif", serif; font-style: italic; color: #fff; text-shadow: 0 3px 14px rgba(0,0,0,.5); }
+  .body { position: absolute; inset: 0; }
+  .body img { position: absolute; left: 0; top: 0; display: none; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="boil" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+    <feColorMatrix in="SourceGraphic" type="luminanceToAlpha" result="luma"/>
+    <feMorphology id="boOuter" in="SourceAlpha" operator="dilate" radius="14" result="o"/>
+    <feMorphology id="boInner" in="SourceAlpha" operator="dilate" radius="7" result="i"/>
+    <feComposite in="o" in2="i" operator="out" result="ring"/>
+    <feTurbulence id="boNoise" type="fractalNoise" baseFrequency="0.02" numOctaves="1" seed="1" result="n"/>
+    <feDisplacementMap id="boDisp" in="ring" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G" result="w"/>
+    <feFlood id="boColor" flood-color="#FFFFFF"/>
+    <feComposite in2="w" operator="in" result="line"/>
+    <feGaussianBlur id="boShBlur" in="w" stdDeviation="2" result="sb"/>
+    <feFlood flood-color="#000000" flood-opacity="0.35"/>
+    <feComposite in2="sb" operator="in" result="sh"/>
+    <feMerge><feMergeNode in="sh"/><feMergeNode in="line"/></feMerge>
+  </filter>
+</defs></svg>
+<script>
+  // Each doodle: polylines in a unit box (-1..1), drawn with a jittered smooth path. h = hatch fill polylines.
+  function circlePts(n, rx, ry, cx, cy) {
+    var p = [];
+    for (var i = 0; i <= n; i++) { var a = (i / n) * Math.PI * 2; p.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); }
+    return p;
+  }
+  function heartPts() {
+    var p = [];
+    for (var i = 0; i <= 40; i++) {
+      var a = (i / 40) * Math.PI * 2;
+      var x = 16 * Math.pow(Math.sin(a), 3);
+      var y = -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a));
+      p.push([x / 17, y / 17]);
+    }
+    return p;
+  }
+  function starPts() {
+    var p = [];
+    for (var i = 0; i <= 10; i++) {
+      var a = -Math.PI / 2 + (i / 10) * Math.PI * 2;
+      var r = i % 2 ? 0.42 : 1;
+      p.push([Math.cos(a) * r, Math.sin(a) * r]);
+    }
+    return p;
+  }
+  function hatch(x0, y0, x1, y1, n) {
+    var out = [];
+    for (var i = 1; i < n; i++) {
+      var f = i / n;
+      out.push([[x0 + (x1 - x0) * f, y0], [x0, y0 + (y1 - y0) * f]]);
+    }
+    return out;
+  }
+  var SHAPES = {
+    heart: function () { return { lines: [heartPts()], fill: hatch(-0.6, -0.4, 0.6, 0.75, 7).map(function (l) { return [[l[0][0], l[0][1]], [l[1][0], l[1][1]]]; }) }; },
+    clapper: function () {
+      return {
+        lines: [
+          [[-1, -0.25], [1, -0.25], [1, 0.9], [-1, 0.9], [-1, -0.25]],
+          [[-1, -0.25], [-0.95, -0.7], [0.95, -1], [1, -0.55], [-1, -0.25]],
+          [[-0.55, -0.32], [-0.35, -0.8]], [[0, -0.4], [0.2, -0.88]], [[0.5, -0.47], [0.68, -0.95]],
+        ],
+        fill: hatch(-0.95, -0.2, 0.95, 0.85, 9),
+      };
+    },
+    star: function () { return { lines: [starPts()] }; },
+    arrow: function () { return { lines: [[[-1, 0.6], [-0.3, 0.1], [0.4, -0.2], [0.9, -0.6]], [[0.4, -0.75], [0.9, -0.6], [0.75, -0.1]]] }; },
+    sparkle: function () { return { lines: [[[0, -1], [0, 1]], [[-1, 0], [1, 0]], [[-0.55, -0.55], [0.55, 0.55]], [[0.55, -0.55], [-0.55, 0.55]]] }; },
+    circle: function () { return { lines: [circlePts(30, 1, 0.8, 0, 0).concat([[1.05, -0.1]])] }; },
+    square: function () { return { lines: [[[-0.9, -0.85], [0.92, -0.9], [0.88, 0.9], [-0.86, 0.86], [-0.9, -0.88]]] }; },
+    underline: function () { return { lines: [[[-1, 0], [-0.3, 0.12], [0.4, -0.04], [1, 0.08]], [[-0.7, 0.35], [0.8, 0.3]]] }; },
+  };
+  // spots around the edges, clear of the centre (the face): [x, y, size] as fractions of width/height/width
+  var SPOTS = [[0.2, 0.2, 0.15], [0.8, 0.22, 0.16], [0.17, 0.75, 0.13], [0.85, 0.73, 0.12], [0.5, 0.12, 0.1], [0.6, 0.86, 0.11], [0.16, 0.45, 0.1], [0.86, 0.44, 0.1]];
+  var DB = { items: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var stage = document.getElementById("stage");
+      // boiling outline around the body, from the matte frames (under the doodles)
+      DB.mattes = [];
+      if (P.matte.length) {
+        var body = RC.el("div", { class: "body", style: { filter: "url(#boil)" } });
+        P.matte.forEach(function (src) {
+          var im = RC.el("img", { src: src, style: { width: RC.width + "px", height: RC.height + "px" } });
+          body.appendChild(im);
+          DB.mattes.push(im);
+        });
+        stage.appendChild(body);
+        DB.body = body;
+        var luma = P.matteChannel === "luma";
+        var gap = Math.max(0, P.outlineGap * RC.u), wid = Math.max(0.5, P.outline * RC.u);
+        ["boOuter", "boInner"].forEach(function (id) { if (luma) document.getElementById(id).setAttribute("in", "luma"); });
+        document.getElementById("boOuter").setAttribute("radius", String(gap + wid));
+        document.getElementById("boInner").setAttribute("radius", String(Math.max(0.01, gap)));
+        document.getElementById("boDisp").setAttribute("scale", String(P.wobble * 2.2 * RC.u));
+        document.getElementById("boNoise").setAttribute("baseFrequency", String(0.012 / Math.max(0.25, RC.u)));
+        document.getElementById("boColor").setAttribute("flood-color", P.color);
+        document.getElementById("boShBlur").setAttribute("stdDeviation", String(3 * RC.u));
+      }
+      var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("width", RC.width);
+      svg.setAttribute("height", RC.height);
+      stage.appendChild(svg);
+      DB.svg = svg;
+      P.doodles.forEach(function (name, i) {
+        var spot = SPOTS[i % SPOTS.length];
+        var shape = SHAPES[name]();
+        var size = spot[2] * RC.width * 0.75 * P.scale;
+        var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        svg.appendChild(g);
+        var item = { g: g, cx: spot[0] * RC.width, cy: spot[1] * RC.height, size: size, i: i, paths: [], sharp: name !== "heart" && name !== "circle" };
+        (shape.fill || []).forEach(function (pts) { item.paths.push({ pts: pts, fill: true, node: makePath(g, P.accent, P.lineWidth * 0.7 * RC.u) }); });
+        shape.lines.forEach(function (pts) { item.paths.push({ pts: pts, fill: false, node: makePath(g, P.color, P.lineWidth * RC.u) }); });
+        DB.items.push(item);
+      });
+      if (P.word) {
+        DB.word = RC.el("div", { class: "word", text: P.word, style: { fontSize: 120 * RC.u * P.scale + "px", top: RC.height * 0.57 + "px" } });
+        stage.appendChild(DB.word);
+      }
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var boil = Math.floor(time.T * P.boilFps);
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.35, 0, 1)) : 0;
+      var wob = P.wobble * RC.u;
+      for (var k = 0; k < DB.items.length; k++) {
+        var it = DB.items[k];
+        var start = 0.1 + it.i * P.drawTime * 0.7;
+        var p = RC.progress(t, start, P.drawTime, "smooth");
+        var fillP = RC.progress(t, start + P.drawTime * 0.8, P.drawTime * 0.6, "linear");
+        var rnd = RC.random(P.seed * 7919 + boil * 131 + it.i * 17);
+        for (var j = 0; j < it.paths.length; j++) {
+          var ph = it.paths[j];
+          var pts = ph.pts.map(function (q) { return [it.cx + q[0] * it.size + (rnd() - 0.5) * 2 * wob, it.cy + q[1] * it.size + (rnd() - 0.5) * 2 * wob]; });
+          ph.node.setAttribute("d", it.sharp ? "M" + pts.map(function (q) { return q[0].toFixed(1) + " " + q[1].toFixed(1); }).join(" L") : smooth(pts));
+          var len = ph.node.getTotalLength();
+          var prog = ph.fill ? fillP : p;
+          ph.node.setAttribute("stroke-dasharray", len + " " + len);
+          ph.node.setAttribute("stroke-dashoffset", String(len * (1 - prog)));
+          ph.node.style.visibility = prog > 0 ? "visible" : "hidden";
+        }
+        var s = 1 - out;
+        it.g.setAttribute("transform", "translate(" + it.cx + " " + it.cy + ") scale(" + s + ") translate(" + -it.cx + " " + -it.cy + ")");
+      }
+      if (DB.body) {
+        // a new wobble on every boil step; the line draws on over 0.3 s and goes with the exit
+        document.getElementById("boNoise").setAttribute("seed", String(P.seed * 31 + boil));
+        var mi = Math.max(0, Math.min(DB.mattes.length - 1, Math.floor(time.T * P.matteFps + 1e-6)));
+        for (var m = 0; m < DB.mattes.length; m++) DB.mattes[m].style.display = m === mi ? "block" : "none";
+        DB.body.style.opacity = String(RC.progress(t, 0.05, 0.3, "linear") * (1 - out));
+      }
+      if (DB.word) {
+        var wp = RC.progress(t, 0.3, 0.5, "smooth");
+        RC.set(DB.word, { opacity: wp * (1 - out), clip: "inset(0 " + (1 - wp) * 100 + "% 0 0)", rotate: ((boil % 3) - 1) * 0.8 });
+      }
+    },
+  });
+  function makePath(g, color, width) {
+    var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("fill", "none");
+    p.setAttribute("stroke", color);
+    p.setAttribute("stroke-width", width);
+    p.setAttribute("stroke-linecap", "round");
+    p.setAttribute("stroke-linejoin", "round");
+    g.appendChild(p);
+    return p;
+  }
+  // Catmull-Rom → cubic bezier through the points (a hand-drawn curve rather than a polygon)
+  function smooth(pts) {
+    if (pts.length < 3) return "M" + pts.map(function (p) { return p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" L");
+    var d = "M" + pts[0][0].toFixed(1) + " " + pts[0][1].toFixed(1);
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i - 1] || pts[i];
+      var p1 = pts[i];
+      var p2 = pts[i + 1];
+      var p3 = pts[i + 2] || p2;
+      var c1x = p1[0] + (p2[0] - p0[0]) / 6;
+      var c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      var c2x = p2[0] - (p3[0] - p1[0]) / 6;
+      var c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += " C" + c1x.toFixed(1) + " " + c1y.toFixed(1) + " " + c2x.toFixed(1) + " " + c2y.toFixed(1) + " " + p2[0].toFixed(1) + " " + p2[1].toFixed(1);
+    }
+    return d;
+  }
+</script>
+</body>
+</html>

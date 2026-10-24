@@ -1,0 +1,12 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/press-ripple); fictional.",
+  "label": "Save changes",
+  "doneLabel": "Saved",
+  "targetX": 50,
+  "targetY": 52,
+  "pressAt": 0.9,
+  "cursor": "light",
+  "accent": "green",
+  "exit": "none",
+  "speed": 1
+}

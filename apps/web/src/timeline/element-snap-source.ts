@@ -1,6 +1,7 @@
 import type { SceneTracks } from "@/timeline";
 import type { SnapPoint } from "@/timeline/snapping";
 import { addMediaTime } from "@/wasm";
+import { getBeatSnapPoints } from "@/beats/timeline";
 
 export function getElementEdgeSnapPoints({
 	tracks,
@@ -32,6 +33,13 @@ export function getElementEdgeSnapPoints({
 					trackId: track.id,
 				},
 			);
+		}
+	}
+
+	// Restorff "music to picture": detected beats of music elements snap like clip edges.
+	for (const beat of getBeatSnapPoints({ tracks })) {
+		if (!beat.elementId || !excludeElementIds?.has(beat.elementId)) {
+			snapPoints.push(beat);
 		}
 	}
 

@@ -1,0 +1,665 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/split-tilt-cards@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-id="split-tilt-cards"
+  data-composition-duration="4.5"
+  data-composition-variables='[
+    { "id": "label_a", "type": "string", "role": "content", "label": "Left label", "description": "Mono header on the left card. Blank hides it.", "default": "Before" },
+    { "id": "label_b", "type": "string", "role": "content", "label": "Right label", "description": "Mono header on the right card. Blank hides it.", "default": "After" },
+    { "id": "badge_a", "type": "string", "role": "content", "label": "Left badge", "description": "Pill badge that spring-pops at the left card inner edge. Blank disables it.", "default": "v1" },
+    { "id": "badge_b", "type": "string", "role": "content", "label": "Right badge", "description": "Pill badge that spring-pops at the right card inner edge. Blank disables it.", "default": "v2" },
+    { "id": "accent", "type": "enum", "role": "style", "label": "Accent", "description": "Right-card tint, right badge, and right ambient glow color.", "default": "green", "options": [{ "value": "green", "label": "Green" }, { "value": "blue", "label": "Blue" }, { "value": "violet", "label": "Violet" }] },
+    { "id": "exit", "type": "enum", "role": "timing", "label": "Exit", "description": "Outgoing transition. None holds the final spread.", "default": "none", "options": [{ "value": "none", "label": "None" }, { "value": "fade", "label": "Fade" }, { "value": "up", "label": "Up" }] }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "split-tilt-cards",
+  "title": "Split Tilt Cards",
+  "description": "Two equal-weight cards arrive from opposite wings with mirrored rotateY book-open tilts under one shared perspective, pill badges spring-pop at each inner edge, and the pair holds with a barely-there phase-opposed idle float. Card bodies are content slots with token skeleton defaults. Imported from a HyperFrames component (ui-product; provenance below).",
+  "duration": 4.5,
+  "size": [
+    1536,
+    714
+  ],
+  "fps": 30,
+  "tags": [
+    "ui-product",
+    "motion-primitive",
+    "layout",
+    "compare",
+    "holdable",
+    "book-open",
+    "tilt",
+    "slots",
+    "imported",
+    "hyperframes"
+  ],
+  "opaque": true,
+  "kit": "hf-compat",
+  "params": {
+    "labelA": {
+      "type": "string",
+      "default": "Before",
+      "label": "Left label",
+      "description": "Mono header on the left card. Blank hides it.",
+      "required": true
+    },
+    "labelB": {
+      "type": "string",
+      "default": "After",
+      "label": "Right label",
+      "description": "Mono header on the right card. Blank hides it."
+    },
+    "badgeA": {
+      "type": "string",
+      "default": "v1",
+      "label": "Left badge",
+      "description": "Pill badge that spring-pops at the left card inner edge. Blank disables it."
+    },
+    "badgeB": {
+      "type": "string",
+      "default": "v2",
+      "label": "Right badge",
+      "description": "Pill badge that spring-pops at the right card inner edge. Blank disables it."
+    },
+    "accent": {
+      "type": "enum",
+      "options": [
+        "green",
+        "blue",
+        "violet"
+      ],
+      "default": "green",
+      "label": "Accent",
+      "description": "Right-card tint, right badge, and right ambient glow color."
+    },
+    "exit": {
+      "type": "enum",
+      "options": [
+        "none",
+        "fade",
+        "up"
+      ],
+      "default": "none",
+      "label": "Exit",
+      "description": "Outgoing transition. None holds the final spread."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1536x713 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "labelA": "label_a",
+      "labelB": "label_b",
+      "badgeA": "badge_a",
+      "badgeB": "badge_b",
+      "accent": "accent",
+      "exit": "exit"
+    },
+    "width": 1536,
+    "height": 713,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/split-tilt-cards",
+    "path": "registry/components/split-tilt-cards",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="split-tilt-cards" data-start="0" data-duration="4.5" data-width="1536" data-height="713" style="position:absolute;left:0;top:0;width:1536px;height:713px">
+
+      <div id="root" data-composition-id="split-tilt-cards" data-duration="4.5" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          /* Root fills the host-owned box. Internal measurements use cqw/cqh
+             and every painted color comes from a contract token. */
+          #root {
+            position: absolute;
+            inset: 0;
+            container-type: size;
+            isolation: isolate;
+            overflow: hidden;
+            background: var(--bg, #0b1016);
+            color: var(--fg, #f8fafc);
+            font-family: var(--font-body, Inter, system-ui, sans-serif);
+            pointer-events: none;
+          }
+
+          .stc-clip {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+          }
+
+          /* Two faint ambient side glows: each wing owns a color identity
+             across the 50% symmetry axis. Static by design. */
+          .stc-clip::before,
+          .stc-clip::after {
+            content: "";
+            position: absolute;
+            top: 14cqh;
+            width: 52cqw;
+            height: 72cqh;
+            border-radius: 50%;
+            filter: blur(6cqmin);
+            pointer-events: none;
+          }
+
+          .stc-clip::before {
+            left: 2cqw;
+            background: radial-gradient(
+              ellipse at 50% 50%,
+              color-mix(in srgb, var(--muted, #94a3b8) 11%, transparent) 0%,
+              transparent 70%
+            );
+          }
+
+          .stc-clip::after {
+            right: 2cqw;
+            background: radial-gradient(
+              ellipse at 50% 50%,
+              color-mix(in srgb, var(--stc-accent, #22c55e) 13%, transparent) 0%,
+              transparent 70%
+            );
+          }
+
+          /* One shared perspective so both tilts converge on the same
+             vanishing point; wings and floats preserve 3D so the card
+             rotateY reads through their own gsap transforms. */
+          .stc-stage {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-3, 5cqw);
+            align-items: center;
+            justify-items: center;
+            padding: 0 8cqw;
+            perspective: 120cqw;
+          }
+
+          /* No opacity (or other grouping property) may ever land on the
+             wing/float/stage chain: it forces transform-style flat and
+             squashes the card rotateY. Fades ride the cards and the clip. */
+          .stc-wing {
+            position: relative;
+            width: 100%;
+            max-width: 38cqw;
+            height: 58cqh;
+            transform-style: preserve-3d;
+            
+          }
+
+          .stc-float {
+            position: absolute;
+            inset: 0;
+            transform-style: preserve-3d;
+            
+          }
+
+          .stc-card {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: var(--space-3, 3.6cqh) var(--space-3, 2.4cqw);
+            border: 0.16cqw solid var(--border, #334155);
+            border-radius: var(--radius, 2.4cqmin);
+            background: color-mix(in srgb, var(--surface, #172033) 90%, var(--bg, #0b1016));
+            
+          }
+
+          /* Static book-open tilts: +18deg left, -18deg right, with the
+             box-shadow falling outward from the tilt (left shadow right,
+             right shadow left). The tilt is carried, never tweened. */
+          .stc-card-a {
+            transform: rotateY(18deg);
+            box-shadow: 2.4cqw 3cqh 7cqh color-mix(in srgb, var(--bg, #0b1016) 52%, transparent);
+          }
+
+          .stc-card-b {
+            transform: rotateY(-18deg);
+            border-color: color-mix(
+              in srgb,
+              var(--stc-accent, #22c55e) 46%,
+              var(--border, #334155)
+            );
+            background: color-mix(in srgb, var(--surface, #172033) 88%, var(--stc-accent, #22c55e));
+            box-shadow: -2.4cqw 3cqh 7cqh color-mix(in srgb, var(--bg, #0b1016) 52%, transparent);
+          }
+
+          .stc-label {
+            flex: 0 0 auto;
+            margin-bottom: var(--space-2, 2.4cqh);
+            color: var(--muted, #94a3b8);
+            font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+            font-size: min(2.1cqw, 3.4cqh);
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            line-height: 1;
+            text-transform: uppercase;
+            white-space: nowrap;
+          }
+
+          .stc-card-b .stc-label {
+            color: color-mix(in srgb, var(--stc-accent, #22c55e) 72%, var(--fg, #f8fafc));
+          }
+
+          .stc-label:empty {
+            display: none;
+          }
+
+          .stc-slot {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+            border-radius: calc(var(--radius, 2.4cqmin) * 0.6);
+          }
+
+          /* Caller-supplied media covers its slot edge to edge. */
+          .stc-slot > img,
+          .stc-slot > video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          /* Token-styled default slot content: a wireframe that reads muted
+             on the left card and accent-tinted on the right. Callers
+             replacing slot children never see any of this. */
+          .stc-default {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: var(--space-2, 2cqh) var(--space-1, 1cqw);
+          }
+
+          .stc-bar {
+            width: 42%;
+            height: 4cqh;
+            margin-bottom: var(--space-2, 2.6cqh);
+            border-radius: 1.2cqh;
+            background: var(--muted, #94a3b8);
+            opacity: 0.5;
+          }
+
+          .stc-line {
+            height: 2.2cqh;
+            margin-bottom: var(--space-1, 1.8cqh);
+            border-radius: 1.1cqh;
+            background: var(--muted, #94a3b8);
+            opacity: 0.38;
+          }
+
+          .stc-line:nth-of-type(2) {
+            width: 88%;
+          }
+
+          .stc-line:nth-of-type(3) {
+            width: 64%;
+          }
+
+          .stc-line:nth-of-type(4) {
+            width: 42%;
+          }
+
+          .stc-card-b .stc-bar {
+            background: var(--stc-accent, #22c55e);
+            opacity: 0.9;
+          }
+
+          .stc-card-b .stc-line {
+            background: color-mix(in srgb, var(--stc-accent, #22c55e) 62%, var(--fg, #f8fafc));
+            opacity: 0.66;
+          }
+
+          /* Badge positioners own the inner-edge placement (CSS translate);
+             gsap scales only the inner pill, so the two transforms never
+             collide on one element. */
+          .stc-badge-pos {
+            position: absolute;
+            top: 50%;
+            z-index: 3;
+            display: flex;
+          }
+
+          .stc-badge-pos-a {
+            right: 0;
+            transform: translate(32%, -50%);
+          }
+
+          .stc-badge-pos-b {
+            left: 0;
+            transform: translate(-32%, -50%);
+          }
+
+          .stc-badge {
+            padding: var(--space-1, 1.4cqh) var(--space-2, 1.8cqw);
+            border: 0.16cqw solid var(--border, #334155);
+            border-radius: 999cqw;
+            background: color-mix(in srgb, var(--surface, #172033) 82%, var(--bg, #0b1016));
+            color: var(--fg, #f8fafc);
+            font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+            font-size: min(2.2cqw, 3.6cqh);
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            line-height: 1;
+            white-space: nowrap;
+            
+          }
+
+          .stc-badge-b {
+            border-color: color-mix(
+              in srgb,
+              var(--stc-accent, #22c55e) 62%,
+              var(--border, #334155)
+            );
+            background: color-mix(in srgb, var(--stc-accent, #22c55e) 26%, var(--surface, #172033));
+          }
+        </style>
+
+        <div
+          id="split-tilt-cards-clip"
+          class="stc-clip clip"
+          data-start="0"
+          data-duration="4.5"
+          data-track-index="0"
+        >
+          <div class="stc-stage">
+            <div class="stc-wing stc-wing-a">
+              <div class="stc-float stc-float-a">
+                <section class="stc-card stc-card-a" aria-label="Left card">
+                  <div class="stc-label stc-label-a"></div>
+                  <div class="stc-slot" data-slot="card-a">
+                    
+                    <div class="stc-default" aria-hidden="true">
+                      <div class="stc-bar"></div>
+                      <div class="stc-line"></div>
+                      <div class="stc-line"></div>
+                      <div class="stc-line"></div>
+                    </div>
+                  </div>
+                </section>
+                <div class="stc-badge-pos stc-badge-pos-a">
+                  <div class="stc-badge stc-badge-a"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stc-wing stc-wing-b">
+              <div class="stc-float stc-float-b">
+                <section class="stc-card stc-card-b" aria-label="Right card">
+                  <div class="stc-label stc-label-b"></div>
+                  <div class="stc-slot" data-slot="card-b">
+                    
+                    <div class="stc-default" aria-hidden="true">
+                      <div class="stc-bar"></div>
+                      <div class="stc-line"></div>
+                      <div class="stc-line"></div>
+                      <div class="stc-line"></div>
+                    </div>
+                  </div>
+                </section>
+                <div class="stc-badge-pos stc-badge-pos-b">
+                  <div class="stc-badge stc-badge-b"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            // Literal id: mount flattening strips data-composition-id from the
+            // live root before this timeline registers.
+            var compositionId = "split-tilt-cards";
+            var clip = root.querySelector(".stc-clip");
+            var wingA = root.querySelector(".stc-wing-a");
+            var cardA = root.querySelector(".stc-card-a");
+            var cardB = root.querySelector(".stc-card-b");
+            var wingB = root.querySelector(".stc-wing-b");
+            var floatA = root.querySelector(".stc-float-a");
+            var floatB = root.querySelector(".stc-float-b");
+            var labelA = root.querySelector(".stc-label-a");
+            var labelB = root.querySelector(".stc-label-b");
+            var badgeA = root.querySelector(".stc-badge-a");
+            var badgeB = root.querySelector(".stc-badge-b");
+            var badgePosA = root.querySelector(".stc-badge-pos-a");
+            var badgePosB = root.querySelector(".stc-badge-pos-b");
+
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            var labelAText = vars.label_a == null ? "Before" : String(vars.label_a);
+            var labelBText = vars.label_b == null ? "After" : String(vars.label_b);
+            var badgeAText = vars.badge_a == null ? "v1" : String(vars.badge_a);
+            var badgeBText = vars.badge_b == null ? "v2" : String(vars.badge_b);
+            // Each enum choice routes to a DIFFERENT contract token so the
+            // variable stays meaningful under a theme.
+            var accentColors = {
+              green: "var(--brand, #22c55e)",
+              blue: "var(--accent, #38bdf8)",
+              violet: "var(--accent-2, #c5a3ff)",
+            };
+            var accent = Object.prototype.hasOwnProperty.call(accentColors, vars.accent)
+              ? vars.accent
+              : "green";
+            // INVARIANT: only none | fade | up reaches the timeline.
+            var exit = vars.exit === "fade" || vars.exit === "up" ? vars.exit : "none";
+
+            labelA.textContent = labelAText;
+            labelB.textContent = labelBText;
+            badgeA.textContent = badgeAText;
+            badgeB.textContent = badgeBText;
+            if (badgeAText === "") badgePosA.style.display = "none";
+            if (badgeBText === "") badgePosB.style.display = "none";
+            root.style.setProperty("--stc-accent", accentColors[accent]);
+
+            // RETIME RANGE: fixed IN and OUT scale together only when D is too
+            // short. HOLD is the sole elastic phase. Never use timeScale().
+            var CARD_DUR_BASE = 1.1;
+            var CARD_B_DELAY_BASE = 0.2;
+            var FADE_DUR_BASE = 0.5;
+            var BADGE_A_AT_BASE = 1.45;
+            var BADGE_B_AT_BASE = 1.75;
+            var BADGE_DUR_BASE = 0.4;
+            var IN_BASE = BADGE_B_AT_BASE + BADGE_DUR_BASE;
+            var OUT_BASE = exit === "none" ? 0 : 0.5;
+            var STILLNESS = 0.3;
+            var FLOAT_CYCLE = 2.0;
+
+            var duration = Math.max(0.001, parseFloat(root.dataset.duration || "4.5"));
+            var totalBase = IN_BASE + OUT_BASE;
+            var scale = duration < totalBase ? duration / totalBase : 1;
+            var IN = IN_BASE * scale;
+            var OUT = OUT_BASE * scale;
+            var HOLD = Math.max(0, duration - (IN + OUT));
+            var OUT_START = IN + HOLD;
+
+            function fireSfx(id, t) {
+              root.dispatchEvent(
+                new CustomEvent("hf:sfx", { detail: { id: id, t: t }, bubbles: true }),
+              );
+            }
+
+            // Explicit both-endpoints state makes tl.seek(0) deterministic.
+            // Fades ride the cards and the clip, never the wing/float/stage
+            // chain: opacity there would flatten the 3D tilt.
+            gsap.set(clip, { opacity: 1, y: 0 });
+            gsap.set(wingA, { x: "-26cqw", scale: 0.85 });
+            gsap.set(wingB, { x: "26cqw", scale: 0.85 });
+            gsap.set([cardA, cardB], { opacity: 0 });
+            gsap.set([floatA, floatB], { y: "0cqh" });
+            gsap.set([badgeA, badgeB], { opacity: 0, scale: 0 });
+
+            var tl = gsap.timeline({ paused: true });
+
+            // IN: mirrored opposite-wing entries, right ~0.2s behind, each
+            // carrying its static book-open tilt; only x/scale/opacity move.
+            [
+              { wing: wingA, card: cardA, at: 0 },
+              { wing: wingB, card: cardB, at: CARD_B_DELAY_BASE * scale },
+            ].forEach(function (entry) {
+              tl.to(
+                entry.card,
+                { opacity: 1, duration: 0.5 * scale, ease: "power2.out" },
+                entry.at,
+              );
+              tl.to(
+                entry.wing,
+                { x: "0cqw", duration: CARD_DUR_BASE * scale, ease: "power3.out" },
+                entry.at,
+              );
+              tl.to(
+                entry.wing,
+                { scale: 1, duration: CARD_DUR_BASE * scale, ease: "power3.out" },
+                entry.at,
+              );
+            });
+
+            // Badges: the one sanctioned overshoot, kept small. Left lands
+            // first, right ~0.3s behind, both inside fixed IN.
+            [
+              { badge: badgeA, text: badgeAText, at: BADGE_A_AT_BASE * scale },
+              { badge: badgeB, text: badgeBText, at: BADGE_B_AT_BASE * scale },
+            ].forEach(function (pop) {
+              if (pop.text === "") return;
+              tl.to(
+                pop.badge,
+                { opacity: 1, scale: 1, duration: BADGE_DUR_BASE * scale, ease: "back.out(1.9)" },
+                pop.at,
+              );
+              var land = pop.at + BADGE_DUR_BASE * scale;
+              tl.call(
+                function () {
+                  fireSfx("badge-pop-soft", land);
+                },
+                [],
+                land,
+              );
+            });
+
+            // HOLD: phase-opposed barely-there idle float. Only whole cycles
+            // fit; each is authored as explicit half-cycle tweens (never
+            // repeat/yoyo) so every cycle starts and ends at rest, and the
+            // closing STILLNESS window stays dead still.
+            var floatWindow = Math.max(0, HOLD - STILLNESS);
+            var cycles = Math.floor(floatWindow / FLOAT_CYCLE);
+            var half = FLOAT_CYCLE / 2;
+            for (var i = 0; i < cycles; i += 1) {
+              var t0 = IN + i * FLOAT_CYCLE;
+              tl.to(floatA, { y: "-0.6cqh", duration: half, ease: "sine.inOut" }, t0);
+              tl.to(floatA, { y: "0cqh", duration: half, ease: "sine.inOut" }, t0 + half);
+              tl.to(floatB, { y: "0.6cqh", duration: half, ease: "sine.inOut" }, t0);
+              tl.to(floatB, { y: "0cqh", duration: half, ease: "sine.inOut" }, t0 + half);
+            }
+
+            // OUT: only when the exit variable asks for one; exit none holds
+            // the final spread (frame roots own transitions).
+            if (exit !== "none") {
+              tl.to(
+                clip,
+                { opacity: 0, duration: FADE_DUR_BASE * scale, ease: "power2.in" },
+                OUT_START,
+              );
+              if (exit === "up") {
+                tl.to(
+                  clip,
+                  { y: "-6cqh", duration: FADE_DUR_BASE * scale, ease: "power2.in" },
+                  OUT_START,
+                );
+              }
+            }
+
+            tl.seek(0);
+
+            window.__timelines = window.__timelines || {};
+            window.__timelines[compositionId] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

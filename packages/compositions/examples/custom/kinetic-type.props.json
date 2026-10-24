@@ -1,0 +1,6 @@
+{
+  "$comment": "Example props (fictional brand: Halcyon Cold Brew). Overrides only; everything else comes from the params block.",
+  "kicker": "HALCYON COLD BREW",
+  "lines": ["COLD", "BREWED", "FOR", "TWENTY", "HOURS"],
+  "highlight": "TWENTY"
+}

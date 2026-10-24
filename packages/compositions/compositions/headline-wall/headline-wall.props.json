@@ -1,0 +1,10 @@
+{
+  "$comment": "Fictional brand AND fictional publications (Grindstone Gazette, Brew Weekly, The Morning Ledger, Caffeine Quarterly) - demo only. In a real ad, only real coverage the brand can link to.",
+  "headlines": [
+    { "source": "GRINDSTONE GAZETTE", "headline": "Halcyon's third drop sells out in 40 minutes", "date": "OCT 2026" },
+    { "source": "BREW WEEKLY", "headline": "The 12-hour cold brew people queue for", "date": "SEP 2026" },
+    { "source": "THE MORNING LEDGER", "headline": "Small-batch coffee goes big, without the sugar", "date": "AUG 2026" },
+    { "source": "CAFFEINE QUARTERLY", "headline": "Why Halcyon steeps longer than anyone else", "date": "JUL 2026" }
+  ],
+  "highlight": -1
+}

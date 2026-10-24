@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon grid hook</title>
+<!-- neon-grid kit, piece 1 of 8 (composition-v3). A typed prompt line, then big lines reveal left to right and
+     ignite; the keyword ignites last with an underline; the camera creeps low over the grid (frame 0 = the pose the
+     neon-outro loop lands on). Every word and every time comes from the params. -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "neon-hook",
+  "title": "Neon grid hook",
+  "description": "Full-screen opener on a dark 3D grid: a prompt line types with an accent caret, then one to three big lines reveal and ignite (accent with bloom, cooling to white); the keyword ignites last with an underline. Use as the hook of a 'defined as a function of time' explainer. Times follow the voice-over's words.",
+  "duration": 3.2,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "kit": "neon-grid",
+  "opaque": true,
+  "tags": ["neon-grid", "hook", "typing", "ignite", "grid", "3d", "kinetic", "title"],
+  "params": {
+    "t0": { "type": "number", "default": 0, "min": 0, "max": 600, "step": 0.01, "label": "Starts at", "description": "Where this clip starts on the timeline (s). Every other time here is TIMELINE seconds, like the voice's words. composition write fills it from t.", "display": false },
+    "words": { "type": "list", "default": [], "label": "Voice words", "description": "The voice-over's words with timeline times [{w, s, e}] (voiceover say / the transcript). They time every item whose time is -1: its own first word, said after the item before it.", "of": { "type": "object", "fields": { "w": { "type": "string" }, "s": { "type": "number" }, "e": { "type": "number", "default": 0 } } } },
+    "captions": { "type": "boolean", "default": false, "label": "Captions", "description": "Show the voice word by word under the graphic (needs words). Off here: the big lines are the line." },
+    "keys": { "type": "list", "default": [], "of": { "type": "string" }, "label": "Key words", "description": "Caption words painted in the accent." },
+    "prompt": { "type": "string", "default": "", "maxLength": 60, "label": "Typed line", "description": "The question typed in mono before the big lines (blank: none)." },
+    "typeFrom": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Typing starts", "description": "Timeline s; -1 = on the prompt's first word in the voice, else early in the clip." },
+    "typeTo": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Typing ends", "description": "Timeline s; -1 = just before the first big line." },
+    "lines": { "type": "list", "minItems": 1, "maxItems": 3, "required": true, "label": "Big lines", "description": "One to three lines of big extended caps, top to bottom; each reveals left to right and ignites when it is said.",
+      "of": { "type": "object", "fields": {
+        "text": { "type": "string", "maxLength": 16, "description": "the words of the line" },
+        "at": { "type": "number", "default": -1, "min": -1, "max": 600, "description": "timeline s; -1 = when its first word is said" },
+        "word": { "type": "string", "default": "", "description": "the voice word it lands on, when not its own first word" } } },
+      "default": [ { "text": "LINE ONE" } ] },
+    "keyword": { "type": "string", "default": "", "maxLength": 16, "label": "Keyword", "description": "The one word (inside a line) that ignites last and gets the underline; the rest of its line stays white. Blank: every line ignites whole." },
+    "keywordAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Keyword at", "description": "Timeline s; -1 = when the keyword is said." },
+    "accent": { "type": "color", "default": "#FF5A1F", "label": "Accent", "description": "The one isolate: ignite, caret, underline, horizon." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "label": "Speed", "description": "How fast the camera creeps (the words stay on the voice). Keep 1 when neon-outro loops into this clip." },
+    "exit": { "type": "boolean", "default": true, "label": "Exit", "description": "The type lifts out over the last 0.3 s (the grid stays)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #07070A; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+var S = {};
+RC.composition({
+  build: function (RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, st = document.getElementById("stage");
+    var T = new KIT.Timing(P, RC.duration);
+    S.T = T;
+    S.cv = KIT.canvas(st); S.ctx = S.cv.getContext("2d");
+    S.cam = new KIT.Camera(W, H, 64);
+    S.hook = RC.el("div", { style: { position: "absolute", left: "0", top: "0", width: W + "px", height: H + "px" } });
+    st.appendChild(S.hook);
+    // the typed prompt + caret
+    S.full = P.prompt || "";
+    S.typed = KIT.mono(S.hook, S.full, 46 * u, { color: "rgba(242,238,230,.86)" });
+    S.typed.style.left = (W - S.typed.offsetWidth) / 2 + "px"; S.typed.style.top = 610 * u + "px";
+    S.caret = RC.el("div", { style: { position: "absolute", width: 24 * u + "px", height: 52 * u + "px", background: P.accent,
+      boxShadow: "0 0 " + 18 * u + "px " + P.accent } });
+    S.hook.appendChild(S.caret);
+    // the big lines: one span per word, so the keyword can ignite on its own
+    var key = KIT.norm(P.keyword);
+    var maxW = W - RC.safe.left - RC.safe.right + 40 * u;
+    S.lines = P.lines.map(function (ln) {
+      var d = RC.el("div", { style: { position: "absolute", whiteSpace: "nowrap", fontFamily: "Archivo", fontWeight: "900", fontStretch: "125%",
+        lineHeight: "0.92", fontSize: 180 * u + "px", color: KIT.BONE, letterSpacing: "-0.01em", textTransform: "uppercase" } });
+      d._spans = String(ln.text).split(/\s+/).filter(Boolean).map(function (w, i, all) {
+        var sp = RC.el("span", { text: w + (i < all.length - 1 ? " " : "") });
+        sp._key = !!key && KIT.norm(w) === key;
+        d.appendChild(sp);
+        return sp;
+      });
+      d._hasKey = d._spans.some(function (sp) { return sp._key; });
+      S.hook.appendChild(d);
+      return d;
+    });
+    var px = Math.min.apply(null, S.lines.map(function (d) { return RC.fitText(d, maxW, 190 * u, 90 * u); }));
+    var y = 720 * u;
+    S.lines.forEach(function (d) { d.style.fontSize = px + "px"; KIT.centre(d, y); y += d.offsetHeight + 8 * u; });
+    // the keyword's underline
+    S.keySpan = null;
+    S.lines.forEach(function (d) { d._spans.forEach(function (sp) { if (sp._key && !S.keySpan) { S.keySpan = sp; S.keyLine = d; } }); });
+    S.under = RC.el("div", { style: { position: "absolute", height: 10 * u + "px", background: P.accent, borderRadius: 6 * u + "px",
+      boxShadow: "0 0 " + 22 * u + "px " + P.accent, transformOrigin: "0 50%", opacity: S.keySpan ? "1" : "0" } });
+    S.hook.appendChild(S.under);
+    if (S.keySpan) {
+      var kw = String(P.keyword).length / (S.keySpan.textContent.length || 1);
+      S.under.style.left = S.keyLine.offsetLeft + S.keySpan.offsetLeft + "px";
+      S.under.style.width = S.keySpan.offsetWidth * Math.min(1, kw + 0.02) + "px";
+      S.under.style.top = S.keyLine.offsetTop + S.keyLine.offsetHeight + 18 * u + "px";
+    }
+    // times: the prompt, each line, the keyword (in that order, each after the one before)
+    S.typeFrom = T.at({ at: P.typeFrom, text: S.full }, T.frac(0.22));
+    S.lineAt = P.lines.map(function (ln, i) { return T.at(ln, T.frac(0.52 + 0.12 * i)); });
+    S.typeTo = P.typeTo >= 0 ? P.typeTo : Math.max(S.typeFrom + 0.2, S.lineAt[0] - 0.06);
+    S.keyAt = S.keySpan ? T.at({ at: P.keywordAt, text: P.keyword }, S.lineAt[S.lines.indexOf(S.keyLine)] + 0.12) : null;
+    if (S.full) KIT.cue(T, S.typeFrom, "type", "prompt types");
+    S.lines.forEach(function (d, i) { if (!d._hasKey) KIT.cue(T, S.lineAt[i], "ignite", "line " + (i + 1) + " ignites"); });
+    if (S.keyAt != null) KIT.cue(T, S.keyAt, "ignite", "keyword ignites");
+    if (P.exit) KIT.cue(T, T.end - 0.32, "whoosh", "type lifts out");
+    S.cap = KIT.captionsFor(st, P, T);
+  },
+  render: function (time, RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, ctx = S.ctx, A = P.accent;
+    var g = S.T.t0 + time.T;           // the voice's clock (timeline seconds)
+    // camera: creeps forward low over the floor from the loop pose (clip-local, so frame 0 is always the same)
+    S.cam.set(0, 1.4, 0.55 * time.t, 0, -10, 0);
+    KIT.backdrop(ctx, W, H);
+    KIT.drawGrid(ctx, S.cam, { color: KIT.BONE, alpha: 0.24, lw: 1.7, reach: 30, accent: A, axes: 0, glow: 1, u: u });
+    KIT.vignette(ctx, W, H, 0.6);
+    // the prompt types; the caret blinks before and after
+    S.typed.textContent = KIT.typed(S.full, g, S.typeFrom, S.typeTo);
+    var caretOn = S.full && g >= S.T.t0 + 0.3 && (g < S.typeFrom || g > S.typeTo ? Math.floor(g * 2.4) % 2 === 0 : true);
+    S.caret.style.left = S.typed.offsetLeft + S.typed.offsetWidth + 6 * u + "px";
+    S.caret.style.top = S.typed.offsetTop + 4 * u + "px";
+    S.caret.style.opacity = caretOn ? "1" : "0";
+    // big lines reveal; a line with the keyword keeps white and only the keyword ignites
+    S.lines.forEach(function (d, i) {
+      KIT.reveal(d, RC.progress(g, S.lineAt[i] - 0.02, 0.34, "smooth"));
+      if (d._hasKey) d._spans.forEach(function (sp) { if (sp._key) KIT.ignite(sp, g, S.keyAt, A, u, 0.35); else sp.style.color = KIT.BONE; });
+      else KIT.ignite(d, g, S.lineAt[i], A, u);
+    });
+    if (S.keySpan) RC.set(S.under, { sx: RC.progress(g, S.keyAt + 0.15, 0.35, "snappy") });
+    var out = P.exit ? RC.progress(0.32 - time.left, 0, 0.3, "ease-in") : 0;
+    RC.set(S.hook, { y: -90 * u * out, opacity: 1 - out, blur: 14 * out });
+    S.cap.render(g, 1 - out);
+  },
+});
+</script>
+</body>
+</html>

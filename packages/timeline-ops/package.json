@@ -1,0 +1,18 @@
+{
+  "name": "@restorffcut/timeline-ops",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ops@1 for RestorffCut: a pure reducer apply(project, ops) over the editor's project JSON, plus the talking-head auto-cut compiler seed.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./compilers/talking-head": "./src/compilers/talking-head.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "test:node": "node --test test/smoke.node.ts",
+    "test:dual": "bun test --preload ./test/dual-apply.preload.ts",
+    "bench": "bun bench/apply.bench.ts",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json"
+  }
+}

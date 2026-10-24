@@ -1,0 +1,6 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/tracing-beam); fictional.",
+  "labels": "Capture,Compose,Render",
+  "accent": "violet",
+  "speed": 1
+}

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Perspective grid</title>
+<!-- Custom composition example (motion-code agent, 2026-10-20). Written as Claude would for the prompt:
+     "a 3D grid floor with the brand name written on it; the camera cranes up until the words stand up and face us". -->
+<script type="application/json" id="params">
+{
+  "name": "perspective-grid",
+  "title": "Perspective grid",
+  "description": "A CSS-perspective grid plane with a title written on it. The camera starts low, looking along the floor, then cranes up and banks while the grid keeps travelling, until the title stands up and faces the viewer; at the end it pushes through. Use it as a hook or a chapter card in a 'built with code' edit.",
+  "duration": 5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["3d", "grid", "camera", "title", "custom"],
+  "params": {
+    "title": { "type": "list", "of": { "type": "string", "maxLength": 12 }, "minItems": 1, "maxItems": 3, "default": ["COLD", "BREW"], "label": "Title", "description": "The words written on the grid, one per line." },
+    "highlight": { "type": "string", "default": "BREW", "maxLength": 12, "label": "Key word", "description": "The title word painted in the accent. Empty = none." },
+    "kicker": { "type": "string", "default": "HALCYON · STEEPED 20 H", "maxLength": 32, "label": "Kicker", "description": "Mono pill under the title once it faces the viewer." },
+    "gridColor": { "type": "color", "default": "#EDEBE6", "label": "Grid colour", "description": "Colour of the grid lines (drawn at 40 % opacity)." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "The key word and the horizon glow: the one isolate." },
+    "cell": { "type": "number", "default": 96, "min": 40, "max": 200, "step": 1, "unit": "px", "label": "Cell", "description": "Grid cell size on the 1080 grid." },
+    "travel": { "type": "number", "default": 0.9, "min": 0, "max": 4, "step": 0.05, "label": "Travel", "description": "Grid cells the camera travels per second." },
+    "tiltFrom": { "type": "number", "default": 78, "min": 0, "max": 86, "step": 1, "unit": "deg", "label": "Start tilt", "description": "Floor angle at the start: high = the camera looks along the floor." },
+    "tiltTo": { "type": "number", "default": 14, "min": -30, "max": 70, "step": 1, "unit": "deg", "label": "End tilt", "description": "Angle once the crane move lands: 0 = the plane faces the viewer." },
+    "roll": { "type": "number", "default": -5, "min": -20, "max": 20, "step": 0.5, "unit": "deg", "label": "Bank", "description": "How far the camera banks during the move (it levels out at the end)." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Title size multiplier." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "The camera pushes through the plane over the last 0.6 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .cam { position: absolute; inset: 0; }
+  .plane { position: absolute; transform-origin: 50% 50%; }
+  .grid { position: absolute; inset: 0; }
+  .title { position: absolute; left: 0; right: 0; text-align: center; font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 125%; text-transform: uppercase; line-height: 0.94; letter-spacing: -0.005em; color: #EDEBE6; white-space: nowrap; }
+  .title div { white-space: nowrap; }
+  .pill { position: absolute; font-family: "JetBrains Mono", monospace; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; white-space: nowrap; color: #0C0C0E; background: #EDEBE6; border-radius: 999px; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var G = {};
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u;
+      var stage = document.getElementById("stage");
+      // The camera: a perspective box the size of the frame. Moving its perspective-origin pans; rotating it banks.
+      var cam = RC.el("div", { class: "cam", style: { perspective: 1500 * u + "px" } });
+      // The plane is twice the frame each way, centred, so its edges stay out of shot while it tilts.
+      var pw = RC.width * 2.2;
+      var ph = RC.height * 2.2;
+      var plane = RC.el("div", { class: "plane", style: { width: pw + "px", height: ph + "px", left: (RC.width - pw) / 2 + "px", top: (RC.height - ph) / 2 + "px" } });
+      var line = RC.alpha(P.gridColor, 0.4);
+      var cell = P.cell * u;
+      // The plane is 2.2× the frame, so 45 % of its half-width is the frame's edge: the grid is a patch that fades
+      // out before the edges (lighter over footage); tilted, the same fade becomes the horizon.
+      var fade = "radial-gradient(closest-side, #000 14%, transparent 46%)";
+      var grid = RC.el("div", { class: "grid", style: {
+        backgroundImage: "linear-gradient(" + line + " " + 2 * u + "px, transparent " + 2 * u + "px), linear-gradient(90deg, " + line + " " + 2 * u + "px, transparent " + 2 * u + "px)",
+        backgroundSize: cell + "px " + cell + "px",
+        WebkitMaskImage: fade,
+        maskImage: fade,
+      } });
+      plane.appendChild(grid);
+      // The title is painted ON the plane: it tilts with the floor and stands up with it.
+      var title = RC.el("div", { class: "title", style: { textShadow: "0 " + 6 * u + "px " + 30 * u + "px rgba(0,0,0,.45)" } });
+      var words = P.title.map(function (w) {
+        var hl = !!P.highlight && w.trim().toUpperCase() === P.highlight.trim().toUpperCase();
+        // inline-block spans: fitText measures the word, not the full-width row
+        var span = RC.el("span", { text: w, style: { display: "inline-block", color: hl ? P.accent : "#EDEBE6" } });
+        title.appendChild(RC.el("div", {}, [span]));
+        return span;
+      });
+      plane.appendChild(title);
+      cam.appendChild(plane);
+      stage.appendChild(cam);
+      var pill = RC.el("div", { class: "pill", text: P.kicker, style: { fontSize: 30 * u + "px", padding: 12 * u + "px " + 26 * u + "px" } });
+      if (P.kicker) stage.appendChild(pill);
+      // Fit each title line to the safe width, then centre the block on the plane.
+      var maxW = RC.width - RC.safe.left - RC.safe.right;
+      var size = 260 * u * P.scale;
+      words.forEach(function (w) { size = Math.min(size, RC.fitText(w, maxW, 260 * u * P.scale, 80 * u)); });
+      words.forEach(function (w) { w.style.fontSize = size + "px"; });
+      title.style.top = (ph - title.offsetHeight) / 2 + "px";
+      pill.style.top = RC.height / 2 + title.offsetHeight / 2 + 40 * u + "px";
+      pill.style.left = (RC.width - pill.offsetWidth) / 2 + "px";
+      G.cam = cam; G.plane = plane; G.grid = grid; G.title = title; G.pill = pill; G.cell = cell; G.u = u;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var appear = RC.progress(t, 0, 0.6, "smooth");
+      // Crane up: the floor angle eases from tiltFrom to tiltTo while the camera banks and levels out again.
+      var crane = RC.progress(t, 0.25, 2.4, "smooth");
+      var tilt = RC.mix(P.tiltFrom, P.tiltTo, crane);
+      var bank = P.roll * Math.sin(crane * Math.PI);
+      // Pan: the perspective origin swings from right of centre back to the middle.
+      var pan = RC.mix(64, 50, crane);
+      // Push through at the end: scale the plane up past the camera and fade it.
+      var push = P.exit ? RC.progress(0.6 - time.left, 0, 0.6, "ease-in") : 0;
+      G.cam.style.perspectiveOrigin = pan + "% 50%";
+      G.cam.style.transform = "rotate(" + bank.toFixed(4) + "deg)";
+      G.plane.style.transform = "rotateX(" + (tilt - push * 10).toFixed(4) + "deg) scale(" + (0.94 + 0.06 * crane + 1.6 * push).toFixed(5) + ")";
+      G.plane.style.opacity = String(appear * (1 - push));
+      // Travel: the grid scrolls one cell per 1/travel seconds (pure function of t).
+      G.grid.style.backgroundPosition = "0px " + ((t * P.travel * G.cell) % G.cell).toFixed(3) + "px";
+      // Title fades up as it rises; the kicker pill pops once it faces us.
+      G.title.style.opacity = String(RC.progress(t, 0.5, 0.9, "smooth"));
+      var k = RC.progress(t, 2.3, 0.35, "bouncy");
+      RC.set(G.pill, { scale: 0.6 + 0.4 * k, opacity: RC.clamp(k * 1.4, 0, 1) * (1 - push) });
+    },
+  });
+</script>
+</body>
+</html>

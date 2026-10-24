@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stand-in subject (test fixture)</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "stand-in",
+  "title": "Stand-in subject",
+  "description": "TEST FIXTURE, not a library effect: a fictional flat-illustrated Halcyon barista talking on a couch in a café room. Rendered as 'plate' (room + person, opaque), 'cutout' (the person only, alpha: an exact matte) or 'background' (the room alone: a clean plate). Lets every matte effect be checked end to end without real footage. Plate keys mirror the editor's transform keyframes (scale, x, y).",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["fixture", "test"],
+  "params": {
+    "layer": { "type": "enum", "options": ["plate", "cutout", "background"], "default": "plate", "label": "Layer", "description": "plate = room + person; cutout = person only on transparent (the matte); background = the room alone (clean plate)." },
+    "keys": {
+      "type": "list", "minItems": 0, "maxItems": 12, "default": [],
+      "label": "Transform keys",
+      "description": "Keyframes of the whole picture, like the editor's clip transform: t seconds, scale around the frame centre, x/y offsets as fractions of the width/height, ease into the key (linear, hold, ease_in, ease_out, ease_in_out = the editor's cubic-beziers).",
+      "of": { "type": "object", "fields": {
+        "t": { "type": "number", "min": 0, "max": 600 },
+        "scale": { "type": "number", "default": 1, "min": 0.05, "max": 10 },
+        "x": { "type": "number", "default": 0, "min": -2, "max": 2 },
+        "y": { "type": "number", "default": 0, "min": -2, "max": 2 },
+        "ease": { "type": "enum", "options": ["linear", "hold", "ease_in", "ease_out", "ease_in_out"], "default": "linear" }
+      } }
+    },
+    "hands": { "type": "list", "minItems": 0, "maxItems": 6, "default": [[0.9, 2.0], [2.6, 3.4]], "of": { "type": "list", "of": { "type": "number", "min": 0, "max": 600 }, "minItems": 2, "maxItems": 2 }, "label": "Hands up", "description": "Time windows [from, to] when both hands rise wide (for Frame Break)." },
+    "sway": { "type": "number", "default": 1, "min": 0, "max": 3, "step": 0.1, "label": "Sway", "description": "Body sway amount." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  svg { position: absolute; left: 0; top: 0; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var SI = {};
+  var NS = "http://www.w3.org/2000/svg";
+  function S(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  // the editor's ease_* cubic-beziers (packages/timeline-ops/src/reducer.ts): solve x(s) = p, return y(s)
+  var BEZ = { ease_in: [0.42, 0, 1, 1], ease_out: [0, 0, 0.58, 1], ease_in_out: [0.42, 0, 0.58, 1] };
+  function bez(c, p) {
+    if (p <= 0) return 0;
+    if (p >= 1) return 1;
+    var lo = 0, hi = 1, s = p;
+    for (var i = 0; i < 40; i++) {
+      s = (lo + hi) / 2;
+      var x = 3 * (1 - s) * (1 - s) * s * c[0] + 3 * (1 - s) * s * s * c[2] + s * s * s;
+      if (x < p) lo = s; else hi = s;
+    }
+    return 3 * (1 - s) * (1 - s) * s * c[1] + 3 * (1 - s) * s * s * c[3] + s * s * s;
+  }
+  function keyAt(keys, t, prop, dflt) {
+    if (!keys.length) return dflt;
+    if (t <= keys[0].t) return keys[0][prop];
+    for (var i = 1; i < keys.length; i++) {
+      var a = keys[i - 1], b = keys[i];
+      if (t <= b.t) {
+        var p = (t - a.t) / Math.max(1e-6, b.t - a.t);
+        var e = b.ease === "hold" ? 0 : b.ease === "linear" ? p : bez(BEZ[b.ease], p);
+        return a[prop] + (b[prop] - a[prop]) * e;
+      }
+    }
+    return keys[keys.length - 1][prop];
+  }
+  var SKIN = "#C98E6B", SKIN_D = "#A8704F", SWEATER = "#2F4A3A", SWEATER_D = "#243A2D", BEANIE = "#C8553D", HAIR = "#2A1E18";
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var stage = document.getElementById("stage");
+      var svg = S("svg", { width: RC.width, height: RC.height, viewBox: "0 0 1080 1920", preserveAspectRatio: "xMidYMid slice" });
+      stage.appendChild(svg);
+      var defs = S("defs", {}, svg);
+      var g1 = S("linearGradient", { id: "wall", x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+      S("stop", { offset: 0, "stop-color": "#D8C7AE" }, g1);
+      S("stop", { offset: 1, "stop-color": "#B49F84" }, g1);
+      var g2 = S("linearGradient", { id: "sky", x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+      S("stop", { offset: 0, "stop-color": "#9CC3DE" }, g2);
+      S("stop", { offset: 1, "stop-color": "#E4EEF0" }, g2);
+      var g3 = S("radialGradient", { id: "lamp", cx: 0.5, cy: 0.5, r: 0.5 }, defs);
+      S("stop", { offset: 0, "stop-color": "#FFE7B0", "stop-opacity": 0.75 }, g3);
+      S("stop", { offset: 1, "stop-color": "#FFE7B0", "stop-opacity": 0 }, g3);
+      var world = S("g", {}, svg);
+      SI.world = world;
+      if (P.layer !== "cutout") {
+        var room = S("g", {}, world);
+        S("rect", { x: -400, y: -400, width: 1880, height: 2720, fill: "url(#wall)" }, room);
+        for (var i = -6; i < 22; i++) S("rect", { x: i * 90, y: -400, width: 3, height: 2720, fill: "rgba(80,60,40,.10)" }, room);
+        // window with mullions and a tree outside (gives Vertigo and Glass Type straight lines to bend)
+        S("rect", { x: 70, y: 330, width: 380, height: 640, fill: "#F3EEE5" }, room);
+        S("rect", { x: 92, y: 352, width: 336, height: 596, fill: "url(#sky)" }, room);
+        S("circle", { cx: 170, cy: 760, r: 120, fill: "#7FA36B" }, room);
+        S("circle", { cx: 300, cy: 820, r: 150, fill: "#6B8F5A" }, room);
+        S("rect", { x: 92, y: 860, width: 336, height: 88, fill: "#8DA87A" }, room);
+        S("rect", { x: 252, y: 352, width: 16, height: 596, fill: "#F3EEE5" }, room);
+        S("rect", { x: 92, y: 640, width: 336, height: 16, fill: "#F3EEE5" }, room);
+        S("rect", { x: 56, y: 962, width: 408, height: 22, fill: "#E6DED1" }, room);
+        // shelf with Halcyon bottles and a plant
+        S("rect", { x: 660, y: 660, width: 380, height: 18, fill: "#7A5638" }, room);
+        [[700, 0], [760, 1], [820, 0]].forEach(function (b) {
+          S("rect", { x: b[0], y: 520, width: 46, height: 140, rx: 10, fill: b[1] ? "#1E1E22" : "#2B2B30" }, room);
+          S("rect", { x: b[0] + 12, y: 490, width: 22, height: 36, rx: 4, fill: "#1E1E22" }, room);
+          S("rect", { x: b[0] + 4, y: 570, width: 38, height: 46, fill: "#EDE3CF" }, room);
+        });
+        S("path", { d: "M900 660 L915 590 L985 590 L1000 660 Z", fill: "#B5603F" }, room);
+        S("ellipse", { cx: 950, cy: 560, rx: 70, ry: 50, fill: "#5E8A55" }, room);
+        S("ellipse", { cx: 920, cy: 520, rx: 40, ry: 45, fill: "#6E9A62" }, room);
+        // floor lamp (right) with a warm glow
+        S("circle", { cx: 980, cy: 1060, r: 260, fill: "url(#lamp)" }, room);
+        S("rect", { x: 972, y: 1080, width: 14, height: 600, fill: "#2A2420" }, room);
+        S("path", { d: "M900 1090 L940 960 L1020 960 L1060 1090 Z", fill: "#F1E2C2" }, room);
+        // couch behind the person, floor
+        S("rect", { x: -40, y: 1580, width: 1160, height: 400, fill: "#5A4636" }, room);
+        S("rect", { x: 40, y: 1260, width: 1000, height: 420, rx: 60, fill: "#3E5A6E" }, room);
+        S("rect", { x: 0, y: 1420, width: 120, height: 330, rx: 50, fill: "#35505F" }, room);
+        S("rect", { x: 960, y: 1420, width: 120, height: 330, rx: 50, fill: "#35505F" }, room);
+        S("rect", { x: 80, y: 1560, width: 920, height: 200, rx: 30, fill: "#46667B" }, room);
+      }
+      if (P.layer !== "background") {
+        var body = S("g", {}, world);
+        SI.body = body;
+        // arms behind the torso (upper arms), torso, then forearms + hands in front
+        SI.armL = S("path", { fill: "none", stroke: SWEATER_D, "stroke-width": 120, "stroke-linecap": "round", "stroke-linejoin": "round" }, body);
+        SI.armR = S("path", { fill: "none", stroke: SWEATER_D, "stroke-width": 120, "stroke-linecap": "round", "stroke-linejoin": "round" }, body);
+        S("path", { d: "M300 1220 C330 1150 420 1120 540 1120 C660 1120 750 1150 780 1220 L870 1980 L210 1980 Z", fill: SWEATER }, body);
+        S("path", { d: "M470 1120 L540 1210 L610 1120", fill: "none", stroke: SWEATER_D, "stroke-width": 16 }, body);
+        S("rect", { x: 600, y: 1330, width: 96, height: 96, rx: 12, fill: "#EDE3CF" }, body);
+        S("text", { x: 648, y: 1400, "text-anchor": "middle", "font-family": "Instrument Serif", "font-size": 76, fill: SWEATER }, body).textContent = "H";
+        S("rect", { x: 490, y: 960, width: 100, height: 180, rx: 30, fill: SKIN_D }, body);
+        var head = S("g", {}, body);
+        SI.head = head;
+        S("ellipse", { cx: 404, cy: 840, rx: 26, ry: 40, fill: SKIN_D }, head);
+        S("ellipse", { cx: 676, cy: 840, rx: 26, ry: 40, fill: SKIN_D }, head);
+        S("ellipse", { cx: 540, cy: 830, rx: 138, ry: 168, fill: SKIN }, head);
+        S("path", { d: "M405 770 C400 690 460 640 540 640 C620 640 680 690 675 770 C640 740 600 735 540 735 C480 735 440 740 405 770 Z", fill: HAIR }, head);
+        S("path", { d: "M395 760 C390 640 455 585 540 585 C625 585 690 640 685 760 Z", fill: BEANIE }, head);
+        S("rect", { x: 388, y: 716, width: 304, height: 54, rx: 24, fill: "#A9442F" }, head);
+        S("circle", { cx: 540, cy: 582, r: 26, fill: "#A9442F" }, head);
+        S("path", { d: "M462 806 Q490 794 518 806", fill: "none", stroke: HAIR, "stroke-width": 9, "stroke-linecap": "round" }, head);
+        S("path", { d: "M562 806 Q590 794 618 806", fill: "none", stroke: HAIR, "stroke-width": 9, "stroke-linecap": "round" }, head);
+        S("ellipse", { cx: 490, cy: 838, rx: 12, ry: 14, fill: "#241A15" }, head);
+        S("ellipse", { cx: 590, cy: 838, rx: 12, ry: 14, fill: "#241A15" }, head);
+        S("path", { d: "M540 850 L528 900 L548 904", fill: "none", stroke: SKIN_D, "stroke-width": 7, "stroke-linecap": "round", "stroke-linejoin": "round" }, head);
+        SI.mouth = S("ellipse", { cx: 540, cy: 938, rx: 34, ry: 8, fill: "#5A2622" }, head);
+        SI.foreL = S("path", { fill: "none", stroke: SWEATER, "stroke-width": 104, "stroke-linecap": "round" }, body);
+        SI.foreR = S("path", { fill: "none", stroke: SWEATER, "stroke-width": 104, "stroke-linecap": "round" }, body);
+        SI.handL = S("circle", { r: 56, fill: SKIN }, body);
+        SI.handR = S("circle", { r: 56, fill: SKIN }, body);
+      }
+      SI.svg = svg;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var T = time.T;
+      // whole-picture transform (the editor's clip transform keys)
+      var sc = keyAt(P.keys, T, "scale", 1);
+      var kx = keyAt(P.keys, T, "x", 0) * 1080;
+      var ky = keyAt(P.keys, T, "y", 0) * 1920;
+      SI.world.setAttribute("transform", "translate(" + (540 + kx) + " " + (960 + ky) + ") scale(" + sc + ") translate(-540 -960)");
+      if (!SI.body) return;
+      var sway = Math.sin(T * Math.PI * 2 * 0.45) * 10 * P.sway;
+      SI.body.setAttribute("transform", "translate(" + sway + " 0)");
+      SI.head.setAttribute("transform", "rotate(" + (Math.sin(T * Math.PI * 2 * 0.6) * 3 * P.sway) + " 540 1000)");
+      SI.mouth.setAttribute("ry", String(6 + 12 * Math.abs(Math.sin(T * 9.3)) * (0.6 + 0.4 * Math.sin(T * 2.1))));
+      var g = 0;
+      for (var i = 0; i < P.hands.length; i++) {
+        var w = P.hands[i];
+        g = Math.max(g, RC.progress(T, w[0], 0.35, "smooth") * (1 - RC.progress(T, w[1] - 0.35, 0.35, "smooth")));
+      }
+      function arm(side, upper, fore, hand) {
+        var sx = 540 + side * 225, sy = 1215;
+        var ex = 540 + side * RC.mix(255, 330, g), ey = RC.mix(1560, 1330, g);
+        var hx = 540 + side * RC.mix(150, 445, g), hy = RC.mix(1700, 1060, g);
+        upper.setAttribute("d", "M" + sx + " " + sy + " L" + ex + " " + ey);
+        fore.setAttribute("d", "M" + ex + " " + ey + " L" + hx + " " + hy);
+        hand.setAttribute("cx", hx);
+        hand.setAttribute("cy", hy);
+      }
+      arm(-1, SI.armL, SI.foreL, SI.handL);
+      arm(1, SI.armR, SI.foreR, SI.handR);
+    },
+  });
+</script>
+</body>
+</html>

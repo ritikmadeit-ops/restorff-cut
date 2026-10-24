@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon grid</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "neon-grid",
+  "title": "Neon grid",
+  "description": "Full-screen motion design: a dark perspective grid floor glides toward the camera, big extended caps words ignite ember-orange and cool to white one per beat, wireframe solids (cube, octahedron, pyramid) turn in space and a mono prompt types along the bottom with a caret. Use as a hook or a chapter card in a 'built with code' edit (EFFECTS.md FX-48). Covers the frame unless background is off.",
+  "duration": 5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["motion design", "kinetic type", "3d", "grid", "hook", "full frame"],
+  "params": {
+    "lines": { "type": "list", "of": { "type": "string", "maxLength": 14 }, "minItems": 1, "maxItems": 8, "default": ["COLD", "BREW", "BUILT", "IN CODE"], "label": "Words", "description": "Big words, one per beat, in order (say them in the voice-over on the beat)." },
+    "prompt": { "type": "string", "default": "make the cold brew ad feel like night", "maxLength": 60, "label": "Typed prompt", "description": "Mono line typed along the bottom with a caret. Empty to hide." },
+    "beat": { "type": "number", "default": 0.9, "min": 0.3, "max": 4, "step": 0.05, "unit": "s", "label": "Beat", "description": "Seconds per word." },
+    "accent": { "type": "color", "default": "#FF6A1F", "label": "Ember", "description": "The ignite colour and the solids' glow: the one accent." },
+    "gridColor": { "type": "color", "default": "#8C8C95", "label": "Grid", "description": "Colour of the grid lines." },
+    "background": { "type": "boolean", "default": true, "label": "Dark background", "description": "Fill the frame with near-black (off = the grid and type float over the footage)." },
+    "solids": { "type": "boolean", "default": true, "label": "Wireframe solids", "description": "Turning cube, octahedron and pyramid." },
+    "typeSpeed": { "type": "number", "default": 18, "min": 4, "max": 60, "step": 1, "unit": "chars/s", "label": "Typing speed", "description": "Characters per second for the prompt (the reel: ~18)." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier for the words." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Camera and word speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades to transparent over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 58%, #1b1414 0%, #0c0c0e 60%); }
+  .floorwrap { position: absolute; left: 0; right: 0; bottom: 0; perspective: 900px; perspective-origin: 50% 0%; overflow: hidden; }
+  .floor { position: absolute; left: -100%; right: -100%; top: 0; height: 300%; transform-origin: 50% 0%; }
+  .horizon { position: absolute; left: 0; right: 0; }
+  .word { position: absolute; left: 0; width: 100%; text-align: center; font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 125%; text-transform: uppercase; white-space: nowrap; line-height: .9; }
+  .prompt { position: absolute; font-family: "JetBrains Mono", monospace; font-weight: 500; color: #EDEBE6; white-space: nowrap; }
+  .caret { display: inline-block; vertical-align: -0.12em; }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var NG = { words: [], solids: [] };
+  var SOLIDS = {
+    cube: { v: [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]], e: [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]] },
+    octa: { v: [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]], e: [[0,2],[0,3],[0,4],[0,5],[1,2],[1,3],[1,4],[1,5],[2,4],[4,3],[3,5],[5,2]] },
+    pyramid: { v: [[0,-1.2,0],[-1,0.8,-1],[1,0.8,-1],[1,0.8,1],[-1,0.8,1]], e: [[0,1],[0,2],[0,3],[0,4],[1,2],[2,3],[3,4],[4,1]] },
+  };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      if (P.background) stage.appendChild(RC.el("div", { class: "bg" }));
+      var horizonY = RC.height * 0.6;
+      var fw = RC.el("div", { class: "floorwrap", style: { top: horizonY + "px" } });
+      var cell = 72 * RC.u;
+      var floor = RC.el("div", { class: "floor", style: {
+        backgroundImage: "linear-gradient(" + RC.alpha(P.gridColor, 0.55) + " 2px, transparent 2px), linear-gradient(90deg, " + RC.alpha(P.gridColor, 0.55) + " 2px, transparent 2px)",
+        backgroundSize: cell + "px " + cell + "px",
+        transform: "rotateX(74deg)",
+        WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, #000 22%)",
+        maskImage: "linear-gradient(to bottom, transparent 0%, #000 22%)",
+      } });
+      fw.appendChild(floor);
+      stage.appendChild(fw);
+      stage.appendChild(RC.el("div", { class: "horizon", style: { top: horizonY - 2 * RC.u + "px", height: 4 * RC.u + "px", background: P.accent, boxShadow: "0 0 " + 40 * RC.u + "px " + 10 * RC.u + "px " + RC.alpha(P.accent, 0.45), opacity: "0.85" } }));
+      NG.floor = floor;
+      NG.cell = cell;
+      // solids
+      if (P.solids) {
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", RC.width);
+        svg.setAttribute("height", RC.height);
+        stage.appendChild(svg);
+        var spots = [["cube", 0.2, 0.2, 95], ["octa", 0.82, 0.3, 80], ["pyramid", 0.72, 0.5, 70]];
+        spots.forEach(function (s, i) {
+          var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          p.setAttribute("fill", "none");
+          p.setAttribute("stroke", i === 0 ? P.accent : "#EDEBE6");
+          p.setAttribute("stroke-width", 3 * RC.u);
+          p.setAttribute("stroke-linejoin", "round");
+          p.style.filter = "drop-shadow(0 0 " + 8 * RC.u + "px " + RC.alpha(P.accent, i === 0 ? 0.8 : 0.3) + ")";
+          g.appendChild(p);
+          svg.appendChild(g);
+          NG.solids.push({ path: p, shape: SOLIDS[s[0]], x: s[1] * RC.width, y: s[2] * RC.height, size: s[3] * RC.u, i: i });
+        });
+      }
+      // words
+      P.lines.forEach(function (w, i) {
+        var node = RC.el("div", { class: "word", text: w, style: { top: RC.height * 0.36 + "px", color: "#EDEBE6" } });
+        stage.appendChild(node);
+        RC.fitText(node, RC.width - 2 * RC.safe.left, 230 * u, 60 * RC.u);
+        node.style.marginTop = -node.offsetHeight / 2 + "px";
+        NG.words.push(node);
+      });
+      if (P.prompt) {
+        var pr = RC.el("div", { class: "prompt", style: { left: RC.safe.left + "px", top: RC.height - RC.safe.bottom - 20 * RC.u + "px", fontSize: 34 * RC.u + "px" } });
+        NG.typed = RC.el("span", { text: "" });
+        NG.caret = RC.el("span", { class: "caret", style: { width: 18 * RC.u + "px", height: 38 * RC.u + "px", background: P.accent, marginLeft: 4 * RC.u + "px" } });
+        pr.appendChild(RC.el("span", { text: "> ", style: { color: P.accent } }));
+        pr.appendChild(NG.typed);
+        pr.appendChild(NG.caret);
+        stage.appendChild(pr);
+      }
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var T = time.T;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      var fadeIn = RC.progress(t, 0, 0.3, "linear");
+      document.getElementById("stage").style.opacity = String(fadeIn * (1 - out));
+      // camera dolly: the grid scrolls toward the viewer
+      NG.floor.style.backgroundPosition = "0px " + (t * NG.cell * 1.6) % NG.cell + "px";
+      // words: one per beat; ignite (ember + glow) then cool to white
+      for (var i = 0; i < NG.words.length; i++) {
+        var node = NG.words[i];
+        var s = 0.25 + i * P.beat;
+        var local = t - s;
+        var on = local >= 0 && (i === NG.words.length - 1 || local < P.beat);
+        if (!on) { node.style.opacity = "0"; continue; }
+        var inP = RC.progress(local, 0, 0.18, "snappy");
+        var cool = RC.progress(local, 0.12, 0.35, "smooth");
+        var leave = i === NG.words.length - 1 ? 0 : RC.progress(local, P.beat - 0.12, 0.12, "ease-in");
+        node.style.color = RC.mixColor(P.accent, "#EDEBE6", cool);
+        node.style.textShadow = "0 0 " + (40 * (1 - cool) + 6) * RC.u + "px " + RC.alpha(P.accent, 0.9 * (1 - cool) + 0.1);
+        RC.set(node, { scale: RC.mix(1.35, 1, inP) * (1 - 0.1 * leave), opacity: inP * (1 - leave), y: -leave * 40 * RC.u });
+      }
+      // solids turn
+      for (var k = 0; k < NG.solids.length; k++) {
+        var so = NG.solids[k];
+        var ax = T * (0.6 + k * 0.2) + k;
+        var ay = T * (0.9 - k * 0.15) + k * 2;
+        var cx = Math.cos(ax), sx = Math.sin(ax), cy = Math.cos(ay), sy = Math.sin(ay);
+        var bob = Math.sin(T * 1.3 + k * 2) * 12 * RC.u;
+        var pts = so.shape.v.map(function (v) {
+          var x = v[0] * cy + v[2] * sy;
+          var z = -v[0] * sy + v[2] * cy;
+          var y = v[1] * cx - z * sx;
+          z = v[1] * sx + z * cx;
+          var f = 4 / (4 + z);
+          return [so.x + x * so.size * f, so.y + bob + y * so.size * f];
+        });
+        var d = "";
+        so.shape.e.forEach(function (e) { d += "M" + pts[e[0]][0].toFixed(1) + " " + pts[e[0]][1].toFixed(1) + " L" + pts[e[1]][0].toFixed(1) + " " + pts[e[1]][1].toFixed(1) + " "; });
+        so.path.setAttribute("d", d);
+        so.path.style.opacity = String(RC.progress(t, 0.2 + k * 0.25, 0.4, "smooth"));
+      }
+      if (NG.typed) {
+        var n = Math.max(0, Math.floor((t - 0.4) * P.typeSpeed)); // the prompt is choreography: speed + fit reach it
+        NG.typed.textContent = P.prompt.slice(0, n);
+        NG.caret.style.opacity = Math.floor(T * 2.5) % 2 === 0 || n < P.prompt.length ? "1" : "0";
+      }
+    },
+  });
+</script>
+</body>
+</html>

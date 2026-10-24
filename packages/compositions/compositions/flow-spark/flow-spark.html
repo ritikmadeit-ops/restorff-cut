@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flow spark</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "flow-spark",
+  "title": "Flow spark",
+  "description": "A small flowchart: nodes pop in down a column joined by a connector, a glowing spark travels the path; optionally one node is crossed out with an X and the path re-routes to a new node beside it. Use to explain a process, or 'the old way breaks here, so we go this way' (EFFECTS.md FX-49).",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["diagram", "flow", "process", "explainer"],
+  "params": {
+    "nodes": { "type": "list", "of": { "type": "string", "maxLength": 22 }, "minItems": 2, "maxItems": 5, "default": ["BEANS", "HOT WATER", "BOTTLE"], "label": "Nodes", "description": "Steps in order, top to bottom." },
+    "broken": { "type": "number", "default": 2, "min": 0, "max": 5, "step": 1, "label": "Broken node", "description": "Which node (1-based) gets crossed out and routed around; 0 = none." },
+    "reroute": { "type": "string", "default": "COLD WATER · 18H", "maxLength": 22, "label": "New node", "description": "The node the path re-routes through instead of the broken one." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Spark", "description": "Spark and the new node's outline: the isolate." },
+    "cross": { "type": "color", "default": "#E5484D", "label": "Cross", "description": "Colour of the X on the broken node." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.35 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .node { position: absolute; display: flex; align-items: center; justify-content: center; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .1em; color: #EDEBE6; background: rgba(12,12,14,.78); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var NS = "http://www.w3.org/2000/svg";
+  var FS = { nodes: [] };
+  function pathEl(svg, d, stroke, w, extra) {
+    var p = document.createElementNS(NS, "path");
+    p.setAttribute("d", d);
+    p.setAttribute("fill", "none");
+    p.setAttribute("stroke", stroke);
+    p.setAttribute("stroke-width", w);
+    p.setAttribute("stroke-linecap", "round");
+    p.setAttribute("stroke-linejoin", "round");
+    for (var k in extra || {}) p.setAttribute(k, extra[k]);
+    svg.appendChild(p);
+    return p;
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("width", RC.width);
+      svg.setAttribute("height", RC.height);
+      stage.appendChild(svg);
+      var n = P.nodes.length;
+      var nw = 380 * u;
+      var nh = 110 * u;
+      var gap = 120 * u;
+      var total = n * nh + (n - 1) * gap;
+      var x = RC.width * 0.27;
+      var y0 = (RC.height - total) / 2 + P.offsetY * RC.u;
+      var broken = P.broken >= 1 && P.broken <= n && n >= 2 && P.broken !== 1 && P.broken !== n ? P.broken - 1 : -1;
+      var centres = [];
+      P.nodes.forEach(function (label, i) {
+        var cy = y0 + i * (nh + gap) + nh / 2;
+        var node = RC.el("div", { class: "node", text: label, style: { left: x - nw / 2 + "px", top: cy - nh / 2 + "px", width: nw + "px", height: nh + "px", borderRadius: 22 * u + "px", border: (3 * u) + "px solid rgba(237,235,230,.5)", fontSize: 34 * u + "px" } });
+        stage.appendChild(node);
+        FS.nodes.push({ node: node, at: 0.1 + i * 0.18 });
+        centres.push([x, cy]);
+      });
+      // the straight path through every node, and (if a node breaks) the detour through the new node on the right
+      var straight = "M" + centres[0][0] + " " + centres[0][1];
+      for (var i = 1; i < n; i++) straight += " L" + centres[i][0] + " " + centres[i][1];
+      FS.line = pathEl(svg, straight, "rgba(237,235,230,.45)", 5 * u, { "stroke-dasharray": 14 * u + " " + 12 * u });
+      svg.insertBefore(FS.line, svg.firstChild);
+      var route = straight;
+      if (broken >= 0) {
+        var a = centres[broken - 1];
+        var b = centres[broken + 1];
+        var rx = x + nw / 2 + 50 * u + 200 * u;
+        var ry = centres[broken][1];
+        route = "M" + centres[0][0] + " " + centres[0][1];
+        for (var j = 1; j < broken; j++) route += " L" + centres[j][0] + " " + centres[j][1];
+        route += " L" + a[0] + " " + (a[1] + nh / 2) + " C" + a[0] + " " + (a[1] + gap) + " " + rx + " " + (ry - gap) + " " + rx + " " + ry;
+        route += " C" + rx + " " + (ry + gap) + " " + b[0] + " " + (b[1] - gap) + " " + b[0] + " " + (b[1] - nh / 2);
+        for (var k = broken + 1; k < n; k++) route += " L" + centres[k][0] + " " + centres[k][1];
+        FS.detour = pathEl(svg, route, P.accent, 5 * u, {});
+        var nn = RC.el("div", { class: "node", text: P.reroute, style: { left: rx - 200 * u + "px", top: ry - nh / 2 + "px", width: 400 * u + "px", height: nh + "px", borderRadius: 22 * u + "px", border: (4 * u) + "px solid " + P.accent, fontSize: 28 * u + "px" } });
+        stage.appendChild(nn);
+        FS.newNode = nn;
+        var bx = centres[broken][0];
+        var by = centres[broken][1];
+        var s = nh * 0.42;
+        FS.x1 = pathEl(svg, "M" + (bx - s * 1.6) + " " + (by - s) + " L" + (bx + s * 1.6) + " " + (by + s), P.cross, 10 * u, {});
+        FS.x2 = pathEl(svg, "M" + (bx + s * 1.6) + " " + (by - s) + " L" + (bx - s * 1.6) + " " + (by + s), P.cross, 10 * u, {});
+        FS.brokenNode = FS.nodes[broken].node;
+      }
+      FS.route = pathEl(svg, route, "none", 1, {});
+      FS.routeLen = FS.route.getTotalLength();
+      if (FS.detour) {
+        FS.detour.setAttribute("stroke-dasharray", FS.routeLen + " " + FS.routeLen);
+      }
+      var spark = document.createElementNS(NS, "circle");
+      spark.setAttribute("r", 14 * u);
+      spark.setAttribute("fill", P.accent);
+      spark.style.filter = "drop-shadow(0 0 " + 14 * u + "px " + P.accent + ")";
+      svg.appendChild(spark);
+      FS.spark = spark;
+      FS.broken = broken;
+      [FS.x1, FS.x2].forEach(function (p) { if (p) { var l = p.getTotalLength(); p.setAttribute("stroke-dasharray", l + " " + l); p.__len = l; } });
+      FS.stage = stage;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var out = P.exit ? 1 - RC.clamp(time.left / 0.35, 0, 1) : 0;
+      FS.nodes.forEach(function (n) {
+        var p = RC.progress(t, n.at, 0.3, "bouncy");
+        RC.set(n.node, { scale: 0.6 + 0.4 * p, opacity: p });
+      });
+      var lineP = RC.progress(t, 0.2, 0.5, "smooth");
+      FS.line.style.opacity = String(lineP * (FS.broken >= 0 ? 1 - 0.6 * RC.progress(t, 1.3, 0.4, "linear") : 1));
+      // X on the broken node, then the new node, then the spark travels the (re-routed) path
+      var xp = RC.progress(t, 0.9, 0.18, "smooth");
+      var xq = RC.progress(t, 1.08, 0.18, "smooth");
+      if (FS.x1) {
+        FS.x1.setAttribute("stroke-dashoffset", String(FS.x1.__len * (1 - xp)));
+        FS.x2.setAttribute("stroke-dashoffset", String(FS.x2.__len * (1 - xq)));
+        FS.x1.style.visibility = xp > 0 ? "visible" : "hidden";
+        FS.x2.style.visibility = xq > 0 ? "visible" : "hidden";
+        FS.brokenNode.style.filter = xq > 0 ? "grayscale(1) brightness(.6)" : "none";
+        var np = RC.progress(t, 1.3, 0.35, "bouncy");
+        RC.set(FS.newNode, { scale: 0.5 + 0.5 * np, opacity: np });
+      }
+      var start = FS.broken >= 0 ? 1.6 : 0.8;
+      var sp = RC.progress(t, start, 1.4, "smooth");
+      if (FS.detour) FS.detour.setAttribute("stroke-dashoffset", String(FS.routeLen * (1 - sp)));
+      var q = FS.route.getPointAtLength(sp * FS.routeLen);
+      FS.spark.setAttribute("cx", q.x);
+      FS.spark.setAttribute("cy", q.y);
+      FS.spark.style.opacity = sp > 0 && sp < 1 ? "1" : sp >= 1 ? String(1 - RC.clamp((t - start - 1.4) / 0.3, 0, 1)) : "0";
+      FS.stage.style.opacity = String(1 - out);
+    },
+  });
+</script>
+</body>
+</html>

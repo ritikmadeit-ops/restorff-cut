@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/touch-indicator); fictional.",
+  "gesture": "tap",
+  "polarity": "light",
+  "targetX": 7.63,
+  "targetY": 72.5,
+  "speed": 1
+}

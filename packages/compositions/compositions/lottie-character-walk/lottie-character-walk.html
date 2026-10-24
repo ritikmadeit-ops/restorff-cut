@@ -1,0 +1,244 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/blocks/lottie-character-walk@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-variables='[{"id":"title","type":"string","label":"Card title","default":"Meet your guide","maxLength":28},{"id":"body","type":"string","label":"Card text","default":"Walks in on planted feet, then points the way.","maxLength":90}]'
+>
+  <head>
+<meta charset="utf-8">
+<!-- rc-lib gsap lottie -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "lottie-character-walk",
+  "title": "Lottie Character Walk",
+  "description": "A jointed flat character walks in on planted feet, stops and points at a card; the body acting is a Lottie file and the stage is GSAP. Imported from a HyperFrames block (ui-product; provenance below).",
+  "duration": 7.5,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "tags": [
+    "ui-product",
+    "character",
+    "character-animation",
+    "mascot",
+    "walk-cycle",
+    "gesture",
+    "pointing",
+    "puppet",
+    "lottie",
+    "explainer",
+    "imported",
+    "hyperframes"
+  ],
+  "opaque": true,
+  "kit": "hf-compat",
+  "params": {
+    "title": {
+      "type": "string",
+      "default": "Meet your guide",
+      "label": "Card title",
+      "description": "Card title",
+      "maxLength": 28,
+      "required": true
+    },
+    "body": {
+      "type": "string",
+      "default": "Walks in on planted feet, then points the way.",
+      "label": "Card text",
+      "description": "Card text",
+      "maxLength": 90
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1920x1080 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "keep",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    }
+  },
+  "hf": {
+    "vars": {
+      "title": "title",
+      "body": "body"
+    },
+    "width": 1920,
+    "height": 1080,
+    "mode": "page",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "blocks/lottie-character-walk",
+    "path": "registry/blocks/lottie-character-walk",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+    
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>lottie-character-walk</title>
+    
+    
+    
+    
+    
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      #lcw-root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #fcfcfd;
+        font-family: Inter, sans-serif;
+        color: #111827;
+      }
+      #lcw-ground {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 906px;
+        height: 1px;
+        background: rgba(17, 24, 39, 0.14);
+      }
+      #lcw-mascot {
+        position: absolute;
+        inset: 0;
+      }
+      #lcw-card {
+        position: absolute;
+        left: 1100px;
+        top: 300px;
+        width: 660px;
+        padding: 56px 60px 60px;
+        border-radius: 28px;
+        background: rgba(17, 24, 39, 0.08);
+        border: 1px solid rgba(17, 24, 39, 0.14);
+        opacity: 0;
+      }
+      #lcw-title {
+        font-size: 64px;
+        font-weight: 600;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+      }
+      #lcw-rule {
+        width: 120px;
+        height: 8px;
+        margin: 28px 0 30px;
+        border-radius: 4px;
+        background: #ff5a36;
+        transform-origin: left center;
+      }
+      #lcw-body {
+        font-size: 34px;
+        line-height: 1.35;
+        color: rgba(17, 24, 39, 0.72);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="lcw-root"
+      data-composition-id="lottie-character-walk"
+      data-start="0"
+      data-duration="7.5"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="lcw-ground"></div>
+      <div id="lcw-card">
+        <div id="lcw-title">Meet your guide</div>
+        <div id="lcw-rule"></div>
+        <div id="lcw-body">Walks in on planted feet, then points the way.</div>
+      </div>
+      <div id="lcw-mascot"></div>
+    </div>
+    <script type="text/x-rc-deferred">
+      (function () {
+        var vars =
+          window.__hyperframes && typeof window.__hyperframes.getVariables === "function"
+            ? window.__hyperframes.getVariables()
+            : {};
+        if (vars.title) document.getElementById("lcw-title").textContent = vars.title;
+        if (vars.body) document.getElementById("lcw-body").textContent = vars.body;
+
+        // Beside this file when mounted; a runtime without assetUrl keeps the plain path.
+        const assetUrl = (path) =>
+          typeof __hyperframes !== "undefined" && __hyperframes.assetUrl
+            ? __hyperframes.assetUrl(path)
+            : path;
+        // The character's body acting (walk, stop, point, idle) lives in the Lottie file.
+        // The runtime seeks every player on window.__hfLottie to composition time.
+        var mascot = lottie.loadAnimation({
+          container: document.getElementById("lcw-mascot"),
+          renderer: "svg",
+          loop: false,
+          autoplay: false,
+          path: assetUrl("assets/mascot.json"),
+        });
+        window.__hfLottie = window.__hfLottie || [];
+        window.__hfLottie.push(mascot);
+
+        // The stage around the character is GSAP, timed to the Lottie's point at 5.2 s.
+        var tl = gsap.timeline({ paused: true });
+        tl.fromTo(
+          "#lcw-card",
+          { opacity: 0, x: 40, scale: 0.96 },
+          { opacity: 1, x: 0, scale: 1, duration: 0.6, ease: "power3.out" },
+          5.2,
+        );
+        tl.fromTo(
+          ["#lcw-title", "#lcw-body"],
+          { opacity: 0, y: 18 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", stagger: 0.1 },
+          5.3,
+        );
+        tl.fromTo("#lcw-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "expo.out" }, 5.5);
+        tl.to({}, { duration: 0 }, 7.5);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["lottie-character-walk"] = tl;
+      })();
+    </script>
+  <script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

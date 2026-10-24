@@ -1,0 +1,6 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew): hot water is the broken step, cold water the re-route.",
+  "nodes": ["BEANS", "HOT WATER", "BOTTLE"],
+  "broken": 2,
+  "reroute": "COLD WATER · 18H"
+}

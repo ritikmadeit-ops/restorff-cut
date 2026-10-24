@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rubber stamp</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "stamp",
+  "title": "Rubber stamp",
+  "description": "A red rubber stamp slams onto the frame: caps in a rough double-ruled box, overshoot 1.15 → 1 with a slight rotation in under 3 frames, uneven ink texture and a tiny shake. Use to judge something on screen: BAD TAKE, GONE, NO KEYFRAMES, APPROVED (EFFECTS.md FX-26).",
+  "duration": 2.5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["stamp", "verdict", "text", "collage", "reels"],
+  "params": {
+    "text": { "type": "string", "required": true, "default": "NO SUGAR", "maxLength": 16, "label": "Text", "description": "The verdict, in caps. Short." },
+    "sub": { "type": "string", "default": "HALCYON QC · BATCH 014", "maxLength": 32, "label": "Small line", "description": "Small mono line inside the stamp under the text. Empty to hide." },
+    "color": { "type": "color", "default": "#D2352B", "label": "Ink", "description": "Ink colour (red by default)." },
+    "rotate": { "type": "number", "default": -8, "min": -30, "max": 30, "step": 1, "unit": "deg", "label": "Angle", "description": "Final tilt of the stamp." },
+    "seed": { "type": "number", "default": 4, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the ink texture." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "center", "label": "Anchor", "description": "Vertical placement." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "ease": { "type": "easing", "default": "bouncy", "label": "Slam easing", "description": "How it lands (bouncy = one overshoot, as in the reels)." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.3 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .st { position: absolute; left: 50%; display: flex; flex-direction: column; align-items: center; mix-blend-mode: normal; }
+  .box { display: flex; flex-direction: column; align-items: center; }
+  .tx { font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 112%; text-transform: uppercase; line-height: .95; white-space: nowrap; letter-spacing: .02em; }
+  .sb { font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<svg width="0" height="0" style="position:absolute">
+  <filter id="ink" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence id="turb" type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.7 1.75" result="holes"/>
+    <feComposite in="SourceGraphic" in2="holes" operator="in" result="speckled"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="9" result="w"/>
+    <feDisplacementMap in="speckled" in2="w" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+<script>
+  var SP = {};
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      document.getElementById("turb").setAttribute("seed", String(P.seed));
+      var stage = document.getElementById("stage");
+      var st = RC.el("div", { class: "st", style: { filter: "url(#ink)" } });
+      var box = RC.el("div", { class: "box", style: { border: (10 * u) + "px solid " + P.color, outline: (4 * u) + "px solid " + P.color, outlineOffset: (8 * u) + "px", padding: (18 * u) + "px " + (34 * u) + "px", borderRadius: 10 * u + "px", color: P.color } });
+      var tx = RC.el("div", { class: "tx", text: P.text, style: { fontSize: 150 * u + "px" } });
+      box.appendChild(tx);
+      if (P.sub) box.appendChild(RC.el("div", { class: "sb", text: P.sub, style: { fontSize: 26 * u + "px", marginTop: 10 * u + "px" } }));
+      st.appendChild(box);
+      stage.appendChild(st);
+      RC.fitText(tx, RC.width * 0.72, 150 * u, 50 * RC.u);
+      var h = st.offsetHeight;
+      var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - h : (RC.height - h) / 2;
+      st.style.top = top + P.offsetY * RC.u + "px";
+      st.style.marginLeft = -st.offsetWidth / 2 + "px";
+      SP.st = st;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var out = P.exit ? 1 - RC.clamp(time.left / 0.3, 0, 1) : 0;
+      // lands in 3 frames from 1.6x, overshoots to ~0.95 and settles at 1 (the reel: <= 3 frames, one overshoot)
+      var land = RC.progress(t, 0, 0.1, "ease-in");
+      var settle = RC.progress(t, 0.1, 0.25, P.ease);
+      var sc = t < 0.1 ? RC.mix(1.6, 0.94, land) : RC.mix(0.94, 1, settle);
+      var shake = t > 0.1 && t < 0.35 ? Math.sin((t - 0.1) * 120) * 6 * RC.u * Math.exp(-(t - 0.1) * 14) : 0;
+      RC.set(SP.st, { scale: sc * 1.0, rotate: P.rotate + (1 - Math.min(1, t / 0.1)) * 6, x: shake, opacity: (t < 0.02 ? 0 : 1) * (1 - out) });
+    },
+  });
+</script>
+</body>
+</html>

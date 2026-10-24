@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/panel-reveal); fictional.",
+  "title": "Motion tokens",
+  "width": "standard",
+  "tone": "paper",
+  "reveal": "fade",
+  "speed": 1
+}

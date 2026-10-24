@@ -1,0 +1,180 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/mk-emphasis-type@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html lang="en">
+  <head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "mk-emphasis-type",
+  "title": "Background Emphasis Type",
+  "description": "Oversized low-contrast background word drifting slowly behind the subject — typography as texture. Imported from a HyperFrames component (kinetic-type; provenance below).",
+  "duration": 4,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "tags": [
+    "kinetic-type",
+    "typography",
+    "text-treatment",
+    "minimal",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "mkEmphDemo": {
+      "type": "string",
+      "default": "Emphasis",
+      "label": "Mk Emph Demo",
+      "description": "The text of #mk-emph-demo (div), \"Emphasis\" in the upstream example.",
+      "required": true
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1920x1080 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    }
+  },
+  "hf": {
+    "vars": {
+      "mkEmphDemo": "rc_text_mk-emph-demo"
+    },
+    "width": 1920,
+    "height": 1080,
+    "mode": "demo",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/mk-emphasis-type",
+    "path": "registry/components/mk-emphasis-type",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+
+    
+    
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: #f2f4f7;
+        overflow: hidden;
+      }
+      /* ---- mk-emphasis-type ------------------------------------------------
+         Oversized low-contrast background word sliding slowly behind the
+         subject (the promo's "EMPHASIS" texture type). Decorative only —
+         keep it behind real content and mark it aria-hidden. */
+      .mk-emphasis {
+        --mk-font: "Inter", -apple-system, sans-serif;
+        --mk-emph-color: rgba(29, 29, 31, 0.07); /* dark scheme: rgba(245,245,247,0.08) */
+
+        position: absolute;
+        font-family: var(--mk-font);
+        font-weight: 600;
+        font-size: 260px;
+        letter-spacing: -0.02em;
+        line-height: 1;
+        white-space: nowrap;
+        text-transform: uppercase;
+        color: var(--mk-emph-color);
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <div
+      id="mk-emph-root"
+      data-composition-id="mk-emphasis-type"
+      data-start="0"
+      data-duration="4"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div
+        class="mk-emphasis"
+        id="mk-emph-demo" data-var-text="rc_text_mk-emph-demo"
+        aria-hidden="true"
+        data-layout-allow-overflow
+        style="top: 400px; left: -40px"
+      >
+        Emphasis
+      </div>
+      <div
+        id="mk-emph-drv"
+        class="clip"
+        data-start="0"
+        data-duration="4"
+        data-track-index="0"
+        style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none"
+      ></div>
+    </div>
+    <script type="text/x-rc-deferred">
+      (function () {
+        window.__timelines = window.__timelines || {};
+
+        // ---- copy these helpers into the host script, then:
+        //   mkEmphasisIn(tl, "#mk-my-word", 1.0, { drift: -120, hold: 6 });
+        //   mkEmphasisOut(tl, "#mk-my-word", 7.5);
+        window.mkEmphasisIn = function (tl, target, at, opts) {
+          opts = opts || {};
+          var drift = opts.drift === undefined ? -100 : opts.drift;
+          var hold = opts.hold === undefined ? 5 : opts.hold;
+          gsap.set(target, { opacity: 0, x: 40 });
+          tl.to(target, { opacity: 1, duration: 1.0, ease: "power2.out" }, at);
+          tl.to(target, { x: 40 + drift, duration: hold, ease: "sine.inOut" }, at);
+        };
+        window.mkEmphasisOut = function (tl, target, at) {
+          tl.to(target, { opacity: 0, duration: 0.5, ease: "power2.in" }, at);
+        };
+
+        // Self-preview timeline (not part of the snippet you copy).
+        var tl = gsap.timeline({ paused: true });
+        window.mkEmphasisIn(tl, "#mk-emph-demo", 0.3, { drift: -110, hold: 3.2 });
+        window.mkEmphasisOut(tl, "#mk-emph-demo", 3.4);
+        tl.set("#mk-emph-root", { visibility: "hidden" }, 3.98);
+        window.__timelines["mk-emphasis-type"] = tl;
+      })();
+    </script>
+  <script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

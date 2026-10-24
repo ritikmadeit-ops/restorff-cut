@@ -1,0 +1,14 @@
+{
+  "name": "@restorffcut/gate",
+  "version": "0.2.0",
+  "private": true,
+  "description": "RestorffCut's export gate: pure checks over the project JSON (EXPORT-GATE.md timeline checks), parsers for the ffmpeg file checks, gate state and owner overrides. Every check returns finding@1 objects.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json"
+  }
+}

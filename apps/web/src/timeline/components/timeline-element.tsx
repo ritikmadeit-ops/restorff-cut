@@ -5,6 +5,8 @@ import { useEditor } from "@/editor/use-editor";
 import { useAssetsPanelStore } from "@/components/editor/panels/assets/assets-panel-store";
 import { AudioWaveform, WAVEFORM_GAIN_SAMPLE_COUNT } from "./audio-waveform";
 import { AudioVolumeLine } from "./audio-volume-line";
+import { BeatMarkers } from "@/beats/components/beat-markers";
+import { TransitionBadge } from "@/transitions/components/transition-badge";
 import { useElementPreview } from "@/timeline/hooks/use-element-preview";
 import {
 	useKeyframeDrag,
@@ -83,7 +85,8 @@ import { cn } from "@/utils/ui";
 import { usePropertiesStore } from "@/components/editor/panels/properties/stores/properties-store";
 import { getTrackTypeForElementType } from "@/timeline/placement/compatibility";
 import { useTimelineStore } from "@/timeline/timeline-store";
-import { KEYFRAME_LANE_HEIGHT_PX } from "./layout";
+import { KEYFRAME_LANE_HEIGHT_PX, TIMELINE_CLIP_INSET_PX } from "./layout";
+import { clipLabel, formatDb, stripExtension } from "@/storyboard/labels";
 import {
 	getExpandedRows,
 	getExpansionHeight,
@@ -348,7 +351,7 @@ export function TimelineElement({
 		element.type === "video" && isSourceAudioSeparated({ element });
 	const hasKeyframes = elementKeyframes.length > 0;
 	const expansionHeight = getExpansionHeight({ rows: expandedRows });
-	const baseTrackHeight = getTrackHeight({ type: track.type });
+	const baseTrackHeight = getTrackHeight(track);
 
 	const expandedContent =
 		isExpanded && expandedRows.length > 0 ? (
@@ -551,27 +554,32 @@ function ElementInner({
 	const isReducedOpacity =
 		(canElementBeHidden(visibleElement) && visibleElement.hidden) ||
 		isDropTarget;
+	// Artboard: clips sit 3 px inside their lane (top/bottom), radius 5.
+	const inset = isExpanded ? 0 : TIMELINE_CLIP_INSET_PX;
 	return (
 		<div
-			className="absolute top-0 bottom-0"
+			className="absolute"
 			style={{
+				top: `${inset}px`,
+				bottom: `${inset}px`,
 				left: `${ELEMENT_RING_WIDTH_PX}px`,
 				right: `${ELEMENT_RING_WIDTH_PX}px`,
 			}}
 		>
 			<div
-				className="absolute inset-0 rounded-sm"
+				className="absolute inset-0 rounded-[5px]"
 				style={
 					isSelected
 						? {
-								boxShadow: `0 0 0 ${ELEMENT_RING_WIDTH_PX}px var(--primary)`,
+								// The selected clip is the view's one neon isolate.
+								boxShadow: `0 0 0 ${ELEMENT_RING_WIDTH_PX}px var(--rc-neon)`,
 							}
 						: undefined
 				}
 			>
 				<div
 					className={cn(
-						"absolute inset-0 overflow-hidden rounded-sm",
+						"absolute inset-0 overflow-hidden rounded-[5px]",
 						isExpanded && "bg-background",
 					)}
 				>
@@ -589,13 +597,15 @@ function ElementInner({
 									type: getTrackTypeForElementType({
 										elementType: element.type,
 									}),
+									track,
 								}),
 								isReducedOpacity && "opacity-50",
 							)}
-							style={{ height: `${baseTrackHeight}px` }}
+							style={{ height: `${baseTrackHeight - 2 * inset}px` }}
 						>
-							<div className="flex flex-1 min-h-0 h-full items-center overflow-hidden">
+							<div className="relative flex flex-1 min-h-0 h-full items-center overflow-hidden">
 								<ElementContent element={visibleElement} track={track} />
+								<TransitionBadge element={visibleElement} />
 							</div>
 						</div>
 						{expandedContent}
@@ -907,8 +917,8 @@ function TextElementContent({
 	element: Extract<TimelineElementType, { type: "text" }>;
 }) {
 	return (
-		<div className="flex size-full items-center justify-start pl-2">
-			<span className="truncate text-xs text-white">
+		<div className="flex size-full items-center justify-start px-1.5">
+			<span className="truncate text-[11px] leading-none text-current">
 				{typeof element.params.content === "string" ? element.params.content : ""}
 			</span>
 		</div>
@@ -1007,7 +1017,17 @@ function AudioElementContent({
 		element.sourceType === "upload"
 			? buildWaveformSourceKey({ kind: "media", id: element.mediaId })
 			: buildWaveformSourceKey({ kind: "library", id: element.sourceUrl });
-	const mediaLabel = mediaAsset?.name ?? element.name;
+	// Artboard MUSIC label: "morning-bed · −16 dB under voice · ducked" — name and the
+	// clip's real gain; "ducked" only when ops@1 tagged the clip (restorff.ducked).
+	const tag = (element as { restorff?: { ducked?: unknown; role?: string } }).restorff;
+	const volume = typeof element.params?.volume === "number" ? element.params.volume : null;
+	const mediaLabel = [
+		stripExtension(mediaAsset?.name ?? element.name),
+		volume !== null && volume !== 0 ? formatDb(volume) : null,
+		tag?.ducked ? "ducked" : null,
+	]
+		.filter(Boolean)
+		.join(" · ");
 	const gainSamples = useMemo(
 		() =>
 			buildWaveformGainSamples({
@@ -1019,8 +1039,7 @@ function AudioElementContent({
 	if (audioBuffer || audioUrl || sourceFile) {
 		return (
 			<div className="group/audio relative size-full">
-				<MediaElementHeader name={mediaLabel} hasFade={false} />
-				<div className="absolute inset-x-0 top-5 bottom-0 overflow-hidden">
+				<div className="absolute inset-0 overflow-hidden opacity-60">
 					<AudioWaveform
 						sourceKey={sourceKey}
 						sourceFile={sourceFile}
@@ -1033,17 +1052,19 @@ function AudioElementContent({
 						sourceStartSec={element.trimStart / TICKS_PER_SECOND}
 						color={TIMELINE_TRACK_THEME.audio.waveformColor}
 					/>
+					<BeatMarkers element={element} pixelsPerSecond={pixelsPerSecond} />
 					<AudioVolumeLine element={element} trackId={trackId} />
 				</div>
+				<MediaElementHeader name={mediaLabel} hasFade={false} />
 			</div>
 		);
 	}
 
 	return (
 		<div className="group/audio relative size-full">
-			<div className="flex size-full items-center pl-2">
-				<span className="text-foreground/80 truncate text-xs">
-					{element.name}
+			<div className="flex size-full items-center px-1.5">
+				<span className="truncate text-[11px] leading-none text-current">
+					{mediaLabel}
 				</span>
 			</div>
 			<AudioVolumeLine element={element} trackId={trackId} />
@@ -1096,15 +1117,17 @@ function TiledMediaContent({
 			? mediaAsset?.thumbnailUrl
 			: (mediaAsset?.thumbnailUrl ?? mediaAsset?.url);
 
+	// Artboard clip labels: "S03 kettle", "S16–S19" (shot keys first), no extension.
+	const label = clipLabel(element.name || mediaAsset?.name || "");
 	if (!imageUrl) {
 		return (
-			<span className="text-foreground/80 truncate text-xs">
-				{element.name}
+			<span className="truncate px-1.5 text-[11px] leading-none text-current">
+				{label}
 			</span>
 		);
 	}
 
-	const trackHeight = getTrackHeight({ type: track.type });
+	const trackHeight = getTrackHeight(track);
 	const tileWidth = trackHeight * THUMBNAIL_ASPECT_RATIO;
 
 	return (
@@ -1112,7 +1135,9 @@ function TiledMediaContent({
 			<div
 				className="absolute inset-0"
 				style={{
-					backgroundColor: "var(--muted)",
+					// Thumbnails sit under the clip colour, so clips read as the
+					// artboard's flat coloured blocks while still showing their frames.
+					opacity: 0.22,
 					backgroundImage: `url(${imageUrl})`,
 					backgroundRepeat: "repeat-x",
 					backgroundSize: `${tileWidth}px ${trackHeight}px`,
@@ -1121,7 +1146,7 @@ function TiledMediaContent({
 				}}
 			/>
 			<MediaElementHeader
-				name={mediaAsset?.name}
+				name={label}
 				leading={
 					hasElementEffects({ element }) ? (
 						<EffectsButton element={element} track={track} />
@@ -1147,15 +1172,16 @@ function MediaElementHeader({
 	}
 
 	return (
+		// Artboard: the label sits in the clip (11 px, padding 3 6), vertically centred.
 		<div
 			className={cn(
-				"absolute top-0 left-0 flex h-5 w-full bg-linear-to-b pt-1",
-				hasFade && "from-black/30 to-transparent",
+				"pointer-events-none absolute inset-0 flex items-center",
+				hasFade && "bg-linear-to-r from-black/25 to-transparent",
 			)}
 		>
-			{leading && <div className="pl-1">{leading}</div>}
+			{leading && <div className="pointer-events-auto pl-1">{leading}</div>}
 			{name && (
-				<span className="truncate px-1.5 text-[0.6rem] leading-tight text-white/75">
+				<span className="truncate px-1.5 text-[11px] leading-none text-current">
 					{name}
 				</span>
 			)}

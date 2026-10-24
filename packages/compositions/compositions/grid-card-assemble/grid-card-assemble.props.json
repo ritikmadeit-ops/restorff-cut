@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/grid-card-assemble); fictional.",
+  "items": "Permissions,Audit trail,Deploy,Search,Drafts,Citations",
+  "layout": "grid",
+  "columns": 3,
+  "cues": "",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

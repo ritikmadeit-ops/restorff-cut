@@ -1,6 +1,7 @@
 # rust/
 
-Shared Rust crates that power OpenCut across platforms (web via WASM, desktop natively).
+Shared Rust crates that power RestorffCut's per-frame work (web via WASM; usable natively by a desktop build).
+Runbook (toolchain, build, test, add an effect): `docs/restorff/RUST.md`.
 
 ## Adding a new crate
 

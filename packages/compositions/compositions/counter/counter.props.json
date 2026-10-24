@@ -1,0 +1,7 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew); the end value stands for a measured number (NFR-04).",
+  "from": 0,
+  "to": 1200,
+  "format": "number",
+  "label": "BOTTLES A WEEK"
+}

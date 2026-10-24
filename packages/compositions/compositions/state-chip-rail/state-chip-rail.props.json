@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/state-chip-rail); fictional.",
+  "states": "Queued,Reading,Searching,Drafting,Done",
+  "times": "1.0,1.9,2.8,3.7",
+  "badgeState": 2,
+  "badges": "Drive,Mail,CRM",
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

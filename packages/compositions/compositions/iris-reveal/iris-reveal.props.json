@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/iris-reveal); fictional.",
+  "irisX": 32,
+  "irisY": 40,
+  "openAt": 0.6,
+  "register": "color",
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

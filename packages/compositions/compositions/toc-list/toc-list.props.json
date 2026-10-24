@@ -1,0 +1,9 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew): the six steps of a 'how it is made' video; item times on the voice, one compact window while a full-frame effect plays.",
+  "count": "6",
+  "title": "steps",
+  "subtitle": "from bean to bottle",
+  "items": ["Source the beans", "Grind coarse", "Add cold water", "Steep 18 hours", "Filter twice", "Bottle it cold"],
+  "times": [0.2, 1.6, 3.1, 4.6, 7.4, 9.6],
+  "compact": [[5.6, 7.2]]
+}

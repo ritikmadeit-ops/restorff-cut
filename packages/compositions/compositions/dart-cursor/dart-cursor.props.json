@@ -1,0 +1,12 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/dart-cursor); fictional.",
+  "tone": "dark",
+  "targetX": 67.9,
+  "targetY": 40.5,
+  "target2X": 63.3,
+  "target2Y": 73.7,
+  "enterFrom": "right",
+  "exitTo": "right",
+  "blur": 1,
+  "speed": 1
+}

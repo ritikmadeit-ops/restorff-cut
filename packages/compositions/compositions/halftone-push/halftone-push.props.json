@@ -1,0 +1,7 @@
+{
+  "$comment": "Fictional Halcyon barista (a still of our own stand-in drawing, assets/barista.png). The camera pushes into his right eye, which becomes a Halcyon record.",
+  "image": "assets/barista.png",
+  "focus": { "x": 0.454, "y": 0.437, "r": 0.012 },
+  "match": "vinyl",
+  "label": "HALCYON · SIDE A"
+}

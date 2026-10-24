@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/echo-trail); fictional.",
+  "echoes": 5,
+  "delta": 0.12,
+  "path": "arc",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/velocity-throw-snap); fictional.",
+  "heroIndex": 4,
+  "accent": "violet",
+  "cardLabelPrefix": "Frame",
+  "speed": 1
+}

@@ -1,0 +1,11 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/count-up); fictional.",
+  "start": 1200,
+  "end": 12500,
+  "prefix": "$",
+  "suffix": "+",
+  "accent": "violet",
+  "glow": false,
+  "exit": "none",
+  "speed": 1
+}

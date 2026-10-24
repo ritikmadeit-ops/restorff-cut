@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UI world</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "ui-world",
+  "title": "UI world",
+  "description": "The top half of the frame becomes a light chat app (our own neutral chrome): clip thumbnails fly up from the footage into the input box one by one, a yellow tag appears, and a command types itself; heavy caps callouts sit on the footage below. Use to show 'drop your clips and ask' in a how-it-works beat (EFFECTS.md FX-03). The clip moves down a quarter of the frame (plate keys) so the face stays in the bottom half.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["ui", "chat", "split", "how-it-works", "reels", "named-effect"],
+  "effect": {
+    "fx": ["FX-03"],
+    "stack": ["plate", "self"],
+    "inputs": {
+      "clips": "3-6 thumbnails: frames of the clips in the timeline (editor: the media's thumbnail; MCP: look at the clip's first frame) or drawn tiles",
+      "text": "the command that types; callouts timed to the voice (word timings)"
+    },
+    "plateKeys": [
+      { "t": 0, "y": 0 },
+      { "t": 0.35, "y": 0.25, "ease": "ease_out" },
+      { "t": 3.6167, "y": 0.25, "ease": "linear" },
+      { "t": 3.9667, "y": 0, "ease": "ease_in" }
+    ],
+    "plateKeysOn": ["plate"],
+    "note": "plateKeys for the defaults (split 0.5, 4 s, 30 fps): y = split / 2 (fraction of the height, down); key 2 = 0.35 s, key 3 = duration - 1/fps - 0.35, key 4 = duration - 1/fps. The panel slides with the same curves, so it always covers the strip above the moved clip."
+  },
+  "params": {
+    "title": { "type": "string", "default": "Halcyon · edit assistant", "maxLength": 40, "label": "Window title", "description": "Title in the app's top bar (our own UI, never a real product's name or logo)." },
+    "prompt": { "type": "string", "default": "Hi! Drop the raw clips and tell me the vibe.", "maxLength": 80, "label": "Assistant line", "description": "The assistant's message bubble above the input box. Empty to hide." },
+    "text": { "type": "string", "required": true, "default": "/steep-edit punchy, 30 s, captions", "maxLength": 48, "label": "Typed command", "description": "What types into the input box after the clips land." },
+    "tag": { "type": "string", "default": "RAW CLIPS", "maxLength": 18, "label": "Tag", "description": "Yellow tag that pops on the input box when the clips land. Empty to hide." },
+    "clips": {
+      "type": "list", "minItems": 1, "maxItems": 6, "label": "Clips",
+      "description": "Thumbnails that fly into the input box, in order. image = a frame of the clip; without one the tile is drawn from color + label.",
+      "of": { "type": "object", "fields": {
+        "label": { "type": "string", "default": "", "maxLength": 12, "description": "Short clip label, e.g. S01." },
+        "color": { "type": "color", "default": "#2F4A3A", "description": "Background of a drawn tile." },
+        "image": { "type": "image", "default": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "description": "Optional frame of the clip; the 1-pixel default means none." }
+      } },
+      "default": [
+        { "label": "S01 pour", "color": "#2F4A3A" },
+        { "label": "S02 steep", "color": "#7A5638" },
+        { "label": "S03 ice", "color": "#3E5A6E" },
+        { "label": "S04 cap", "color": "#C8553D" }
+      ]
+    },
+    "callouts": {
+      "type": "list", "minItems": 0, "maxItems": 4, "label": "Callouts",
+      "description": "Heavy caps lines on the footage below, each from its time (seconds) until the next one: time them to the spoken words.",
+      "of": { "type": "object", "fields": { "text": { "type": "string", "maxLength": 22 }, "at": { "type": "number", "min": 0, "max": 60 } } },
+      "default": [ { "text": "DROP CLIPS", "at": 0.45 }, { "text": "TRIGGER THE EDIT", "at": 2.1 } ]
+    },
+    "split": { "type": "number", "default": 0.5, "min": 0.3, "max": 0.7, "step": 0.01, "label": "Panel height", "description": "Fraction of the frame the app covers from the top (the clip moves down split / 2)." },
+    "typeSpeed": { "type": "number", "default": 18, "min": 4, "max": 60, "step": 1, "unit": "chars/s", "label": "Typing speed", "description": "Characters per second (the reel: about 18)." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Speed of the clips flying in, the tag and the typing (the panel's slide stays on the clip's keys). A clip shorter than 4 s plays all of it faster on its own (fit-to-duration)." },
+    "accent": { "type": "color", "default": "#F6E05E", "label": "Tag colour", "description": "The tag behind RAW CLIPS." },
+    "paper": { "type": "color", "default": "#F4EFE6", "label": "App background", "description": "Cream of the app." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "The panel slides back up over the last 0.35 s (the clip's keys bring it back)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .panel { position: absolute; left: 0; top: 0; width: 100%; overflow: hidden; }
+  .bar3 { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; font-family: "Archivo", sans-serif; font-weight: 600; color: #6B6760; border-bottom: 1px solid rgba(26,26,29,.08); }
+  .dot { border-radius: 50%; display: inline-block; }
+  .bubble { position: absolute; font-family: "Archivo", sans-serif; font-weight: 500; color: #2A2A2E; background: #FFFFFF; box-shadow: 0 2px 10px rgba(0,0,0,.06); line-height: 1.25; }
+  .who { position: absolute; font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .12em; color: #C8553D; text-transform: uppercase; }
+  .box { position: absolute; background: #FFFFFF; border: 2px solid rgba(26,26,29,.14); box-shadow: 0 10px 30px rgba(0,0,0,.08); }
+  .typed { position: absolute; font-family: "JetBrains Mono", monospace; font-weight: 600; color: #1A1A1D; white-space: nowrap; }
+  .caret { display: inline-block; background: #1A1A1D; vertical-align: middle; }
+  .send { position: absolute; border-radius: 50%; background: #1A1A1D; display: flex; align-items: center; justify-content: center; }
+  .tag { position: absolute; font-family: "JetBrains Mono", monospace; font-weight: 800; letter-spacing: .1em; color: #111; transform-origin: 0 100%; }
+  .thumb { position: absolute; left: 0; top: 0; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,.3); border: 2px solid #fff; }
+  .thumb .lab { position: absolute; left: 6%; bottom: 5%; font-family: "JetBrains Mono", monospace; font-weight: 700; color: #F7F2E8; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  .co { position: absolute; left: 0; width: 100%; text-align: center; font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 112%; color: #fff; text-transform: uppercase; letter-spacing: .01em; text-shadow: 0 3px 0 rgba(0,0,0,.35), 0 6px 26px rgba(0,0,0,.5); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var UW = { thumbs: [], cos: [] };
+  var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  function bez(c, p) {
+    if (p <= 0) return 0;
+    if (p >= 1) return 1;
+    var lo = 0, hi = 1, s = p;
+    for (var i = 0; i < 40; i++) {
+      s = (lo + hi) / 2;
+      var x = 3 * (1 - s) * (1 - s) * s * c[0] + 3 * (1 - s) * s * s * c[2] + s * s * s;
+      if (x < p) lo = s; else hi = s;
+    }
+    return 3 * (1 - s) * (1 - s) * s * c[1] + 3 * (1 - s) * s * s * c[3] + s * s * s;
+  }
+  var EASE_OUT = [0, 0, 0.58, 1], EASE_IN = [0.42, 0, 1, 1];
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var W = RC.width, H = RC.height, u = RC.u;
+      var stage = document.getElementById("stage");
+      var ph = P.split * H;
+      UW.ph = ph;
+      var panel = RC.el("div", { class: "panel", style: { height: ph + "px", background: P.paper, boxShadow: "0 " + 10 * u + "px " + 40 * u + "px rgba(0,0,0,.35)", borderRadius: "0 0 " + 36 * u + "px " + 36 * u + "px" } });
+      stage.appendChild(panel);
+      UW.panel = panel;
+      var top = RC.safe.top * 0.55;
+      var bar = RC.el("div", { class: "bar3", style: { top: top + "px", height: 70 * u + "px", padding: "0 " + 48 * u + "px", gap: 12 * u + "px", fontSize: 26 * u + "px" } });
+      ["#E5484D", "#E8A33D", "#3DD68C"].forEach(function (c) { bar.appendChild(RC.el("span", { class: "dot", style: { width: 16 * u + "px", height: 16 * u + "px", background: c } })); });
+      bar.appendChild(RC.el("span", { text: P.title, style: { marginLeft: 18 * u + "px" } }));
+      panel.appendChild(bar);
+      var y = top + 110 * u;
+      if (P.prompt) {
+        panel.appendChild(RC.el("div", { class: "who", text: "Assistant", style: { left: 60 * u + "px", top: y + "px", fontSize: 20 * u + "px" } }));
+        var b = RC.el("div", { class: "bubble", text: P.prompt, style: { left: 60 * u + "px", top: y + 36 * u + "px", maxWidth: W - 200 * u + "px", fontSize: 34 * u + "px", padding: 20 * u + "px " + 26 * u + "px", borderRadius: 8 * u + "px " + 26 * u + "px " + 26 * u + "px " + 26 * u + "px" } });
+        panel.appendChild(b);
+        UW.bubble = b;
+      }
+      // input box sits in the lower part of the panel
+      var bw = W - 120 * u, bh = 250 * u;
+      var bx = 60 * u, by = ph - bh - 56 * u;
+      UW.box = { x: bx, y: by, w: bw, h: bh };
+      panel.appendChild(RC.el("div", { class: "box", style: { left: bx + "px", top: by + "px", width: bw + "px", height: bh + "px", borderRadius: 30 * u + "px" } }));
+      UW.typed = RC.el("div", { class: "typed", style: { left: bx + 30 * u + "px", top: by + bh - 82 * u + "px", fontSize: 32 * u + "px" } }, [RC.el("span"), RC.el("span", { class: "caret", style: { width: 3 * u + "px", height: 38 * u + "px", marginLeft: 4 * u + "px" } })]);
+      panel.appendChild(UW.typed);
+      var send = RC.el("div", { class: "send", style: { left: bx + bw - 86 * u + "px", top: by + bh - 92 * u + "px", width: 64 * u + "px", height: 64 * u + "px" } });
+      send.innerHTML = '<svg viewBox="0 0 24 24" width="' + 30 * u + '" height="' + 30 * u + '"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      panel.appendChild(send);
+      if (P.tag) {
+        UW.tag = RC.el("div", { class: "tag", text: P.tag, style: { left: bx + 24 * u + "px", top: by - 30 * u + "px", fontSize: 24 * u + "px", padding: 8 * u + "px " + 16 * u + "px", background: P.accent, borderRadius: 8 * u + "px" } });
+        panel.appendChild(UW.tag);
+      }
+      // thumbnails land as chips in a row inside the box (top-left)
+      var tw = 104 * u, th = tw * 16 / 9 * 0.62;
+      P.clips.forEach(function (c, i) {
+        var hasImg = c.image && c.image !== BLANK;
+        var el = RC.el("div", { class: "thumb", style: { width: tw + "px", height: th + "px", borderRadius: 14 * u + "px", background: hasImg ? "#111" : "linear-gradient(160deg, " + RC.mixColor(c.color, "#FFFFFF", 0.2) + ", " + c.color + ")" } });
+        if (hasImg) el.appendChild(RC.el("img", { src: c.image, style: { width: "100%", height: "100%", objectFit: "cover", display: "block" } }));
+        if (c.label) el.appendChild(RC.el("div", { class: "lab", text: c.label, style: { fontSize: 15 * u + "px" } }));
+        stage.appendChild(el);
+        UW.thumbs.push({ el: el, i: i, tx: bx + 28 * u + i * (tw + 16 * u), ty: by + 22 * u, sx: W * (0.25 + 0.5 * ((i * 37) % 10) / 10), sy: H * 0.82 });
+      });
+      UW.tw = tw;
+      UW.th = th;
+      // callouts are timed to the voice; times past the end of a shortened clip are fitted with it (RC.cues)
+      var ats = RC.cues(P.callouts.map(function (c) { return c.at; }));
+      P.callouts.forEach(function (c, i) {
+        var el = RC.el("div", { class: "co", text: c.text, style: { top: H * 0.86 - 60 * u + "px", fontSize: 92 * u + "px" } });
+        stage.appendChild(el);
+        RC.fitText(el, W - RC.safe.left - RC.safe.right, 92 * u, 40 * u);
+        el.style.width = "100%";
+        UW.cos.push({ el: el, at: ats[i], until: i + 1 < P.callouts.length ? ats[i + 1] : 1e9 });
+      });
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      // T: real time (the panel follows the clip's plate keys, in real seconds; callouts follow the voice)
+      // t: animation time (speed × fit-to-duration): the clips, the tag and the typing — so a 1 s clip still types
+      var T = time.T, t = time.t, u = RC.u;
+      var last = Math.max(0, RC.duration - 1 / RC.fps);
+      var pin = bez(EASE_OUT, T / 0.35);
+      var pout = P.exit ? bez(EASE_IN, (T - (last - 0.35)) / 0.35) : 0;
+      var p = Math.min(pin, 1 - pout);
+      // the panel's bottom edge travels with the clip's top edge (both eased the same way)
+      RC.set(UW.panel, { y: -(1 - p) * UW.ph });
+      var land0 = 0.45;
+      UW.thumbs.forEach(function (th) {
+        var t0 = land0 + th.i * 0.22;
+        var k = bez(EASE_OUT, (t - t0) / 0.35);
+        var arc = Math.sin(Math.PI * k) * 120 * u;
+        var x = RC.mix(th.sx - UW.tw / 2, th.tx, k);
+        var y = RC.mix(th.sy, th.ty, k) - arc - (1 - p) * UW.ph;
+        RC.set(th.el, { x: x, y: y, rotate: (1 - k) * (th.i % 2 ? 14 : -12), scale: RC.mix(1.5, 1, k), opacity: t >= t0 ? (1 - pout) : 0 });
+      });
+      var landed = land0 + (UW.thumbs.length - 1) * 0.22 + 0.35;
+      if (UW.tag) {
+        var tp = RC.progress(t, landed, 0.25, "bouncy");
+        RC.set(UW.tag, { scale: tp, rotate: -3, opacity: tp > 0 ? 1 : 0 });
+      }
+      var typeAt = landed + 0.2;
+      var n = Math.max(0, Math.min(P.text.length, Math.floor((t - typeAt) * P.typeSpeed)));
+      UW.typed.firstChild.textContent = P.text.slice(0, n);
+      UW.typed.lastChild.style.opacity = Math.floor(T * 2.5) % 2 === 0 || (n > 0 && n < P.text.length) ? "1" : "0";
+      if (UW.bubble) RC.set(UW.bubble, { opacity: RC.progress(t, 0.25, 0.25, "linear") });
+      UW.cos.forEach(function (c) {
+        var on = T >= c.at && T < c.until;
+        var k = RC.progress(RC.since(T, c.at), 0, 0.18, "snappy");
+        RC.set(c.el, { scale: RC.mix(1.15, 1, k), opacity: on ? (1 - pout) : 0 });
+      });
+    },
+  });
+</script>
+</body>
+</html>

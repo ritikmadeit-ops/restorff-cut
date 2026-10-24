@@ -1,0 +1,209 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/blocks/lt-bold-block@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html lang="en">
+  <head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "lt-bold-block",
+  "title": "Lower Third — Bold Block",
+  "description": "High-energy podcast lower third: solid dark block wipes in, uppercase name slams up, accent tag pops. Imported from a HyperFrames block (ui-product; provenance below).",
+  "duration": 4.8,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "tags": [
+    "ui-product",
+    "lower-third",
+    "overlay",
+    "podcast",
+    "interview",
+    "bold",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "ltName": {
+      "type": "string",
+      "default": "Maya Chen",
+      "label": "Lt Name",
+      "description": "The text of #lt-name (div), \"Maya Chen\" in the upstream example.",
+      "required": true
+    },
+    "ltTag": {
+      "type": "string",
+      "default": "Host · Neuroscientist",
+      "label": "Lt Tag",
+      "description": "The text of #lt-tag (span), \"Host · Neuroscientist\" in the upstream example."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1920x1080 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "keep",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    }
+  },
+  "hf": {
+    "vars": {
+      "ltName": "rc_text_lt-name",
+      "ltTag": "rc_text_lt-tag"
+    },
+    "width": 1920,
+    "height": 1080,
+    "mode": "page",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "blocks/lt-bold-block",
+    "path": "registry/blocks/lt-bold-block",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Archivo Black";font-style:normal;font-weight:400;font-display:block;src:url("../../fonts/gf/archivoblack-normal-400.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Space Mono";font-style:italic;font-weight:400;font-display:block;src:url("../../fonts/gf/spacemono-italic-400.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Space Mono";font-style:italic;font-weight:700;font-display:block;src:url("../../fonts/gf/spacemono-italic-700.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Space Mono";font-style:normal;font-weight:400;font-display:block;src:url("../../fonts/gf/spacemono-normal-400.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Space Mono";font-style:normal;font-weight:700;font-display:block;src:url("../../fonts/gf/spacemono-normal-700.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+    
+    
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        background: transparent;
+        overflow: hidden;
+      }
+      body {
+        width: 1920px;
+        height: 1080px;
+      }
+
+      #root .lt {
+        position: absolute;
+        left: 120px;
+        bottom: 116px;
+      }
+      #root .lt-block {
+        background: #141518;
+        padding: 18px 34px 22px 30px;
+        display: inline-flex;
+        flex-direction: column;
+        gap: 12px;
+        
+      }
+      #root .lt-name {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 58px;
+        font-weight: 400;
+        color: #ffffff;
+        line-height: 0.98;
+        letter-spacing: -0.015em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      #root .lt-tagwrap {
+        overflow: hidden;
+      }
+      #root .lt-tag {
+        display: inline-block;
+        background: #ffd23f;
+        color: #141518;
+        font-family: "Space Mono", monospace;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 7px 16px;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="lt-bold-block"
+      data-width="1920"
+      data-height="1080"
+      data-start="0"
+      data-duration="4.8"
+    >
+      <div id="lt-clip" class="clip" data-start="0" data-duration="4.8" data-track-index="0">
+        <div id="lt" class="lt">
+          <div id="lt-block" class="lt-block">
+            <div id="lt-name" data-var-text="rc_text_lt-name" class="lt-name">Maya Chen</div>
+            <div class="lt-tagwrap">
+              <span id="lt-tag" data-var-text="rc_text_lt-tag" class="lt-tag">Host · Neuroscientist</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/x-rc-deferred">
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      var wrap = document.getElementById("lt");
+      var block = document.getElementById("lt-block");
+      var nameEl = document.getElementById("lt-name");
+      var tag = document.getElementById("lt-tag");
+
+      // Solid block wipes in from the left, name slams up inside it, tag pops up after.
+      gsap.set(block, { clipPath: "inset(0 100% 0 0)" });
+      gsap.set(nameEl, { y: 30, opacity: 0 });
+      gsap.set(tag, { y: 40 });
+
+      tl.to(block, { clipPath: "inset(0 0% 0 0)", duration: 0.5, ease: "power4.out" }, 0.1);
+      tl.to(nameEl, { y: 0, opacity: 1, duration: 0.42, ease: "back.out(1.6)" }, 0.26);
+      tl.to(tag, { y: 0, duration: 0.45, ease: "back.out(2)" }, 0.5);
+
+      // Exit: block wipes out to the left, then hard kill.
+      tl.to(block, { clipPath: "inset(0 0 0 100%)", duration: 0.4, ease: "power3.in" }, 4.3);
+      tl.set(wrap, { visibility: "hidden" }, 4.75);
+
+      window.__timelines["lt-bold-block"] = tl;
+    </script>
+  <script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

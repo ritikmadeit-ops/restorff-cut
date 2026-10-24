@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/gloss-sweep); fictional.",
+  "text": "Studio",
+  "accent": "violet",
+  "sweepAngle": 38,
+  "speed": 1
+}

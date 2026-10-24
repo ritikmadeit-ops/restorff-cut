@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/cursor-text-select); fictional.",
+  "title": "Spring release notes",
+  "text": "Our spring release ships on Thursday. Teams can now share a live review link, collect time-stamped comments, and approve the final cut without leaving the editor. Early customers cut their review rounds in half.",
+  "phrase": "approve the final cut",
+  "accent": "#0a84ff",
+  "speed": 1
+}

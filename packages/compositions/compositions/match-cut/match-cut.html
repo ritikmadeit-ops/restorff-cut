@@ -1,0 +1,393 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/match-cut@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-id="match-cut"
+  data-composition-duration="4"
+  data-composition-variables='[
+    { "id": "accent", "type": "enum", "role": "style", "label": "Accent", "description": "Color shared by the matched circles.", "default": "green", "options": [{ "value": "green", "label": "Green" }, { "value": "blue", "label": "Blue" }, { "value": "violet", "label": "Violet" }] },
+    { "id": "label_a", "type": "string", "role": "content", "label": "Scene A label", "description": "Text inside the outgoing button.", "default": "Start" },
+    { "id": "label_b", "type": "string", "role": "content", "label": "Scene B label", "description": "Result text revealed after the cut.", "default": "Done" }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "match-cut",
+  "title": "Match Cut",
+  "description": "A circle accelerates into a hard single-frame scene swap, matches the incoming circle exactly, and continues into a smaller resting pose. Imported from a HyperFrames component (transitions; provenance below).",
+  "duration": 4,
+  "size": [
+    1382,
+    778
+  ],
+  "fps": 30,
+  "tags": [
+    "transitions",
+    "motion-primitive",
+    "transition",
+    "match-cut",
+    "hard-cut",
+    "continuity",
+    "imported",
+    "hyperframes"
+  ],
+  "opaque": true,
+  "kit": "hf-compat",
+  "params": {
+    "accent": {
+      "type": "enum",
+      "options": [
+        "green",
+        "blue",
+        "violet"
+      ],
+      "default": "green",
+      "label": "Accent",
+      "description": "Color shared by the matched circles."
+    },
+    "labelA": {
+      "type": "string",
+      "default": "Start",
+      "label": "Scene A label",
+      "description": "Text inside the outgoing button.",
+      "required": true
+    },
+    "labelB": {
+      "type": "string",
+      "default": "Done",
+      "label": "Scene B label",
+      "description": "Result text revealed after the cut."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1382x778 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    }
+  },
+  "hf": {
+    "vars": {
+      "accent": "accent",
+      "labelA": "label_a",
+      "labelB": "label_b"
+    },
+    "width": 1382,
+    "height": 778,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/match-cut",
+    "path": "registry/components/match-cut",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="match-cut" data-start="0" data-duration="4" data-width="1382" data-height="778" style="position:absolute;left:0;top:0;width:1382px;height:778px">
+
+      <div id="root" data-composition-id="match-cut" data-duration="4" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            container-type: size;
+            isolation: isolate;
+            color: #f8fafc;
+            font-family: Inter, system-ui, sans-serif;
+            pointer-events: none;
+          }
+
+          .mc-clip,
+          .mc-shell,
+          .mc-scene {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+          }
+
+          .mc-scene {
+            display: grid;
+            place-items: center;
+          }
+
+          .mc-scene-a {
+            background: radial-gradient(circle at 50% 50%, #182032 0%, #0b0f18 68%);
+          }
+
+          .mc-scene-b {
+            background: radial-gradient(circle at 50% 44%, #202b42 0%, #0d121d 72%);
+            opacity: 0;
+          }
+
+          /* Both actors share this one geometry owner. At the cut, each is
+             centered at scale 1, so their painted circles match exactly. */
+          .mc-circle {
+            display: grid;
+            place-items: center;
+            width: 32cqmin;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: var(--mc-accent, #4ade80);
+            box-shadow: 0 3.2cqh 8cqh color-mix(in srgb, var(--mc-accent, #4ade80) 30%, transparent);
+            transform-origin: 50% 50%;
+            
+          }
+
+          .mc-label-a {
+            display: block;
+            max-width: 78%;
+            overflow: hidden;
+            color: #081018;
+            font-size: 5.2cqmin;
+            font-weight: 780;
+            letter-spacing: -0.035em;
+            line-height: 1;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .mc-circle-b {
+            color: #081018;
+          }
+
+          .mc-check {
+            width: 34%;
+            height: 22%;
+            border-left: 2.4cqmin solid currentColor;
+            border-bottom: 2.4cqmin solid currentColor;
+            transform: translateY(-8%) rotate(-45deg);
+          }
+
+          .mc-copy-b {
+            position: absolute;
+            top: 69%;
+            left: 12cqw;
+            right: 12cqw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.6cqh;
+            text-align: center;
+          }
+
+          .mc-kicker,
+          .mc-label-b {
+            opacity: 0;
+          }
+
+          .mc-kicker {
+            color: color-mix(in srgb, var(--mc-accent, #4ade80) 76%, #f8fafc);
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 2.1cqmin;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+          }
+
+          .mc-label-b {
+            display: block;
+            max-width: 74cqw;
+            overflow: hidden;
+            color: #f8fafc;
+            font-size: 6.8cqmin;
+            font-weight: 760;
+            letter-spacing: -0.04em;
+            line-height: 1.05;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        </style>
+
+        <div
+          id="match-cut-clip"
+          class="mc-clip clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="0"
+        >
+          <div class="mc-shell">
+            <section class="mc-scene mc-scene-a" aria-label="Outgoing scene">
+              <div class="mc-circle mc-circle-a">
+                <span class="mc-label-a"></span>
+              </div>
+            </section>
+
+            <section class="mc-scene mc-scene-b" aria-label="Incoming scene">
+              <div class="mc-circle mc-circle-b" aria-hidden="true">
+                <span class="mc-check"></span>
+              </div>
+              <div class="mc-copy-b">
+                <span class="mc-kicker">Match complete</span>
+                <span class="mc-label-b"></span>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var shell = root.querySelector(".mc-shell");
+            var sceneA = root.querySelector(".mc-scene-a");
+            var sceneB = root.querySelector(".mc-scene-b");
+            var circleA = root.querySelector(".mc-circle-a");
+            var circleB = root.querySelector(".mc-circle-b");
+            var labelA = root.querySelector(".mc-label-a");
+            var labelB = root.querySelector(".mc-label-b");
+            var revealB = root.querySelectorAll(".mc-kicker, .mc-label-b");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            var accentName =
+              vars.accent === "blue" || vars.accent === "violet" ? vars.accent : "green";
+            var accents = { green: "#4ade80", blue: "#60a5fa", violet: "#a78bfa" };
+            var labelAText = vars.label_a == null ? "Start" : String(vars.label_a);
+            var labelBText = vars.label_b == null ? "Done" : String(vars.label_b);
+
+            root.style.setProperty("--mc-accent", accents[accentName]);
+            labelA.textContent = labelAText;
+            labelB.textContent = labelBText;
+
+            var IN_BASE = 2.35;
+            var OUT_BASE = 0.5;
+            var CUT_AT_BASE = 1.4;
+            var A_APPROACH_BASE = 0.45;
+            var B_SETTLE_BASE = 0.65;
+            var COPY_DELAY_BASE = 0.1;
+            var COPY_IN_BASE = 0.55;
+
+            var duration = Math.max(0.001, parseFloat(root.dataset.duration || "4"));
+            var envelopeBase = IN_BASE + OUT_BASE;
+            var phaseScale = duration < envelopeBase ? duration / envelopeBase : 1;
+            var IN = IN_BASE * phaseScale;
+            var OUT = OUT_BASE * phaseScale;
+            var CUT_AT = CUT_AT_BASE * phaseScale;
+            var A_APPROACH = A_APPROACH_BASE * phaseScale;
+            var B_SETTLE = B_SETTLE_BASE * phaseScale;
+            var COPY_DELAY = COPY_DELAY_BASE * phaseScale;
+            var COPY_IN = COPY_IN_BASE * phaseScale;
+            var HOLD = Math.max(0, duration - IN - OUT);
+            var HOLD_START = IN;
+            var OUT_START = IN + HOLD;
+
+            var tl = gsap.timeline({ paused: true });
+
+            tl.set(shell, { opacity: 0 }, 0);
+            tl.set(sceneA, { opacity: 1 }, 0);
+            tl.set(sceneB, { opacity: 0 }, 0);
+            tl.set(circleA, { scale: 0.54 }, 0);
+            tl.set(circleB, { scale: 1, y: 0 }, 0);
+            tl.set(revealB, { opacity: 0, y: "2.4cqh" }, 0);
+
+            tl.to(shell, { opacity: 1, duration: Math.min(0.3, IN), ease: "power2.out" }, 0);
+            tl.to(circleA, { scale: 0.64, duration: A_APPROACH, ease: "power3.out" }, 0);
+            tl.to(
+              circleA,
+              {
+                scale: 1,
+                duration: Math.max(0, CUT_AT - A_APPROACH),
+                ease: "power4.in",
+              },
+              A_APPROACH,
+            );
+
+            // HARD CUT: both opacity states change at the exact same instant.
+            tl.set(sceneA, { opacity: 0 }, CUT_AT);
+            tl.set(sceneB, { opacity: 1 }, CUT_AT);
+
+            // Scene B starts at the matching geometry and leaves the cut at
+            // peak speed, then decelerates into its smaller resting pose.
+            tl.to(circleB, { scale: 0.74, duration: B_SETTLE, ease: "power4.out" }, CUT_AT);
+            tl.to(
+              revealB,
+              {
+                opacity: 1,
+                y: 0,
+                duration: COPY_IN,
+                stagger: 0.08 * phaseScale,
+                ease: "power3.out",
+              },
+              CUT_AT + COPY_DELAY,
+            );
+
+            if (HOLD > 0) {
+              tl.to(
+                circleB,
+                {
+                  y: "-0.8cqh",
+                  duration: HOLD / 2,
+                  ease: "sine.inOut",
+                  yoyo: true,
+                  repeat: 1,
+                },
+                HOLD_START,
+              );
+            }
+
+            tl.to(shell, { opacity: 0, duration: OUT, ease: "power2.in" }, OUT_START);
+
+            tl.seek(0);
+            window.__timelines = window.__timelines || {};
+            window.__timelines["match-cut"] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

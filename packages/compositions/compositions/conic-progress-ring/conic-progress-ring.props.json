@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/conic-progress-ring); fictional.",
+  "progress": 92,
+  "thickness": 16,
+  "label": "92",
+  "speed": 1
+}

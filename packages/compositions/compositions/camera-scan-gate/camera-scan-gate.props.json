@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/camera-scan-gate); fictional.",
+  "scanColor": "var(--accent)",
+  "targetLabel": "Payment approved",
+  "sweepSpeed": 1.1,
+  "speed": 1
+}

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Strike-through</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "strike",
+  "title": "Strike-through",
+  "description": "A phrase appears, a hand-drawn line strikes through it (drawn, not popped, in 0.2-0.4 s), then the correction writes in beside or under it. Use for 'not this → this' beats: 'open an editing app' struck out, 'just ask' written in (EFFECTS.md FX-25).",
+  "duration": 3,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["text", "strike", "correction", "reels"],
+  "params": {
+    "text": { "type": "string", "required": true, "default": "add sugar", "maxLength": 30, "label": "Struck text", "description": "What gets struck out." },
+    "correction": { "type": "string", "default": "steep it longer", "maxLength": 30, "label": "Correction", "description": "What replaces it, written in after the strike. Empty to hide." },
+    "strikeAt": { "type": "number", "default": 0.6, "min": 0, "max": 20, "step": 0.05, "unit": "s", "label": "Strike at", "description": "Seconds when the line starts drawing (on the spoken word)." },
+    "style": { "type": "enum", "options": ["line", "cross", "scribble"], "default": "line", "label": "Mark", "description": "line = one stroke, cross = an X over the phrase, scribble = a zigzag scratch-out." },
+    "color": { "type": "color", "default": "#EDEBE6", "label": "Text colour", "description": "Colour of the struck text." },
+    "accent": { "type": "color", "default": "#E5484D", "label": "Pen", "description": "Colour of the strike and the correction." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "center", "label": "Anchor", "description": "Vertical placement." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed (strikeAt stays on its second)." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.35 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .grp { position: absolute; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .wrap { position: relative; }
+  .tx { font-family: "Archivo", sans-serif; font-weight: 800; font-stretch: 100%; white-space: nowrap; line-height: 1; text-shadow: 0 4px 24px rgba(0,0,0,.55); }
+  .cor { font-family: "Instrument Serif", serif; font-style: italic; white-space: nowrap; line-height: 1; text-shadow: 0 4px 24px rgba(0,0,0,.45); }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var SK = { strokes: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var grp = RC.el("div", { class: "grp" });
+      var wrap = RC.el("div", { class: "wrap" });
+      var tx = RC.el("div", { class: "tx", text: P.text, style: { color: P.color } });
+      wrap.appendChild(tx);
+      grp.appendChild(wrap);
+      if (P.correction) {
+        SK.cor = RC.el("div", { class: "cor", text: P.correction, style: { color: P.accent, marginTop: 26 * u + "px" } });
+        grp.appendChild(SK.cor);
+      }
+      stage.appendChild(grp);
+      RC.fitText(tx, RC.width - 2 * RC.safe.left, 120 * u, 40 * RC.u);
+      if (SK.cor) RC.fitText(SK.cor, RC.width - 2 * RC.safe.left, 150 * u, 40 * RC.u);
+      var w = tx.offsetWidth;
+      var h = tx.offsetHeight;
+      var NS = "http://www.w3.org/2000/svg";
+      var svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("width", w);
+      svg.setAttribute("height", h);
+      wrap.appendChild(svg);
+      var paths = [];
+      var o = 18 * u;
+      if (P.style === "line") paths.push("M" + -o + " " + h * 0.58 + " C" + w * 0.3 + " " + h * 0.5 + " " + w * 0.7 + " " + h * 0.62 + " " + (w + o) + " " + h * 0.48);
+      else if (P.style === "cross") {
+        paths.push("M" + -o + " " + -o * 0.5 + " L" + (w + o) + " " + (h + o * 0.5));
+        paths.push("M" + (w + o) + " " + -o * 0.5 + " L" + -o + " " + (h + o * 0.5));
+      } else {
+        var d = "M" + -o + " " + h * 0.4;
+        for (var i = 1; i <= 9; i++) d += " L" + (-o + (i / 9) * (w + 2 * o)) + " " + (i % 2 ? h * 0.7 : h * 0.3);
+        paths.push(d);
+      }
+      paths.forEach(function (d, i) {
+        var p = document.createElementNS(NS, "path");
+        p.setAttribute("d", d);
+        p.setAttribute("fill", "none");
+        p.setAttribute("stroke", P.accent);
+        p.setAttribute("stroke-width", Math.max(6, h * 0.11));
+        p.setAttribute("stroke-linecap", "round");
+        p.setAttribute("stroke-linejoin", "round");
+        svg.appendChild(p);
+        var len = p.getTotalLength();
+        p.setAttribute("stroke-dasharray", len + " " + len);
+        SK.strokes.push({ node: p, len: len, i: i });
+      });
+      var gh = grp.offsetHeight;
+      var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - gh : (RC.height - gh) / 2;
+      grp.style.top = top + P.offsetY * RC.u + "px";
+      SK.grp = grp;
+      SK.tx = tx;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var T = time.T;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.35, 0, 1)) : 0;
+      var ip = RC.progress(t, 0, 0.3, "snappy");
+      RC.set(SK.tx, { y: (1 - ip) * 24 * RC.u, opacity: ip });
+      var per = P.style === "cross" ? 0.18 : 0.3;
+      // the strike starts on the spoken word (real time); the strokes and the correction then run at the clip's rate
+      var ds = RC.since(T, RC.cue(P.strikeAt));
+      for (var i = 0; i < SK.strokes.length; i++) {
+        var s = SK.strokes[i];
+        var sp = RC.clamp((ds - i * per) / per, 0, 1);
+        s.node.setAttribute("stroke-dashoffset", String(s.len * (1 - RC.ease("smooth", sp))));
+        s.node.style.visibility = sp > 0 ? "visible" : "hidden";
+      }
+      var struck = RC.clamp(ds / 0.4, 0, 1);
+      SK.tx.style.opacity = String(ip * (1 - 0.45 * struck));
+      if (SK.cor) {
+        var cs = SK.strokes.length * per + 0.05;
+        var cp = RC.clamp((ds - cs) / 0.45, 0, 1);
+        RC.set(SK.cor, { opacity: cp > 0 ? 1 : 0, clip: "inset(-20% " + (1 - RC.ease("smooth", cp)) * 100 + "% -20% 0)" });
+      }
+      SK.grp.style.opacity = String(1 - out);
+    },
+  });
+</script>
+</body>
+</html>

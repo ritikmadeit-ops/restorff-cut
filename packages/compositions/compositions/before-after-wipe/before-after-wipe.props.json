@@ -1,0 +1,6 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew): the Halcyon barista illustration as the before still, a warm look on the after side (demo without footage; over a real clip leave afterLook none and the graded footage shows).",
+  "before": "../halftone-push/assets/barista.png",
+  "afterLook": "warm",
+  "stop": 0.62
+}

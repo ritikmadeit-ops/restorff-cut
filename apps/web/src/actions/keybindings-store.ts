@@ -180,7 +180,7 @@ export const useKeybindingsStore = create<KeybindingsState>()(
 			getKeybindingString: (ev) => generateKeybindingString(ev),
 		}),
 		{
-			name: "opencut-keybindings",
+			name: "restorffcut-keybindings",
 			version: CURRENT_VERSION,
 			partialize: (state): PersistedState => ({
 				keybindings: Object.fromEntries(state.keybindings),

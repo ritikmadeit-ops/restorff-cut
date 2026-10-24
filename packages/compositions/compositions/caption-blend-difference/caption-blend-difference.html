@@ -1,0 +1,201 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/caption-blend-difference@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html lang="en">
+  <head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "caption-blend-difference",
+  "title": "Blend Difference",
+  "description": "Auto-inverting text using mix-blend-mode: difference — flips between white and black per-pixel against the background. Imported from a HyperFrames component (captions; provenance below).",
+  "duration": 6,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "tags": [
+    "captions",
+    "text",
+    "text-effect",
+    "effect",
+    "blend-mode",
+    "contrast",
+    "inversion",
+    "imported",
+    "hyperframes"
+  ],
+  "opaque": true,
+  "kit": "hf-compat",
+  "params": {
+    "l1": {
+      "type": "string",
+      "default": "Reads on",
+      "label": "L1",
+      "description": "The text of #l1 (div), \"Reads on\" in the upstream example.",
+      "required": true
+    },
+    "l2": {
+      "type": "string",
+      "default": "any color",
+      "label": "L2",
+      "description": "The text of #l2 (div), \"any color\" in the upstream example."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1920x1080 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    }
+  },
+  "hf": {
+    "vars": {
+      "l1": "rc_text_l1",
+      "l2": "rc_text_l2"
+    },
+    "width": 1920,
+    "height": 1080,
+    "mode": "demo",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/caption-blend-difference",
+    "path": "registry/components/caption-blend-difference",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+
+    
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Blend Difference</title>
+    
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        margin: 0;
+        overflow: hidden;
+        background: #111;
+      }
+      #caption-blend-difference {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        isolation: isolate;
+      }
+      #bg {
+        position: absolute;
+        inset: 0;
+        width: 3840px;
+        background: linear-gradient(
+          90deg,
+          #f4efe6 0%,
+          #f4efe6 22%,
+          #1d3557 22%,
+          #1d3557 45%,
+          #e63946 45%,
+          #e63946 68%,
+          #f4efe6 68%,
+          #f4efe6 80%,
+          #111 80%,
+          #111 100%
+        );
+      }
+      .blend-difference {
+        mix-blend-mode: var(--blend-mode, difference);
+        color: var(--blend-caption-color, white);
+        pointer-events: none;
+      }
+      #caption {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+      .line {
+        font-size: 210px;
+        line-height: 1;
+        visibility: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="caption-blend-difference"
+      data-composition-id="caption-blend-difference"
+      data-start="0"
+      data-duration="6"
+      data-fps="30"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="bg"></div>
+      <div id="caption" class="blend-difference">
+        <div class="line" id="l1" data-var-text="rc_text_l1">Reads on</div>
+        <div class="line" id="l2" data-var-text="rc_text_l2">any color</div>
+      </div>
+    </div>
+
+    <script type="text/x-rc-deferred">
+      (function () {
+        window.__timelines = window.__timelines || {};
+        var tl = gsap.timeline({ paused: true });
+        tl.fromTo("#bg", { x: 0 }, { x: -1920, duration: 6, ease: "none" }, 0);
+        tl.set("#l1", { visibility: "visible" }, 0.2);
+        tl.from("#l1", { y: 60, opacity: 0, duration: 0.6, ease: "expo.out" }, 0.2);
+        tl.set("#l2", { visibility: "visible" }, 1.0);
+        tl.from("#l2", { y: 60, opacity: 0, duration: 0.6, ease: "expo.out" }, 1.0);
+        tl.to(["#l1", "#l2"], { opacity: 0, duration: 0.4, ease: "power2.in" }, 5.5);
+        tl.seek(0);
+        window.__timelines["caption-blend-difference"] = tl;
+      })();
+    </script>
+  <script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

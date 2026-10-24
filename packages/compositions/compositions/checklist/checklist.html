@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Checklist</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "checklist",
+  "title": "Checklist",
+  "description": "A titled list whose items tick in one by one (box draws, check strokes in, label brightens). Use for ingredients, steps, what's included, reasons to buy: 3-5 short items.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["list", "text", "steps", "reels"],
+  "params": {
+    "title": { "type": "string", "default": "WHAT'S IN THE CAN", "maxLength": 32, "label": "Title", "description": "Label above the list. Empty to hide." },
+    "items": { "type": "list", "of": { "type": "string", "maxLength": 36 }, "minItems": 1, "maxItems": 6, "default": ["Cold-filtered water", "Single-origin beans", "Twelve hours", "Nothing else"], "label": "Items", "description": "The items, in the order they tick. Short: one line each." },
+    "ticks": { "type": "list", "of": { "type": "number", "min": 0 }, "maxItems": 6, "default": [], "label": "Tick times", "description": "Seconds from the overlay start when each item ticks, taken from the word timings (the spoken word for each item). Real time: not changed by speed. Empty = first tick at `start`, then every `interval`." },
+    "start": { "type": "number", "default": 0.5, "min": 0, "max": 5, "step": 0.05, "unit": "s", "label": "First tick", "description": "When the first item ticks if no tick times are given (animation seconds)." },
+    "interval": { "type": "number", "default": 0.45, "min": 0.1, "max": 2, "step": 0.05, "unit": "s", "label": "Interval", "description": "Time between ticks if no tick times are given." },
+    "counter": { "type": "boolean", "default": true, "label": "Counter", "description": "\"2 of 4\" beside the title, counting ticked items." },
+    "progress": { "type": "boolean", "default": true, "label": "Progress bar", "description": "Thin accent bar under the title that fills as items tick." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Colour of the ticks and the progress bar." },
+    "card": { "type": "boolean", "default": true, "label": "Card", "description": "Dark card behind the list (keeps it legible over busy video)." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed. 0.8 = slower, 1.25 = faster." },
+    "ease": { "type": "easing", "default": "snappy", "label": "Easing", "description": "How rows and ticks land." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "top", "label": "Anchor", "description": "Vertical placement inside the safe area. top keeps the panel in the top 45 % of the frame, clear of the speaker's face in most framings." },
+    "offsetY": { "type": "number", "default": 40, "min": -900, "max": 900, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Card drops away over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .card { position: absolute; display: flex; flex-direction: column; }
+  .card.on { background: rgba(12,12,14,.88); box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 0 0 2px rgba(237,235,230,.10); }
+  .title {
+    font-family: "Archivo", sans-serif; font-weight: 800; font-stretch: 125%; text-transform: uppercase;
+    letter-spacing: .14em; color: var(--fog);
+  }
+  .row { display: flex; align-items: center; opacity: 0; }
+  .box { position: relative; flex: none; }
+  .box svg { position: absolute; inset: 0; overflow: visible; }
+  .label {
+    font-family: "Archivo", sans-serif; font-weight: 700; color: var(--bone); white-space: nowrap;
+    text-shadow: 0 2px 12px rgba(0,0,0,.4);
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var C = { rows: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var card = RC.el("div", { class: "card" + (P.card ? " on" : ""), style: { padding: 54 * u + "px " + 56 * u + "px", borderRadius: 30 * u + "px", gap: 30 * u + "px" } });
+      if (P.title || P.counter) {
+        C.count = P.counter ? RC.el("span", { class: "count", text: "0 of " + P.items.length }) : null;
+        card.appendChild(RC.el("div", { class: "title", style: { fontSize: 30 * u + "px", display: "flex", justifyContent: "space-between", gap: 40 * u + "px" } }, [
+          RC.el("span", { text: P.title || "" }), C.count,
+        ]));
+      }
+      if (P.progress) {
+        C.bar = RC.el("div", { class: "bar", style: { height: 6 * u + "px", borderRadius: 3 * u + "px", background: P.accent, transformOrigin: "0 50%", transform: "scaleX(0)" } });
+        card.appendChild(RC.el("div", { class: "track", style: { height: 6 * u + "px", borderRadius: 3 * u + "px", background: "rgba(237,235,230,.14)", marginTop: -10 * u + "px", marginBottom: 6 * u + "px" } }, [C.bar]));
+      }
+      var bs = 58 * u;
+      P.items.forEach(function (text) {
+        var svg = '<svg viewBox="0 0 58 58" width="' + bs + '" height="' + bs + '">' +
+          '<rect class="frame" x="2.5" y="2.5" width="53" height="53" rx="14" fill="none" stroke="#8C8C95" stroke-width="4" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>' +
+          '<path class="tick" d="M14 30 L25 41 L45 18" fill="none" stroke="' + P.accent + '" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg>';
+        var box = RC.el("div", { class: "box", html: svg, style: { width: bs + "px", height: bs + "px" } });
+        var label = RC.el("div", { class: "label", text: text, style: { fontSize: 56 * u + "px" } });
+        var row = RC.el("div", { class: "row", style: { gap: 30 * u + "px" } }, [box, label]);
+        card.appendChild(row);
+        C.rows.push({ row: row, label: label, frame: box.querySelector(".frame"), tick: box.querySelector(".tick") });
+      });
+      stage.appendChild(card);
+      card.style.minWidth = Math.min(RC.width - RC.safe.left - RC.safe.right, 760 * u) + "px";
+      var w = card.offsetWidth;
+      var h = card.offsetHeight;
+      card.style.left = (RC.width - w) / 2 - (RC.safe.right - RC.safe.left) / 2 + "px";
+      var y = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - h : (RC.height - h) / 2;
+      card.style.top = y + P.offsetY * RC.u + "px";
+      C.card = card;
+      C.u = u;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var u = C.u;
+      var t = time.t;
+      var cin = RC.progress(t, 0, 0.45, P.ease);
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      RC.set(C.card, { y: (1 - cin) * 80 * u + out * 140 * u, scale: RC.mix(0.94, 1, cin), opacity: RC.progress(t, 0, 0.2, "linear") * (1 - out) });
+      // word-timed ticks follow the audio clock (T); otherwise start + interval in animation time (t)
+      var timed = P.ticks.length > 0;
+      var clock = timed ? time.T : t;
+      var lastGiven = timed ? P.ticks[P.ticks.length - 1] : 0;
+      var tickAt = function (i) {
+        if (!timed) return P.start + i * P.interval;
+        return i < P.ticks.length ? P.ticks[i] : lastGiven + (i - P.ticks.length + 1) * P.interval;
+      };
+      var done = 0;
+      var fill = 0;
+      C.rows.forEach(function (r, i) {
+        var tick = tickAt(i);
+        var appear = RC.progress(clock, tick - 0.35, 0.3, P.ease);
+        RC.set(r.row, { x: (1 - appear) * -40 * u, opacity: appear });
+        var f = RC.progress(clock, tick - 0.3, 0.25, "smooth");
+        r.frame.setAttribute("stroke-dashoffset", String(100 - 100 * f));
+        var k = RC.progress(clock, tick, 0.22, "snappy");
+        r.tick.setAttribute("stroke-dashoffset", String(100 - 100 * k));
+        r.frame.setAttribute("stroke", k > 0 ? P.accent : "#8C8C95");
+        r.label.style.opacity = String(RC.mix(0.55, 1, RC.progress(clock, tick, 0.2, "linear")));
+        RC.set(r.label, { x: RC.progress(clock, tick, 0.25, "bouncy") * 6 * u });
+        if (clock >= tick) done++;
+        fill += RC.progress(clock, tick, 0.25, "snappy");
+      });
+      if (C.count) C.count.textContent = done + " of " + C.rows.length;
+      if (C.bar) C.bar.style.transform = "scaleX(" + fill / C.rows.length + ")";
+    },
+  });
+</script>
+</body>
+</html>

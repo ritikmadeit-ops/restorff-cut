@@ -1,45 +1,37 @@
-# opencut-wasm
+# restorffcut-wasm
 
-Shared video editor logic compiled to WebAssembly. Used by the [OpenCut](https://github.com/opencut/opencut) web app.
+RestorffCut's per-frame engine (compositor, effects, masks, media time) compiled to WebAssembly. Used by the
+RestorffCut web app (`apps/web`). MIT; upstream credits are in `LICENSE` and the repo's `NOTICE`.
 
-## Install
+## Build
+
+From the repo root (toolchain setup and every known failure: `docs/restorff/RUST.md`):
 
 ```bash
-npm install opencut-wasm
+export PATH="$HOME/.cargo/bin:$PATH"
+wasm-pack build rust/wasm --target bundler --out-dir pkg
 ```
+
+Output: `rust/wasm/pkg/` (`restorffcut_wasm.js`, `restorffcut_wasm_bg.wasm`, `restorffcut_wasm.d.ts`, `package.json`
+named `restorffcut-wasm`). This folder is generated; do not edit it.
 
 ## Usage
 
 ```ts
-import { formatTimecode, mediaTimeFromSeconds } from "opencut-wasm";
+import { formatTimecode, listEffectShaders, mediaTimeFromSeconds } from "restorffcut-wasm";
 
-const ticks = mediaTimeFromSeconds(1.5);
-const label = formatTimecode({ ticks });
+const ticks = mediaTimeFromSeconds({ seconds: 1.5 });
+const label = formatTimecode({ time: ticks });
+const shaders = listEffectShaders(); // [{ id: "gaussian-blur", uniforms: [...] }, { id: "restorff-digital-zoom", ... }]
 ```
 
-All exports are documented in the [TypeScript definitions](./opencut_wasm.d.ts).
+All exports are typed in the generated `restorffcut_wasm.d.ts`.
 
 ## Source
 
-Functions are implemented in Rust under [`rust/crates/`](../crates/). This package is the compiled WebAssembly output — do not edit it directly.
+Functions are implemented in Rust under [`rust/crates/`](../crates/). Effects (shader ids, uniforms, WGSL) are
+registered in `rust/crates/effects/src/shaders.rs`.
 
-## Local development
+## Using the local build in apps/web
 
-The web app depends on the published `opencut-wasm` package by default. If you are editing the WASM source in this repo and want `apps/web` to use your local build instead:
-
-```bash
-# From the repo root
-bun run build:wasm
-
-cd rust/wasm/pkg
-bun link
-
-cd ../../../apps/web
-bun link opencut-wasm
-```
-
-While you work, rebuild on changes from the repo root:
-
-```bash
-bun dev:wasm
-```
+See `docs/restorff/RUST.md`, section "Switching the app to the local build".

@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/beat-freeze-cut); fictional.",
+  "bfcAKicker": "MUSIC PROMO",
+  "bfcAPill": "LIVE",
+  "bfcBEyebrow": "Next shot",
+  "bfcBSub": "Beat-locked freeze, then cut. Built for music-led promos and montages.",
+  "speed": 1
+}

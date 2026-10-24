@@ -19,6 +19,8 @@ export type BackdropSource = {
 	source: CanvasImageSource;
 	width: number;
 	height: number;
+	/** A pooled video-frame canvas's current frame (timestamp); see compositor/types.ts ExternalTextureDescriptor. */
+	version?: string;
 };
 
 export interface ResolvedBlurBackgroundNodeState {

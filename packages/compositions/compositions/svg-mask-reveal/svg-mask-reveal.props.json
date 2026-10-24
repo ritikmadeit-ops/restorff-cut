@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/svg-mask-reveal); fictional.",
+  "text": "REVEAL",
+  "revealProgress": 100,
+  "featherPx": 24,
+  "speed": 1
+}

@@ -12,7 +12,6 @@ import { Timeline } from "@/timeline/components";
 import { PreviewPanel } from "@/preview/components";
 import { EditorHeader } from "@/components/editor/editor-header";
 import { EditorProvider } from "@/components/providers/editor-provider";
-import { Onboarding } from "@/components/editor/onboarding";
 import { MigrationDialog } from "@/project/components/migration-dialog";
 import { usePanelStore } from "@/editor/panel-store";
 import { usePasteMedia } from "@/media/use-paste-media";
@@ -22,7 +21,6 @@ import { useEditor } from "@/editor/use-editor";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
-import { ChangelogNotification } from "@/changelog/components/changelog-notification";
 import {
 	createPreviewOverlayControl,
 	isPreviewOverlayVisible,
@@ -48,9 +46,7 @@ export default function Editor() {
 					<div className="min-h-0 min-w-0 flex-1">
 						<EditorLayout />
 					</div>
-					<Onboarding />
 					<MigrationDialog />
-					<ChangelogNotification />
 				</div>
 			</EditorProvider>
 		</MobileGate>
@@ -63,8 +59,8 @@ function DegradedRendererBanner() {
 	if (!isDegraded || dismissed) return null;
 
 	return (
-		<div className="bg-accent border-b h-9 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-			<span>For the best experience, open OpenCut in Chrome.</span>
+		<div className="rc-mono bg-surface border-b h-9 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+			<span>For the best experience, open RestorffCut in Chrome.</span>
 			<Button
 				variant="text"
 				size="icon"
@@ -128,7 +124,7 @@ function EditorLayout() {
 	return (
 		<ResizablePanelGroup
 			direction="vertical"
-			className="size-full gap-[0.18rem]"
+			className="size-full"
 			onLayout={(sizes) => {
 				setPanel({
 					panel: "mainContent",
@@ -148,7 +144,7 @@ function EditorLayout() {
 			>
 				<ResizablePanelGroup
 					direction="horizontal"
-					className="size-full gap-[0.19rem] px-3"
+					className="size-full"
 					onLayout={(sizes) => {
 						setPanel({ panel: "tools", size: sizes[0] ?? panels.tools });
 						setPanel({ panel: "preview", size: sizes[1] ?? panels.preview });
@@ -167,7 +163,7 @@ function EditorLayout() {
 						<AssetsPanel />
 					</ResizablePanel>
 
-					<ResizableHandle withHandle />
+					<ResizableHandle className="bg-border transition-colors hover:bg-[#4a4a52]" />
 
 					<ResizablePanel
 						defaultSize={panels.preview}
@@ -181,7 +177,7 @@ function EditorLayout() {
 						/>
 					</ResizablePanel>
 
-					<ResizableHandle withHandle />
+					<ResizableHandle className="bg-border transition-colors hover:bg-[#4a4a52]" />
 
 					<ResizablePanel
 						defaultSize={panels.properties}
@@ -194,13 +190,13 @@ function EditorLayout() {
 				</ResizablePanelGroup>
 			</ResizablePanel>
 
-			<ResizableHandle withHandle />
+			<ResizableHandle className="bg-border transition-colors hover:bg-[#4a4a52]" />
 
 			<ResizablePanel
 				defaultSize={panels.timeline}
 				minSize={15}
 				maxSize={70}
-				className="min-h-0 px-3 pb-3"
+				className="min-h-0"
 			>
 				<Timeline />
 			</ResizablePanel>

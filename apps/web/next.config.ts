@@ -1,6 +1,4 @@
 import type { NextConfig } from "next";
-import { withBotId } from "botid/next/config";
-import { withContentCollections } from "@content-collections/next";
 
 const nextConfig: NextConfig = {
 	compiler: {
@@ -9,28 +7,10 @@ const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	productionBrowserSourceMaps: true,
 	output: "standalone",
+	// No floating dev overlay badge: it covers the editor's bottom-left corner.
+	devIndicators: false,
 	images: {
 		remotePatterns: [
-			{
-				protocol: "https",
-				hostname: "plus.unsplash.com",
-			},
-			{
-				protocol: "https",
-				hostname: "images.unsplash.com",
-			},
-			{
-				protocol: "https",
-				hostname: "images.marblecms.com",
-			},
-			{
-				protocol: "https",
-				hostname: "lh3.googleusercontent.com",
-			},
-			{
-				protocol: "https",
-				hostname: "avatars.githubusercontent.com",
-			},
 			{
 				protocol: "https",
 				hostname: "api.iconify.design",
@@ -51,4 +31,4 @@ const nextConfig: NextConfig = {
 	},
 };
 
-export default withContentCollections(withBotId(nextConfig));
+export default nextConfig;

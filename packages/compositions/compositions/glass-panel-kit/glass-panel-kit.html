@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glass panel kit</title>
+<script src="../../src/runtime.js"></script>
+<!-- Promoted from the explainer-overlay recreation's kit (docs/restorff/recreations/explainer-overlay/inputs/kit.html,
+     our own code, 14 sections of that reel), generalised: no brand words in the code (every word comes from params),
+     the tile icon is a param, beat times are voice cues on the fitted clock. The kit's "collapse" and "filmstrip"
+     widgets became their own compositions: waveform-collapse and filmstrip-flash. -->
+<script type="application/json" id="params">
+{
+  "name": "glass-panel-kit",
+  "title": "Glass panel kit",
+  "description": "The explainer overlay grammar for the top 40 % above a talking head: a section title types on top-left, a frosted dark glass panel with mono micro-labels and white icon tiles, and ONE moving part (the widget) that acts out the spoken line, every sub-beat on its spoken word (times). Lay one per beat, about every 2 s (EFFECTS.md FX-29). Widgets and the order of their labels — card: repo line, name, description, pill 1, pill 2, tile label, stats line · chips: row 1 label, row 2 label, chip 1-3 · flow: source name, source pill, ring label · install: typed request, typed reply, working status, done status, chip · log: typed lines 1-3 · chat: placeholder, typed message, zone label, chip · bars: bar 1 label, bar 2 label, picture word · repeat: the repeated line · doc: doc title, tag · grid: four '01 Step' items · comment: typed keyword, notification header, lines 1-3 · zero: the label (with big).",
+  "duration": 3,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["explainer", "glass", "panel", "overlay", "kit", "ui", "beats"],
+  "params": {
+    "titles": { "type": "list", "minItems": 0, "maxItems": 6, "label": "Section titles", "description": "Each types on in the top left (about 0.3 s) at its time (seconds from the clip start, on the voice) and replaces the one before.",
+      "of": { "type": "object", "fields": { "at": { "type": "number", "min": 0, "max": 60, "default": 0, "description": "Seconds from the clip start." }, "text": { "type": "string", "maxLength": 40, "description": "Sentence case." } } },
+      "default": [{ "at": 0, "text": "This brew" }, { "at": 0.5, "text": "Halcyon Cold Brew" }] },
+    "widget": { "type": "enum", "options": ["none", "card", "chips", "flow", "install", "log", "chat", "bars", "repeat", "doc", "grid", "comment", "zero"], "default": "card", "label": "Moving part", "description": "What acts out the line (see the description for each widget's labels)." },
+    "labels": { "type": "list", "of": { "type": "string", "maxLength": 48 }, "minItems": 0, "maxItems": 12, "label": "Labels", "description": "The widget's words, in its own order (see the description). Missing ones stay empty.",
+      "default": ["halcyon-co / cold-brew", "Halcyon Cold Brew", "Slow-steeped. Single origin. Never bitter.", "SINGLE ORIGIN", "18-HOUR STEEP", "HALCYON-CO", "4.9 rating  ·  18 h  ·  1 : 8"] },
+    "times": { "type": "list", "of": { "type": "number", "min": 0, "max": 60 }, "minItems": 0, "maxItems": 12, "default": [], "label": "Beat times", "description": "Seconds from the clip start for each sub-beat (from the word timings). Empty = the widget's own timing, which fits the clip." },
+    "big": { "type": "string", "default": "", "maxLength": 16, "label": "Big text", "description": "zero: the big word or number." },
+    "icon": { "type": "enum", "options": ["drop", "bean", "bottle", "flame", "repeat", "send", "heart", "link"], "default": "drop", "label": "Tile icon", "description": "The icon on the white app tiles." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "The one isolate: ticks and progress fills." },
+    "brand": { "type": "color", "default": "#1F6F8B", "label": "Brand colour", "description": "Colour of the tile icon." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size of the whole group." },
+    "titleScale": { "type": "number", "default": 1, "min": 0.5, "max": 2.5, "step": 0.01, "unit": "x", "label": "Title size", "description": "Size of the section titles." },
+    "offsetY": { "type": "number", "default": 0, "min": -300, "max": 900, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge the group, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed of the widget's own beats (cue times stay on the voice)." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "The group fades over the last 0.15 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  #grp { position: absolute; left: 0; top: 0; }
+  .a { position: absolute; }
+  .sans { font-family: "Archivo", sans-serif; font-stretch: 100%; }
+  .mono { font-family: "JetBrains Mono", monospace; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  .title { font-weight: 700; color: #fff; white-space: nowrap; letter-spacing: -0.012em; text-shadow: 0 2px 16px rgba(0,0,0,.35); }
+  .glass { background: linear-gradient(160deg, rgba(78,78,84,.84), rgba(34,34,38,.90)); border: 1.5px solid rgba(255,255,255,.22); box-shadow: 0 18px 50px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.20); }
+  .tile { background: #fff; box-shadow: 0 14px 34px rgba(0,0,0,.28); display: flex; align-items: center; justify-content: center; }
+  .pill { background: rgba(16,16,18,.90); color: #fff; border-radius: 999px; white-space: nowrap; box-shadow: 0 8px 22px rgba(0,0,0,.25); }
+  .white { background: #fff; color: #1d2126; box-shadow: 0 18px 44px rgba(0,0,0,.28); }
+  .lbl { color: #fff; white-space: nowrap; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var K = {};
+  var U = 1;
+  // deterministic 0..1 from a seed number (pure)
+  function hrnd(n) { var x = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
+  function px(v) { return (v * U) + "px"; }
+  function mk(cls, x, y, w, h, extra) {
+    var n = document.createElement("div");
+    n.className = "a " + (cls || "");
+    n.style.left = px(x); n.style.top = px(y);
+    if (w != null) n.style.width = px(w);
+    if (h != null) n.style.height = px(h);
+    if (extra) for (var k in extra) n.style[k] = extra[k];
+    K.grp.appendChild(n);
+    return n;
+  }
+  function put(parent, child) { parent.appendChild(child); return child; }
+  function T(n, o) {
+    var tr = "";
+    if (o.x || o.y) tr += "translate(" + px(o.x || 0) + "," + px(o.y || 0) + ") ";
+    if (o.ry) tr += "perspective(" + px(1600) + ") rotateY(" + o.ry + "deg) ";
+    if (o.rotate) tr += "rotate(" + o.rotate + "deg) ";
+    if (o.scale != null && o.scale !== 1) tr += "scale(" + o.scale + ") ";
+    n.style.transform = tr;
+    if (o.opacity != null) n.style.opacity = o.opacity;
+    n.style.filter = o.blur ? "blur(" + px(o.blur) + ")" : "";
+  }
+  var CHECK = '<svg viewBox="0 0 24 24" style="display:inline-block;vertical-align:-0.12em;width:0.95em;height:0.95em;margin-right:0.35em"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="ACC" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function setLabel(n, text, acc) {
+    if (n._t === text) return;
+    n._t = text;
+    if (text.indexOf("✓ ") === 0) { n.innerHTML = CHECK.replace("ACC", acc || "#fff"); n.appendChild(document.createTextNode(text.slice(2))); }
+    else n.textContent = text;
+  }
+  function typed(n, text, t, at, dur) {
+    var p = RC.clamp((t - at) / dur, 0, 1);
+    var s = text.slice(0, Math.round(p * text.length));
+    if (n._t !== s) { n._t = s; n.textContent = s; }
+    return p;
+  }
+  function pop(n, t, at, base) {
+    var p = RC.progress(t, at, 0.32, "bouncy");
+    var q = RC.progress(t, at, 0.14, "linear");
+    var o = { scale: 0.6 + 0.4 * p, opacity: q };
+    if (base) for (var k in base) o[k] = base[k];
+    T(n, o);
+    return p;
+  }
+  function fadeUp(n, t, at, dy) {
+    var p = RC.progress(t, at, 0.28, "snappy");
+    T(n, { y: (1 - p) * (dy == null ? 26 : dy), opacity: RC.progress(t, at, 0.16, "linear") });
+    return p;
+  }
+  function icon(name, col, size) {
+    var s = size || 64;
+    if (name === "drop") return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64"><path d="M32 5C32 5 13 28 13 40a19 19 0 0 0 38 0C51 28 32 5 32 5z" fill="' + col + '"/><path d="M23 42a9 9 0 0 0 9 9" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/></svg>';
+    if (name === "bean") return '<svg width="' + s + '" height="' + (s * 1.4) + '" viewBox="0 0 40 56"><ellipse cx="20" cy="28" rx="16" ry="24" fill="' + (col === "#fff" ? "#6B4226" : col) + '" stroke="#fff" stroke-width="3"/><path d="M20 6C11 20 29 36 20 50" stroke="#EDEBE6" stroke-width="3" fill="none"/></svg>';
+    if (name === "bottle") return '<svg width="' + s + '" height="' + (s * 2.5) + '" viewBox="0 0 40 100"><rect x="14" y="2" width="12" height="12" rx="2" fill="#EDEBE6"/><path d="M14 14h12v10c8 4 10 10 10 16v52a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6V40c0-6 2-12 10-16z" fill="#3B2416"/><rect x="4" y="48" width="32" height="22" fill="#EDEBE6"/><rect x="9" y="56" width="22" height="3.5" fill="' + col + '"/></svg>';
+    if (name === "flame") return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64"><path d="M32 6c4 12 16 18 16 34a16 16 0 0 1-32 0c0-8 4-12 8-16 0 6 3 9 6 10-2-10 2-20 2-28z" fill="none" stroke="' + col + '" stroke-width="3.2" stroke-linejoin="round"/></svg>';
+    if (name === "repeat") return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64" fill="none" stroke="' + col + '" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 30a20 20 0 0 1 34-14"/><path d="M47 5v12H35"/><path d="M52 34a20 20 0 0 1-34 14"/><path d="M17 59V47h12"/></svg>';
+    if (name === "send") return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="' + col + '"/><path d="M32 46V20M21 30l11-11 11 11" stroke="#111" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    if (name === "heart") return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64"><path d="M32 54S8 40 8 23a12 12 0 0 1 24-4 12 12 0 0 1 24 4c0 17-24 31-24 31z" fill="none" stroke="' + col + '" stroke-width="4"/></svg>';
+    if (name === "link") return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64" fill="none" stroke="' + col + '" stroke-width="5" stroke-linecap="round"><path d="M27 37l10-10"/><path d="M22 30l-6 6a8 8 0 0 0 11 11l6-6"/><path d="M42 34l6-6a8 8 0 0 0-11-11l-6 6"/></svg>';
+    return "";
+  }
+  /** The brand tile's icon (the icon param) in the brand colour. */
+  function brandIcon(size) { return icon(K.P.icon, K.P.brand, size); }
+  function tile(x, y, size, inner) {
+    var n = mk("tile", x, y, size, size, { borderRadius: px(size * 0.24) });
+    n.innerHTML = inner;
+    return n;
+  }
+  // a beat: its voice cue in animation seconds (cue × rate: on the clock t it lands exactly on the spoken word), else d
+  function tm(i, d) { var a = K.cues; return a && a[i] != null ? a[i] * RC.rate : d; }
+  // a label: missing ones stay empty (no example words in an applied render)
+  function lb(i) { var a = K.P.labels; return a && a[i] != null ? a[i] : ""; }
+
+  var W = {};
+
+  W.card = {
+    build: function (P) {
+      var c = mk("white", 60, 255, 610, 290, { borderRadius: px(26), transformOrigin: "0% 50%" });
+      var row = put(c, document.createElement("div")); row.className = "a mono"; row.style.cssText = "left:" + px(30) + ";top:" + px(28) + ";font-size:" + px(22) + ";color:#57606a;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:" + px(12);
+      row.innerHTML = brandIcon(30 * U); row.appendChild(document.createTextNode(lb(0)));
+      var nm = put(c, document.createElement("div")); nm.className = "a sans"; nm.style.cssText = "left:" + px(30) + ";top:" + px(80) + ";font-size:" + px(46) + ";font-weight:800;color:#1d2126;letter-spacing:-0.02em;white-space:nowrap"; nm.textContent = lb(1);
+      RC.fitText(nm, 550 * U, 46 * U, 24 * U);
+      var ds = put(c, document.createElement("div")); ds.className = "a sans"; ds.style.cssText = "left:" + px(30) + ";top:" + px(148) + ";width:" + px(550) + ";font-size:" + px(26) + ";line-height:1.3;color:#57606a"; ds.textContent = lb(2);
+      var stt = put(c, document.createElement("div")); stt.className = "a mono"; stt.style.cssText = "left:" + px(30) + ";top:" + px(236) + ";font-size:" + px(21) + ";color:#57606a;letter-spacing:.02em"; stt.textContent = lb(6);
+      K.card = c;
+      K.tile = tile(720, 290, 140, brandIcon(78 * U));
+      K.tileLbl = mk("mono lbl", 720, 450, null, null, { fontSize: px(26) }); K.tileLbl.textContent = lb(5);
+      K.p1 = mk("pill mono", 60, 575, null, null, { fontSize: px(26), padding: px(14) + " " + px(26) }); K.p1.textContent = lb(3);
+      K.p2 = mk("pill mono", 60, 575, null, null, { fontSize: px(26), padding: px(14) + " " + px(26) }); K.p2.textContent = lb(4);
+      if (!lb(3)) K.p1.style.display = "none";
+      if (!lb(4)) K.p2.style.display = "none";
+    },
+    after: function () { K.p2.style.left = (lb(3) ? K.p1.offsetLeft + K.p1.offsetWidth + 16 * U : 60 * U) + "px"; },
+    render: function (t) {
+      var p = RC.progress(t, 0, 0.36, "snappy");
+      T(K.card, { opacity: RC.progress(t, 0, 0.18, "linear"), scale: 0.9 + 0.1 * p, ry: -16 + 9 * p });
+      pop(K.tile, t, tm(0, 0.3)); fadeUp(K.tileLbl, t, tm(0, 0.3) + 0.12, 14);
+      pop(K.p1, t, tm(1, 1.6)); pop(K.p2, t, tm(2, 1.9));
+    }
+  };
+
+  W.chips = {
+    build: function (P) {
+      K.tile = tile(60, 330, 150, brandIcon(84 * U));
+      K.wire = mk("", 210, 404, 90, 3, { background: "rgba(255,255,255,.7)", transformOrigin: "0% 50%" });
+      K.panel = mk("glass", 300, 250, 720, 470, { borderRadius: px(34) });
+      K.l1 = mk("mono lbl", 336, 282, null, null, { fontSize: px(32) }); K.l1.textContent = lb(0);
+      K.line = mk("", 336, 382, 650, 3, { background: "rgba(255,255,255,.55)", transformOrigin: "0% 50%" });
+      K.beans = [];
+      for (var i = 0; i < 6; i++) { var b = mk("", 372 + i * 105, 348, 44, 62); b.innerHTML = icon("bean", "#fff", 44 * U); K.beans.push(b); }
+      K.l2 = mk("mono lbl", 336, 456, null, null, { fontSize: px(32) }); K.l2.textContent = lb(1);
+      K.chips = [];
+      var home = [[346, 548, -9], [580, 608, 7], [800, 530, -6]];
+      for (var j = 0; j < 3; j++) {
+        var c = mk("white", home[j][0], home[j][1], 178, 78, { borderRadius: px(14), display: "flex", alignItems: "center", gap: px(10), padding: "0 " + px(16), boxSizing: "border-box" });
+        c.innerHTML = icon("bottle", P.brand, 22 * U) + '<span class="mono" style="font-size:' + px(22) + ';color:#1d2126;white-space:nowrap">' + "</span>";
+        c.lastChild.textContent = lb(2 + j) || "0" + (j + 1);
+        c._home = home[j]; K.chips.push(c);
+      }
+      K.head = mk("", 524, 520, 4, 120, { background: P.accent, borderRadius: px(2) });
+    },
+    render: function (t, P) {
+      pop(K.tile, t, tm(0, 0));
+      T(K.wire, { scale: RC.progress(t, tm(0, 0) + 0.15, 0.25, "smooth"), opacity: 1 });
+      var pp = RC.progress(t, tm(0, 0) + 0.1, 0.3, "snappy");
+      T(K.panel, { opacity: RC.progress(t, tm(0, 0) + 0.1, 0.16, "linear"), scale: 0.94 + 0.06 * pp });
+      fadeUp(K.l1, t, tm(0, 0) + 0.2, 12); fadeUp(K.l2, t, tm(0, 0) + 0.3, 12);
+      T(K.line, { scale: RC.progress(t, tm(0, 0) + 0.25, 0.4, "smooth"), opacity: 1 });
+      for (var i = 0; i < K.beans.length; i++) pop(K.beans[i], t, tm(1, 0.8) + i * 0.12);
+      var s = RC.progress(t, tm(2, 1.8), 0.32, "snappy");
+      for (var j = 0; j < K.chips.length; j++) {
+        var h = K.chips[j]._home; var tx = 346 + j * 178, ty = 572;
+        var q = RC.progress(t, tm(0, 0) + 0.35 + j * 0.1, 0.18, "linear");
+        T(K.chips[j], { x: (tx - h[0]) * s, y: (ty - h[1]) * s, rotate: h[2] * (1 - s), opacity: q });
+      }
+      T(K.head, { opacity: RC.progress(t, tm(2, 1.8) + 0.3, 0.12, "linear"), scale: 1 });
+    }
+  };
+
+  W.zero = {
+    build: function (P) {
+      K.flame = mk("", 222, 330, 160, 160); K.flame.innerHTML = icon("flame", "#fff", 160 * U);
+      K.ring = mk("", 152, 262, 300, 300);
+      K.ring.innerHTML = '<svg width="' + 300 * U + '" height="' + 300 * U + '" viewBox="0 0 300 300"><circle cx="150" cy="150" r="138" fill="none" stroke="#fff" stroke-width="9" stroke-dasharray="867" stroke-dashoffset="867"/><line x1="52" y1="52" x2="248" y2="248" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-dasharray="278" stroke-dashoffset="278"/></svg>';
+      K.c = K.ring.querySelector("circle"); K.l = K.ring.querySelector("line");
+      K.lab = mk("mono lbl", 600, 286, null, null, { fontSize: px(34), letterSpacing: ".14em" }); K.lab.textContent = lb(0);
+      K.big = mk("sans lbl", 592, 318, null, null, { fontSize: px(250), fontWeight: 900, lineHeight: 1 }); K.big.textContent = P.big;
+      RC.fitText(K.big, 440 * U, 250 * U, 80 * U);
+    },
+    render: function (t) {
+      fadeUp(K.flame, t, tm(0, 0.4) - 0.25, 18);
+      var d = RC.progress(t, tm(1, 1.2), 0.35, "smooth"); var e = RC.progress(t, tm(1, 1.2) + 0.25, 0.22, "smooth");
+      K.c.setAttribute("stroke-dashoffset", String(867 * (1 - d))); K.l.setAttribute("stroke-dashoffset", String(278 * (1 - e)));
+      fadeUp(K.lab, t, tm(0, 0.4) - 0.1, 10);
+      var b = RC.progress(t, tm(0, 0.4), 0.18, "smooth");
+      T(K.big, { opacity: b, blur: 18 * (1 - b), scale: 1.15 - 0.15 * b });
+    }
+  };
+
+  W.flow = {
+    build: function (P) {
+      K.card = mk("glass", 60, 285, 390, 330, { borderRadius: px(28) });
+      var th = put(K.card, document.createElement("div")); th.className = "a"; th.style.cssText = "left:" + px(22) + ";top:" + px(22) + ";width:" + px(346) + ";height:" + px(200) + ";border-radius:" + px(18) + ";background:radial-gradient(circle at 30% 30%,#8a5a3a,#3b2416);overflow:hidden";
+      var beans = ""; for (var i = 0; i < 14; i++) { var r1 = hrnd(i * 3 + 1), r2 = hrnd(i * 5 + 2); beans += '<div class="a" style="left:' + px(10 + r1 * 300) + ";top:" + px(8 + r2 * 160) + ";transform:rotate(" + Math.round(r1 * 180) + 'deg)">' + icon("bean", "#fff", 30 * U) + "</div>"; }
+      th.innerHTML = beans;
+      if (lb(1)) { var pl = put(th, document.createElement("div")); pl.className = "a pill mono"; pl.style.cssText += ";left:" + px(14) + ";top:" + px(14) + ";font-size:" + px(22) + ";padding:" + px(8) + " " + px(16); pl.textContent = lb(1); }
+      var nm = put(K.card, document.createElement("div")); nm.className = "a mono lbl"; nm.style.cssText += ";left:" + px(24) + ";top:" + px(250) + ";font-size:" + px(25) + ";text-transform:none"; nm.textContent = lb(0);
+      K.wire = mk("", 452, 450, 380, 4, { background: "rgba(255,255,255,.8)", transformOrigin: "0% 50%", borderRadius: px(2) });
+      K.dot = mk("", 452, 441, 22, 22, { background: P.accent, borderRadius: "50%", boxShadow: "0 0 18px " + P.accent });
+      K.tile = tile(840, 375, 150, brandIcon(84 * U));
+      K.ring = mk("", 815, 350, 200, 200);
+      K.ring.innerHTML = '<svg width="' + 200 * U + '" height="' + 200 * U + '" viewBox="0 0 200 200"><circle cx="100" cy="100" r="94" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="6"/><circle cx="100" cy="100" r="94" fill="none" stroke="' + P.accent + '" stroke-width="7" stroke-linecap="round" stroke-dasharray="150 441"/></svg>';
+      K.rl = mk("mono lbl", 815, 568, 200, null, { fontSize: px(24), textAlign: "center" }); K.rl.textContent = lb(2);
+    },
+    render: function (t) {
+      var p = RC.progress(t, tm(0, 0), 0.32, "snappy");
+      T(K.card, { opacity: RC.progress(t, tm(0, 0), 0.16, "linear"), scale: 0.9 + 0.1 * p });
+      pop(K.tile, t, tm(0, 0) + 0.15);
+      var w = RC.progress(t, tm(1, 0.6), 0.45, "smooth");
+      T(K.wire, { scale: w, opacity: 1 });
+      var on = t >= tm(1, 0.6) + 0.3;
+      var f = on ? ((t - tm(1, 0.6) - 0.3) % 0.8) / 0.8 : 0;
+      T(K.dot, { x: f * 370, opacity: on ? 1 : 0 });
+      var r = RC.progress(t, tm(2, 1.3), 0.2, "linear");
+      T(K.ring, { opacity: r, rotate: (t - tm(2, 1.3)) * 300 });
+      T(K.rl, { opacity: r });
+    }
+  };
+
+  W.install = {
+    build: function (P) {
+      K.pill = mk("glass", 60, 262, 960, 88, { borderRadius: px(44), display: "flex", alignItems: "center", gap: px(16), padding: "0 " + px(30), boxSizing: "border-box" });
+      K.pill.innerHTML = icon("link", "#fff", 40 * U);
+      K.pt = put(K.pill, document.createElement("span")); K.pt.className = "mono"; K.pt.style.cssText = "font-size:" + px(30) + ";color:#fff;text-transform:none;letter-spacing:.01em;white-space:nowrap";
+      K.box = mk("glass", 60, 382, 960, 230, { borderRadius: px(30) });
+      K.bt = put(K.box, document.createElement("div")); K.bt.className = "a sans"; K.bt.style.cssText = "left:" + px(36) + ";top:" + px(30) + ";font-size:" + px(36) + ";color:#fff;width:" + px(880);
+      if (lb(4)) {
+        var ch = put(K.box, document.createElement("div")); ch.className = "a pill sans"; ch.style.cssText += ";left:" + px(30) + ";top:" + px(150) + ";font-size:" + px(28) + ";padding:" + px(8) + " " + px(20) + ";display:flex;align-items:center;gap:" + px(8);
+        ch.innerHTML = brandIcon(26 * U); ch.appendChild(document.createTextNode(lb(4)));
+      }
+      var sd = put(K.box, document.createElement("div")); sd.className = "a"; sd.style.cssText = "right:" + px(28) + ";top:" + px(140); sd.innerHTML = icon("send", "#fff", 62 * U);
+      K.fly = mk("pill mono", 220, 284, null, null, { fontSize: px(24), padding: px(8) + " " + px(16), textTransform: "none" }); K.fly.textContent = lb(0);
+      K.track = mk("", 60, 648, 960, 16, { background: "rgba(255,255,255,.22)", borderRadius: px(8) });
+      K.fill = mk("", 60, 648, 960, 16, { background: P.accent, borderRadius: px(8), transformOrigin: "0% 50%" });
+      K.bl = mk("mono lbl", 60, 682, null, null, { fontSize: px(26) });
+    },
+    render: function (t, P) {
+      fadeUp(K.pill, t, tm(0, 0.2) - 0.15, 16);
+      typed(K.pt, lb(0), t, tm(0, 0.2), 0.6);
+      var b = RC.progress(t, tm(1, 0.85), 0.3, "snappy");
+      T(K.box, { y: -40 * (1 - b), opacity: RC.progress(t, tm(1, 0.85), 0.15, "linear") });
+      var fl = RC.progress(t, tm(2, 1.2), 0.42, "smooth");
+      var inFly = t >= tm(2, 1.2) && t < tm(2, 1.2) + 0.5;
+      T(K.fly, { x: -100 * fl, y: 150 * fl, scale: 1 - 0.25 * fl, opacity: inFly && lb(0) ? 1 - RC.progress(t, tm(2, 1.2) + 0.35, 0.15, "linear") : 0 });
+      typed(K.bt, lb(1), t, tm(3, 1.55), 0.5);
+      var on = RC.progress(t, tm(4, 2.0), 0.12, "linear");
+      T(K.track, { opacity: on });
+      var f = RC.clamp((t - tm(4, 2.0)) / Math.max(0.2, tm(5, 2.55) - tm(4, 2.0)), 0, 1);
+      T(K.fill, { scale: RC.ease("smooth", f), opacity: on });
+      setLabel(K.bl, t >= tm(5, 2.55) ? (lb(3) ? "✓ " + lb(3) : "") : lb(2), P.accent); T(K.bl, { opacity: on });
+    }
+  };
+
+  W.log = {
+    build: function (P) {
+      K.tile = tile(60, 255, 140, brandIcon(80 * U));
+      K.wave = mk("", 232, 262, 790, 130, { overflow: "hidden" });
+      var bars = ""; for (var i = 0; i < 52; i++) { var h = 16 + 100 * Math.abs(Math.sin(i * 0.47) * 0.7 + (hrnd(i + 40) - 0.5) * 0.5); bars += '<div class="a" style="left:' + px(i * 15) + ";top:" + px(65 - h / 2) + ";width:" + px(8) + ";height:" + px(h) + ';background:#fff;border-radius:' + px(4) + '"></div>'; }
+      K.wave.innerHTML = bars;
+      K.head = mk("", 232, 252, 4, 150, { background: P.accent });
+      K.log = mk("glass", 60, 430, 960, 290, { borderRadius: px(30) });
+      K.lines = [];
+      for (var j = 0; j < 3; j++) { var n = put(K.log, document.createElement("div")); n.className = "a mono"; n.style.cssText = "left:" + px(36) + ";top:" + px(34 + j * 80) + ";font-size:" + px(32) + ";color:#fff;text-transform:none;letter-spacing:.01em;white-space:nowrap"; K.lines.push(n); }
+    },
+    render: function (t) {
+      pop(K.tile, t, tm(0, 0));
+      var w = RC.progress(t, tm(1, 0.3), 1.0, "linear");
+      K.wave.style.clipPath = "inset(0 " + (100 - w * 100) + "% 0 0)";
+      var hp = RC.clamp((t - tm(1, 0.3)) / Math.max(0.5, RC.duration * RC.rate - tm(1, 0.3) - 0.2), 0, 1);
+      T(K.head, { x: hp * 786, opacity: RC.progress(t, tm(1, 0.3), 0.1, "linear") });
+      var l = RC.progress(t, tm(2, 0.6), 0.25, "snappy");
+      T(K.log, { opacity: RC.progress(t, tm(2, 0.6), 0.14, "linear"), y: 30 * (1 - l) });
+      for (var j = 0; j < 3; j++) typed(K.lines[j], lb(j), t, tm(2, 0.6) + 0.15 + j * 0.45, 0.35);
+    }
+  };
+
+  W.chat = {
+    build: function (P) {
+      K.zone = mk("", 50, 236, 980, 500, { border: px(4) + " dashed rgba(255,255,255,.85)", borderRadius: px(40), boxSizing: "border-box" });
+      K.zl = mk("mono lbl", 0, 652, 1080, null, { fontSize: px(28), textAlign: "center", letterSpacing: ".18em" }); K.zl.textContent = lb(2);
+      K.chev = mk("", 515, 690, 50, 30); K.chev.innerHTML = '<svg width="' + 50 * U + '" height="' + 30 * U + '" viewBox="0 0 50 30"><path d="M6 6l19 18L44 6" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      K.box = mk("glass", 100, 280, 880, 300, { borderRadius: px(34) });
+      K.ph = put(K.box, document.createElement("div")); K.ph.className = "a sans"; K.ph.style.cssText = "left:" + px(40) + ";top:" + px(40) + ";font-size:" + px(42) + ";color:rgba(255,255,255,.55)"; K.ph.textContent = lb(0);
+      K.ty = put(K.box, document.createElement("div")); K.ty.className = "a sans"; K.ty.style.cssText = "left:" + px(40) + ";top:" + px(40) + ";width:" + px(800) + ";font-size:" + px(42) + ";line-height:1.25;color:#fff";
+      K.caret = put(K.box, document.createElement("div")); K.caret.className = "a"; K.caret.style.cssText = "left:" + px(38) + ";top:" + px(42) + ";width:" + px(3) + ";height:" + px(50) + ";background:#fff";
+      if (lb(3)) {
+        var ch = put(K.box, document.createElement("div")); ch.className = "a pill sans"; ch.style.cssText += ";left:" + px(34) + ";top:" + px(212) + ";font-size:" + px(30) + ";padding:" + px(8) + " " + px(22) + ";display:flex;align-items:center;gap:" + px(10);
+        ch.innerHTML = brandIcon(28 * U); ch.appendChild(document.createTextNode(lb(3)));
+      }
+      K.send = put(K.box, document.createElement("div")); K.send.className = "a"; K.send.style.cssText = "left:" + px(778) + ";top:" + px(200) + ";transform-origin:50% 50%"; K.send.innerHTML = icon("send", "#fff", 68 * U);
+    },
+    render: function (t) {
+      var b = RC.progress(t, tm(0, 0.15), 0.3, "snappy");
+      T(K.box, { opacity: RC.progress(t, tm(0, 0.15), 0.15, "linear"), scale: 0.94 + 0.06 * b });
+      var started = t >= tm(1, 0.6);
+      K.ph.style.opacity = started ? 0 : 1;
+      typed(K.ty, lb(1), t, tm(1, 0.6), Math.max(0.3, tm(2, 1.6) - tm(1, 0.6)));
+      K.caret.style.opacity = started ? 0 : (Math.floor(t * 2.2) % 2 === 0 ? 1 : 0);
+      var z = RC.progress(t, tm(3, 1.8), 0.3, "smooth");
+      T(K.zone, { opacity: z, scale: 1.04 - 0.04 * z });
+      fadeUp(K.zl, t, tm(3, 1.8) + 0.2, 10); fadeUp(K.chev, t, tm(3, 1.8) + 0.3, -10);
+      var s = t >= tm(4, 2.4) ? 1 - 0.15 * Math.sin(RC.clamp((t - tm(4, 2.4)) / 0.25, 0, 1) * Math.PI) : 1;
+      T(K.send, { scale: s });
+    }
+  };
+
+  W.bars = {
+    build: function (P) {
+      K.th = mk("white", 60, 262, 300, 430, { borderRadius: px(26), background: "radial-gradient(circle at 50% 35%,#f4efe6,#d9cfbf)", overflow: "hidden" });
+      var b = put(K.th, document.createElement("div")); b.className = "a"; b.style.cssText = "left:" + px(95) + ";top:" + px(60); b.innerHTML = icon("bottle", P.brand, 110 * U);
+      var ln = put(K.th, document.createElement("div")); ln.className = "a mono"; ln.style.cssText = "left:0;width:100%;text-align:center;top:" + px(380) + ";font-size:" + px(20) + ";color:#3b2416"; ln.textContent = lb(2);
+      K.l1 = mk("mono lbl", 410, 318, null, null, { fontSize: px(34) }); K.l1.textContent = lb(0);
+      K.t1 = mk("", 410, 372, 610, 24, { background: "rgba(255,255,255,.22)", borderRadius: px(12) });
+      K.f1 = mk("", 410, 372, 610, 24, { background: "#fff", borderRadius: px(12), transformOrigin: "0% 50%" });
+      K.l2 = mk("mono lbl", 410, 488, null, null, { fontSize: px(34) }); K.l2.textContent = lb(1);
+      K.t2 = mk("", 410, 542, 610, 24, { background: "rgba(255,255,255,.22)", borderRadius: px(12) });
+      K.f2 = mk("", 410, 542, 610, 24, { background: K.P.accent, borderRadius: px(12), transformOrigin: "0% 50%" });
+    },
+    render: function (t) {
+      var a = tm(0, 0.1), e = tm(1, 1.4);
+      var p = RC.clamp((t - a) / Math.max(0.3, e - a), 0, 1);
+      var q = RC.progress(t, 0, 0.25, "snappy");
+      T(K.th, { opacity: RC.progress(t, 0, 0.14, "linear"), scale: 0.92 + 0.08 * q, blur: 16 * (1 - RC.ease("smooth", p)) });
+      fadeUp(K.l1, t, 0.05, 10); fadeUp(K.l2, t, 0.12, 10);
+      T(K.t1, { opacity: q }); T(K.t2, { opacity: q });
+      T(K.f1, { scale: RC.ease("smooth", p), opacity: q }); T(K.f2, { scale: RC.ease("smooth", RC.clamp(p * 1.1 - 0.1, 0, 1)), opacity: q });
+    }
+  };
+
+  W.repeat = {
+    build: function () {
+      K.ic = mk("", 60, 262, 120, 120); K.ic.innerHTML = icon("repeat", "#fff", 120 * U);
+      K.x = mk("mono lbl", 206, 278, null, null, { fontSize: px(72), textTransform: "none" });
+      K.b = [];
+      for (var k = 0; k < 3; k++) {
+        var n = mk("white sans", 60 + k * 30, 410 + k * 96, null, null, { fontSize: px(36), padding: px(20) + " " + px(30), borderRadius: px(30) + " " + px(30) + " " + px(30) + " " + px(8), whiteSpace: "nowrap", fontWeight: 600 });
+        n.textContent = lb(0);
+        K.b.push(n);
+      }
+    },
+    render: function (t) {
+      var r = RC.progress(t, 0, 0.3, "snappy");
+      T(K.ic, { opacity: RC.progress(t, 0, 0.15, "linear"), rotate: -120 * (1 - r) });
+      var c = t >= tm(2, 1.5) ? 3 : t >= tm(1, 0.9) ? 2 : t >= tm(0, 0.3) ? 1 : 0;
+      setLabel(K.x, c ? "×" + c : "");
+      var lastAt = c === 3 ? tm(2, 1.5) : c === 2 ? tm(1, 0.9) : tm(0, 0.3);
+      T(K.x, { opacity: c ? 1 : 0, scale: c ? 1 + 0.25 * (1 - RC.progress(t, lastAt, 0.25, "snappy")) : 1 });
+      for (var k = 0; k < 3; k++) pop(K.b[k], t, tm(k, 0.3 + k * 0.6));
+    }
+  };
+
+  W.doc = {
+    build: function (P) {
+      K.card = mk("white", 270, 262, 540, 420, { borderRadius: px(24), overflow: "hidden" });
+      var h = put(K.card, document.createElement("div")); h.className = "a mono"; h.style.cssText = "left:" + px(34) + ";top:" + px(30) + ";font-size:" + px(32) + ";color:#1d2126;text-transform:none;letter-spacing:0;font-weight:800;white-space:nowrap"; h.textContent = lb(0);
+      var lines = ""; var ws = [420, 360, 400, 300, 380, 250];
+      for (var i = 0; i < ws.length; i++) lines += '<div class="a" style="left:' + px(34) + ";top:" + px(110 + i * 44) + ";width:" + px(ws[i]) + ";height:" + px(16) + ';border-radius:' + px(8) + ';background:#d8d3cb"></div>';
+      K.card.insertAdjacentHTML("beforeend", lines);
+      var ic = put(K.card, document.createElement("div")); ic.className = "a"; ic.style.cssText = "right:" + px(30) + ";top:" + px(24); ic.innerHTML = brandIcon(48 * U);
+      K.tag = mk("pill mono", 0, 610, null, null, { fontSize: px(30), padding: px(14) + " " + px(28), textTransform: "none" }); K.tag.textContent = lb(1);
+      if (!lb(1)) K.tag.style.display = "none";
+    },
+    after: function () { K.tag.style.left = (540 * U - K.tag.offsetWidth / 2) + "px"; },
+    render: function (t) {
+      var p = RC.progress(t, tm(0, 0), 0.32, "snappy");
+      T(K.card, { opacity: RC.progress(t, tm(0, 0), 0.15, "linear"), scale: 0.85 + 0.15 * p, rotate: -4 * (1 - p) });
+      pop(K.tag, t, tm(1, 0.4));
+    }
+  };
+
+  W.grid = {
+    build: function (P) {
+      K.c = [];
+      for (var i = 0; i < 4; i++) {
+        var x = 60 + (i % 2) * 490, y = 280 + Math.floor(i / 2) * 150;
+        var n = mk("glass", x, y, 470, 126, { borderRadius: px(28), display: "flex", alignItems: "center", gap: px(22), padding: "0 " + px(30), boxSizing: "border-box", overflow: "hidden" });
+        var raw = lb(i); var sp = raw.indexOf(" ");
+        var num = sp > 0 ? raw.slice(0, sp) : String(i + 1).padStart(2, "0"), word = sp > 0 ? raw.slice(sp + 1) : raw;
+        n.innerHTML = '<span class="mono" style="font-size:' + px(34) + ";color:" + P.accent + '"></span><span class="sans" style="font-size:' + px(44) + ';font-weight:700;color:#fff;white-space:nowrap"></span>';
+        n.firstChild.textContent = num; n.lastChild.textContent = word;
+        K.c.push(n);
+      }
+    },
+    render: function (t) { for (var i = 0; i < 4; i++) pop(K.c[i], t, tm(i, 0.2 + i * 0.25)); }
+  };
+
+  W.comment = {
+    build: function (P) {
+      K.box = mk("glass", 60, 262, 960, 110, { borderRadius: px(55), display: "flex", alignItems: "center", padding: "0 " + px(40), boxSizing: "border-box", gap: px(16) });
+      K.ph = put(K.box, document.createElement("span")); K.ph.className = "sans"; K.ph.style.cssText = "font-size:" + px(38) + ";color:rgba(255,255,255,.55)"; K.ph.textContent = "Add a comment…";
+      K.ty = put(K.box, document.createElement("span")); K.ty.className = "sans"; K.ty.style.cssText = "font-size:" + px(40) + ";color:#fff;font-weight:700";
+      var hz = put(K.box, document.createElement("span")); hz.style.cssText = "margin-left:auto"; hz.innerHTML = icon("heart", "#fff", 50 * U);
+      K.n = mk("white", 60, 410, 960, 300, { borderRadius: px(30) });
+      var hd = put(K.n, document.createElement("div")); hd.className = "a mono"; hd.style.cssText = "left:" + px(34) + ";top:" + px(28) + ";font-size:" + px(24) + ";color:#6b6f76;display:flex;align-items:center;gap:" + px(12) + ";white-space:nowrap";
+      hd.innerHTML = brandIcon(30 * U); hd.appendChild(document.createTextNode(lb(1)));
+      K.ln = [];
+      for (var j = 0; j < 3; j++) { var l = put(K.n, document.createElement("div")); l.className = "a sans"; l.style.cssText = "left:" + px(34) + ";top:" + px(84 + j * 66) + ";font-size:" + px(34) + ";color:#1d2126;font-weight:" + (j === 0 ? 800 : 500) + ";white-space:nowrap"; K.ln.push(l); }
+    },
+    render: function (t) {
+      fadeUp(K.box, t, tm(0, 0), 18);
+      var on = t >= tm(1, 0.4);
+      K.ph.style.display = on ? "none" : "";
+      typed(K.ty, lb(0), t, tm(1, 0.4), 0.25);
+      var d = RC.progress(t, tm(2, 0.9), 0.35, "bouncy");
+      T(K.n, { y: -60 * (1 - d), opacity: RC.progress(t, tm(2, 0.9), 0.15, "linear") });
+      for (var j = 0; j < 3; j++) setLabel(K.ln[j], (lb(2 + j) && t >= tm(3 + j, 1.3 + j * 0.3) ? "✓ " : "") + lb(2 + j), "#1F9D55");
+    }
+  };
+
+  W.none = { build: function () {}, render: function () {} };
+
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params; K.P = P; U = RC.u;
+      K.cues = RC.cues(P.times);
+      var stage = document.getElementById("stage");
+      K.grp = document.createElement("div"); K.grp.id = "grp"; stage.appendChild(K.grp);
+      K.grp.style.width = px(1080); K.grp.style.height = px(1920);
+      K.grp.style.transformOrigin = px(540) + " " + px(120);
+      // titles: their own times are voice cues too (fitted with the clip only when past its end)
+      var tAt = RC.cues((P.titles || []).map(function (ti) { return ti.at; }));
+      K.titles = (P.titles || []).map(function (ti, i) {
+        var n = mk("sans title", 60, 128, null, null, { fontSize: px(64 * P.titleScale) });
+        n._full = ti.text; n._at = tAt[i] * RC.rate; return n;
+      });
+      K.w = W[P.widget] || W.none;
+      K.w.build(P);
+      if (K.w.after) K.w.after(P);
+    },
+    render: function (time, RC) {
+      var P = RC.params; var t = time.t;
+      for (var i = 0; i < K.titles.length; i++) {
+        var n = K.titles[i]; var next = K.titles[i + 1];
+        var vis = t >= n._at && (!next || t < next._at);
+        n.style.opacity = vis ? 1 : 0;
+        if (vis) typed(n, n._full, t, n._at, 0.3);
+      }
+      K.w.render(t, P);
+      var out = P.exit ? RC.progress(0.15 - time.left, 0, 0.15, "linear") : 0;
+      K.grp.style.opacity = 1 - out;
+      K.grp.style.transform = "translateY(" + px(P.offsetY) + ") scale(" + P.scale + ")";
+    }
+  });
+</script>
+</body>
+</html>

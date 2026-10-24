@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/icon-swap); fictional.",
+  "tone": "dark",
+  "size": "standard",
+  "shape": "rounded",
+  "blur": "standard",
+  "speed": 1
+}

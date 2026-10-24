@@ -1,5 +1,5 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
-import type { FrameRate } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
 import {
 	mediaTime,
 	snapSeekMediaTime,

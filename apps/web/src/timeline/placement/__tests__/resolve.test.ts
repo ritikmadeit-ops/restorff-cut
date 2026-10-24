@@ -557,14 +557,17 @@ describe("resolveTrackPlacement", () => {
 	});
 
 	test("batch time spans reject tracks when any span overlaps", () => {
+		// RestorffCut (polish, 2026-10-20): times are MediaTime ticks (integers) since upstream eea6d43c; this test
+		// still passed 2.5 / 5.5 and threw in mediaTime(). Same geometry ×10: the first span is free, the second
+		// overlaps "b", so the batch needs a new track.
 		const tracks = buildSceneTracks({
 			audio: [
 				buildTrack({
 					id: "audio-1",
 					type: "audio",
 					elements: [
-						buildElement({ id: "a", type: "audio", startTime: 0, duration: 2 }),
-						buildElement({ id: "b", type: "audio", startTime: 5, duration: 2 }),
+						buildElement({ id: "a", type: "audio", startTime: 0, duration: 20 }),
+						buildElement({ id: "b", type: "audio", startTime: 50, duration: 20 }),
 					],
 				}),
 			],
@@ -575,8 +578,8 @@ describe("resolveTrackPlacement", () => {
 				tracks,
 				elementType: "audio",
 				timeSpans: [
-					buildTimeSpan({ startTime: 2.5, duration: 1 }),
-					buildTimeSpan({ startTime: 5.5, duration: 1 }),
+					buildTimeSpan({ startTime: 25, duration: 10 }),
+					buildTimeSpan({ startTime: 55, duration: 10 }),
 				],
 				strategy: { type: "firstAvailable" },
 			}),
@@ -648,7 +651,7 @@ describe("resolveTrackPlacement", () => {
 			trackId: "video-main",
 			trackIndex: 0,
 			trackType: "video",
-			adjustedStartTime: 0,
+			adjustedStartTime: ZERO_MEDIA_TIME,
 		});
 	});
 

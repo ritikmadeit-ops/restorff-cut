@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import type { MediaAsset } from "@/media/types";
 import { generateUUID } from "@/utils/id";
 import { storageService } from "@/services/storage/service";
-import type { FrameRate } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
 import { hasMediaId } from "@/timeline/element-utils";
 import { frameRatesEqual, getHighestImportedVideoFps } from "@/fps/utils";
 import { UpdateProjectSettingsCommand } from "@/commands/project";

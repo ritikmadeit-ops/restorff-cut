@@ -1,0 +1,82 @@
+{
+ "$comment": "Example (fictional Halcyon Cold Brew, from packages/compositions/examples/neon-grid/halcyon-cold-brew-18h.json): the scene at 14.05 s, its voice words moved to the clip (t0 = 0). On a timeline, send the voice's real words and t0 = the clip's start (composition write fills t0 from t).",
+ "t0": 0,
+ "title": "EXTRACTION",
+ "tag": "EASE · OUT",
+ "curve": {
+  "label": "extraction(t)",
+  "note": "τ = 6.2 h",
+  "shape": "exp",
+  "tau": 6.2,
+  "end": 18,
+  "unit": "h",
+  "ticks": 3
+ },
+ "marks": [
+  {
+   "text": "SWEETNESS",
+   "tone": "bright"
+  },
+  {
+   "text": "BITTERNESS",
+   "tone": "dim"
+  }
+ ],
+ "readout": "t = {x} h · {y}",
+ "keys": [
+  "extraction",
+  "eases"
+ ],
+ "words": [
+  {
+   "w": "Extraction",
+   "s": 0.12,
+   "e": 0.704
+  },
+  {
+   "w": "climbs",
+   "s": 0.704,
+   "e": 1.069
+  },
+  {
+   "w": "fast,",
+   "s": 1.069,
+   "e": 1.5
+  },
+  {
+   "w": "then",
+   "s": 1.86,
+   "e": 2.029
+  },
+  {
+   "w": "eases",
+   "s": 2.029,
+   "e": 2.364
+  },
+  {
+   "w": "out.",
+   "s": 2.364,
+   "e": 2.59
+  },
+  {
+   "w": "Sweetness",
+   "s": 3.41,
+   "e": 3.859
+  },
+  {
+   "w": "first,",
+   "s": 3.859,
+   "e": 4.32
+  },
+  {
+   "w": "bitterness",
+   "s": 4.65,
+   "e": 5.049
+  },
+  {
+   "w": "last.",
+   "s": 5.049,
+   "e": 5.45
+  }
+ ]
+}

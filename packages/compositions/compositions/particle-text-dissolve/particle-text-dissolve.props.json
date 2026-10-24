@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/particle-text-dissolve); fictional.",
+  "text": "Particles",
+  "direction": "in",
+  "density": "high",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

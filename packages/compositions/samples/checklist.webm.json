@@ -1,0 +1,54 @@
+{
+  "composition": "checklist",
+  "source": "compositions/checklist/checklist.html",
+  "renderer": "@restorffcut/compositions 0.1.0",
+  "chrome": "HeadlessChrome/153.0.8010.12",
+  "out": "samples/checklist.webm",
+  "format": "webm",
+  "frames": 120,
+  "fps": 30,
+  "duration": 4,
+  "width": 1080,
+  "height": 1920,
+  "ms": {
+    "total": 3850,
+    "load": 231,
+    "capture": 3619
+  },
+  "secondsPerSecond": 0.96,
+  "workers": 4,
+  "bytes": 426184,
+  "inputHash": "b8501121e25e14395caad790357afee18b9f6cabfbfefd8ff6b43a8176d6d42a",
+  "framesHash": "8ddb41f2c13c5adb86e498030a3f75fb82fcbc06793258147062aa2b77dc793f",
+  "params": {
+    "title": "WHAT'S IN THE CAN",
+    "items": [
+      "Cold-filtered water",
+      "Single-origin beans",
+      "Twelve hours",
+      "Nothing else"
+    ],
+    "ticks": [
+      0.7,
+      1.3,
+      1.9,
+      2.6
+    ],
+    "start": 0.5,
+    "interval": 0.45,
+    "counter": true,
+    "progress": true,
+    "accent": "#F6FF00",
+    "card": true,
+    "scale": 1,
+    "speed": 1,
+    "ease": "snappy",
+    "anchor": "top",
+    "offsetY": 40,
+    "exit": true
+  },
+  "sidecar": "samples/checklist.webm.json",
+  "crf": 31,
+  "warnings": [],
+  "renderedAt": "2026-10-19T22:59:32.967Z"
+}

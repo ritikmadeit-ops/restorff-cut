@@ -150,7 +150,7 @@ function EmptyView({ message }: { message: string }) {
 
 function RegionBanner({ region }: { region: string }) {
 	return (
-		<div className="flex h-7 items-center gap-1.5 rounded-lg border border-sky-100 bg-sky-50 px-2">
+		<div className="bg-surface flex h-7 items-center gap-1.5 rounded-lg border px-2">
 			<svg
 				width="12"
 				height="12"
@@ -160,13 +160,13 @@ function RegionBanner({ region }: { region: string }) {
 				strokeWidth="2"
 				strokeLinecap="round"
 				strokeLinejoin="round"
-				className="shrink-0 text-sky-600"
+				className="text-fog shrink-0"
 				aria-hidden="true"
 			>
 				<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
 				<circle cx="12" cy="10" r="3" />
 			</svg>
-			<span className="text-xs font-semibold text-sky-600">{region}</span>
+			<span className="rc-mono text-bone text-xs">{region}</span>
 		</div>
 	);
 }

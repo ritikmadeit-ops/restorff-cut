@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/text-shimmer); fictional.",
+  "text": "Pure momentum",
+  "accent": "blue",
+  "sweepAt": 0.8,
+  "speed": 1
+}

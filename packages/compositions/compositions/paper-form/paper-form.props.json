@@ -1,0 +1,10 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew): hot brew rejected, cold brew kept. Row times follow the gallery voice-over.",
+  "form": "FORM 18-H",
+  "subtitle": "STEEP LOG · HALCYON COLD BREW",
+  "number": "No. 018",
+  "rows": [
+    { "label": "METHOD A · HOT", "boxes": ["HOT WATER", "4 MIN", "BITTER"], "mark": "strike", "check": "A — HOT, 4 MIN" },
+    { "label": "METHOD B · COLD", "boxes": ["COLD WATER", "18 H", "SMOOTH"], "mark": "tick", "check": "B — COLD, 18 H" }
+  ]
+}

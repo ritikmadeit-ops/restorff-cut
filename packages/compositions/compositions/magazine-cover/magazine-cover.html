@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Magazine cover</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "magazine-cover",
+  "title": "Magazine cover",
+  "description": "The full newsstand cover: a huge Didone-style masthead builds letter by letter, a dateline and price, a rotating round seal, mixed-type coverlines (a big number with a small line) and a barcode, all over the shot. The richer sibling of Cover story, after the 'make it more aesthetic' reel (EFFECTS.md FX-16 variants). Use as the opener of a warm, editorial edit.",
+  "duration": 4.5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["title", "editorial", "magazine", "intro", "aesthetic"],
+  "params": {
+    "masthead": { "type": "string", "required": true, "default": "STEEP", "maxLength": 10, "label": "Masthead", "description": "The magazine's name. Fitted to 90 % of the width." },
+    "dateline": { "type": "string", "default": "NO. 01 · OCTOBER 2026", "maxLength": 36, "label": "Dateline", "description": "Mono line under the masthead (left)." },
+    "price": { "type": "string", "default": "$4.50", "maxLength": 10, "label": "Price", "description": "Price on the right of the dateline. Empty to hide." },
+    "seal": { "type": "string", "default": "NEW · 18-HOUR STEEP · ", "maxLength": 40, "label": "Seal text", "description": "Text running round the seal (repeat it with a trailing ' · '). Empty to hide the seal." },
+    "sealCenter": { "type": "string", "default": "18h", "maxLength": 5, "label": "Seal centre", "description": "Big text in the middle of the seal." },
+    "coverlines": {
+      "type": "list",
+      "of": { "type": "object", "fields": {
+        "big": { "type": "string", "maxLength": 8, "default": "", "description": "Big number or word (may be empty)." },
+        "line": { "type": "string", "maxLength": 44, "description": "The story line next to it." }
+      } },
+      "minItems": 0, "maxItems": 3,
+      "default": [ { "big": "18", "line": "hours of steeping, zero bitterness" }, { "big": "", "line": "Inside the small-batch roastery" } ],
+      "label": "Coverlines", "description": "One to three stories in the lower left: an optional big figure and a line. Numbers must be true." },
+    "barcode": { "type": "boolean", "default": true, "label": "Barcode", "description": "A barcode block in the bottom-right corner." },
+    "color": { "type": "color", "default": "#F4E9DA", "label": "Ink", "description": "Colour of the masthead and lines (cream for warm footage; #0C0C0E over bright shots)." },
+    "accent": { "type": "color", "default": "#C8553D", "label": "Accent", "description": "Seal colour and the big figures." },
+    "stagger": { "type": "number", "default": 0.08, "min": 0.01, "max": 0.4, "step": 0.01, "unit": "s", "label": "Letter stagger", "description": "Delay between masthead letters (80 ms in the reel)." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier for everything but the masthead (which always fits the width)." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "ease": { "type": "easing", "default": "smooth", "label": "Easing", "description": "Editorial = calm: smooth or gentle." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.5 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .mast { position: absolute; left: 0; width: 100%; text-align: center; font-family: "Instrument Serif", serif; line-height: .8; letter-spacing: -.035em; white-space: nowrap; text-shadow: 0 8px 40px rgba(0,0,0,.25); }
+  .mast span { display: inline-block; }
+  .dl { position: absolute; display: flex; justify-content: space-between; align-items: center; font-family: "JetBrains Mono", monospace; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
+  .rule { position: absolute; transform-origin: 0 50%; }
+  .cls { position: absolute; display: flex; flex-direction: column; }
+  .cl { display: flex; align-items: center; }
+  .big { font-family: "Instrument Serif", serif; line-height: .8; flex: none; text-shadow: 0 4px 20px rgba(0,0,0,.35); }
+  .ln { font-family: "Archivo", sans-serif; font-weight: 700; font-stretch: 100%; line-height: 1.12; text-shadow: 0 3px 16px rgba(0,0,0,.5); }
+  .seal { position: absolute; }
+  .bar { position: absolute; background: #F4F1EA; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+  .bars { display: flex; align-items: stretch; }
+  .bc { font-family: "JetBrains Mono", monospace; color: #111; letter-spacing: .12em; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var MC = { letters: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var top = RC.safe.top * 0.55;
+      var mast = RC.el("div", { class: "mast", style: { color: P.color, top: top + "px" } });
+      P.masthead.split("").forEach(function (ch) {
+        var s = RC.el("span", { text: ch === " " ? " " : ch });
+        mast.appendChild(s);
+        MC.letters.push(s);
+      });
+      stage.appendChild(mast);
+      RC.fitText(mast, RC.width * 0.92, 520 * RC.u, 80 * RC.u);
+      var mh = mast.offsetHeight;
+      var side = RC.width * 0.05;
+      var dl = RC.el("div", { class: "dl", style: { color: P.color, left: side + "px", right: side + "px", top: top + mh + 10 * RC.u + "px", fontSize: 26 * u + "px" } }, [RC.el("span", { text: P.dateline }), RC.el("span", { text: P.price || "" })]);
+      stage.appendChild(dl);
+      MC.rule = RC.el("div", { class: "rule", style: { left: side + "px", width: RC.width - 2 * side + "px", top: top + mh + 10 * RC.u + 44 * u + "px", height: Math.max(2, 3 * RC.u) + "px", background: P.color } });
+      stage.appendChild(MC.rule);
+      MC.dl = dl;
+      MC.mast = mast;
+      // seal (SVG text on a circle)
+      if (P.seal) {
+        var R = 120 * u;
+        var NS = "http://www.w3.org/2000/svg";
+        var svg = document.createElementNS(NS, "svg");
+        svg.setAttribute("width", 2 * R + 20);
+        svg.setAttribute("height", 2 * R + 20);
+        svg.setAttribute("viewBox", (-R - 10) + " " + (-R - 10) + " " + (2 * R + 20) + " " + (2 * R + 20));
+        svg.setAttribute("class", "seal");
+        svg.style.left = RC.width - side - 2 * R - 10 + "px";
+        svg.style.top = top + mh + 90 * u + "px";
+        var circ = document.createElementNS(NS, "circle");
+        circ.setAttribute("r", R);
+        circ.setAttribute("fill", P.accent);
+        svg.appendChild(circ);
+        var defs = document.createElementNS(NS, "defs");
+        var path = document.createElementNS(NS, "path");
+        var rr = R * 0.78;
+        path.setAttribute("id", "ring");
+        path.setAttribute("d", "M" + -rr + " 0 a" + rr + " " + rr + " 0 1 1 " + 2 * rr + " 0 a" + rr + " " + rr + " 0 1 1 " + -2 * rr + " 0");
+        defs.appendChild(path);
+        svg.appendChild(defs);
+        var ring = document.createElementNS(NS, "g");
+        var text = document.createElementNS(NS, "text");
+        text.setAttribute("fill", "#F4E9DA");
+        text.setAttribute("font-family", "JetBrains Mono");
+        text.setAttribute("font-weight", "700");
+        text.setAttribute("font-size", 22 * u);
+        text.setAttribute("letter-spacing", 2 * u);
+        var tp = document.createElementNS(NS, "textPath");
+        tp.setAttribute("href", "#ring");
+        tp.setAttribute("textLength", String(2 * Math.PI * rr - 4));
+        tp.textContent = (P.seal + P.seal).slice(0, 60);
+        text.appendChild(tp);
+        ring.appendChild(text);
+        svg.appendChild(ring);
+        var c = document.createElementNS(NS, "text");
+        c.setAttribute("text-anchor", "middle");
+        c.setAttribute("dominant-baseline", "central");
+        c.setAttribute("fill", "#F4E9DA");
+        c.setAttribute("font-family", "Instrument Serif");
+        c.setAttribute("font-size", 96 * u);
+        c.textContent = P.sealCenter;
+        svg.appendChild(c);
+        stage.appendChild(svg);
+        MC.seal = svg;
+        MC.ring = ring;
+      }
+      // coverlines bottom-left
+      var cls = RC.el("div", { class: "cls", style: { left: side + "px", maxWidth: RC.width * 0.62 + "px", gap: 22 * u + "px" } });
+      MC.lines = [];
+      P.coverlines.forEach(function (c) {
+        var row = RC.el("div", { class: "cl", style: { gap: 18 * u + "px" } });
+        if (c.big) row.appendChild(RC.el("div", { class: "big", text: c.big, style: { fontSize: 190 * u + "px", color: P.accent } }));
+        row.appendChild(RC.el("div", { class: "ln", text: c.line, style: { fontSize: (c.big ? 40 : 46) * u + "px", color: P.color } }));
+        cls.appendChild(row);
+        MC.lines.push(row);
+      });
+      stage.appendChild(cls);
+      var ch = cls.offsetHeight;
+      cls.style.top = RC.height - RC.safe.bottom - ch + "px";
+      if (P.barcode) {
+        var bw = 200 * u;
+        var bh = 130 * u;
+        var bar = RC.el("div", { class: "bar", style: { width: bw + "px", height: bh + "px", left: RC.width - side - bw + "px", top: RC.height - RC.safe.bottom - bh + "px", padding: 10 * u + "px" } });
+        var bars = RC.el("div", { class: "bars", style: { height: bh * 0.62 + "px", gap: 2 * u + "px" } });
+        var rnd = RC.random(97);
+        for (var i = 0; i < 34; i++) bars.appendChild(RC.el("span", { style: { width: (1 + Math.floor(rnd() * 3)) * 1.6 * u + "px", background: "#111" } }));
+        bar.appendChild(bars);
+        bar.appendChild(RC.el("div", { class: "bc", text: "0 12345 67890 5", style: { fontSize: 15 * u + "px", marginTop: 4 * u + "px" } }));
+        stage.appendChild(bar);
+        MC.bar = bar;
+      }
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.5, 0, 1)) : 0;
+      for (var i = 0; i < MC.letters.length; i++) {
+        var lp = RC.progress(t, i * P.stagger, 0.45, P.ease);
+        RC.set(MC.letters[i], { y: (1 - lp) * 70 * RC.u, opacity: lp, blur: (1 - lp) * 8 * RC.u });
+      }
+      var after = MC.letters.length * P.stagger;
+      var dp = RC.progress(t, after * 0.6, 0.4, P.ease);
+      RC.set(MC.dl, { opacity: dp, y: (1 - dp) * 14 * RC.u });
+      MC.rule.style.transform = "scaleX(" + RC.progress(t, after * 0.5, 0.6, "smooth") + ")";
+      if (MC.seal) {
+        var sp = RC.progress(t, after + 0.1, 0.45, "bouncy");
+        RC.set(MC.seal, { scale: sp, rotate: (1 - sp) * -40 });
+        MC.ring.setAttribute("transform", "rotate(" + time.T * 22 + ")");
+      }
+      for (var k = 0; k < MC.lines.length; k++) {
+        var cp = RC.progress(t, after + 0.3 + k * 0.18, 0.45, P.ease);
+        RC.set(MC.lines[k], { x: (1 - cp) * -60 * RC.u, opacity: cp });
+      }
+      if (MC.bar) RC.set(MC.bar, { opacity: RC.progress(t, after + 0.6, 0.3, "linear") });
+      document.getElementById("stage").style.opacity = String(1 - out);
+    },
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Map route</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "map-route",
+  "title": "Map route",
+  "description": "A flat paper map (mustard land, blue sea) slides in; a red dotted route draws from place to place with a moving head, pins drop at each stop and black-on-yellow label tags pop beside them. Use to show a journey: farm → roastery → café, a shipping route, where something comes from (EFFECTS.md FX-54, collage kit). The map is stylised, not geographic: places are positions on the card.",
+  "duration": 4.5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["map", "route", "collage", "explainer", "journey", "kit"],
+  "effect": {
+    "fx": ["FX-54"],
+    "stack": ["plate", "self"],
+    "inputs": { "places": "two or more real places with their positions on the drawn map (x, y fractions); the route draws in their order" },
+    "note": "Collage kit: layout card over footage, or layout full as a scene; add paper-texture (overlay) on top and cutout-outline pieces above for the paper-collage look."
+  },
+  "params": {
+    "places": {
+      "type": "list",
+      "of": { "type": "object", "fields": {
+        "name": { "type": "string", "maxLength": 24, "description": "Label on the tag." },
+        "x": { "type": "number", "min": 0.05, "max": 0.95, "description": "Across the map, 0 = left, 1 = right." },
+        "y": { "type": "number", "min": 0.08, "max": 0.92, "description": "Down the map, 0 = top, 1 = bottom." }
+      } },
+      "minItems": 2, "maxItems": 5,
+      "default": [ { "name": "FARM · HIGHLANDS", "x": 0.2, "y": 0.72 }, { "name": "ROASTERY", "x": 0.55, "y": 0.4 }, { "name": "CAFÉ · DOWNTOWN", "x": 0.82, "y": 0.68 } ],
+      "label": "Places", "description": "Stops in travel order: name and position on the map (fractions)." },
+    "title": { "type": "string", "default": "BEAN TO BOTTLE", "maxLength": 28, "label": "Title tag", "description": "Tag in the map's top-left corner. Empty to hide." },
+    "layout": { "type": "enum", "options": ["card", "full"], "default": "card", "label": "Layout", "description": "card = a map card over the footage; full = the map fills the frame." },
+    "land": { "type": "color", "default": "#E2B84A", "label": "Land", "description": "Land colour." },
+    "sea": { "type": "color", "default": "#8DB7C7", "label": "Sea", "description": "Sea colour." },
+    "route": { "type": "color", "default": "#C8352B", "label": "Route", "description": "Route dots, head and pins." },
+    "accent": { "type": "color", "default": "#F2D04B", "label": "Tags", "description": "Label tag colour." },
+    "seed": { "type": "number", "default": 5, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the coastline." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier for the card, tags and pins." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "top", "label": "Anchor", "description": "Vertical placement of the card." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed (the route draws over ~2 s at 1)." },
+    "ease": { "type": "easing", "default": "smooth", "label": "Route easing", "description": "How the route travels." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "The card slides away over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .card { position: absolute; overflow: hidden; box-shadow: 0 calc(16px * var(--u)) calc(40px * var(--u)) rgba(0,0,0,.4); }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+  .tag { position: absolute; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #111; box-shadow: 0 calc(3px * var(--u)) calc(8px * var(--u)) rgba(0,0,0,.3); }
+  .title { position: absolute; font-family: "JetBrains Mono", monospace; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #F3EFE4; background: #111; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var NS = "http://www.w3.org/2000/svg";
+  var MR = { pins: [], tags: [] };
+  function svgEl(tag, attrs) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+  function blob(cx, cy, r, rnd, n) {
+    var pts = [];
+    var base = [];
+    for (var i = 0; i < n; i++) base.push(0.55 + rnd() * 0.9);
+    for (var j = 0; j < n; j++) {
+      var a = (j / n) * Math.PI * 2;
+      var rr = r * (base[j] * 0.6 + base[(j + 1) % n] * 0.2 + base[(j + n - 1) % n] * 0.2);
+      pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.8]);
+    }
+    var d = "M" + pts[0][0].toFixed(1) + " " + pts[0][1].toFixed(1);
+    for (var k = 0; k < pts.length; k++) {
+      var p1 = pts[k];
+      var p2 = pts[(k + 1) % pts.length];
+      d += " Q" + p1[0].toFixed(1) + " " + p1[1].toFixed(1) + " " + ((p1[0] + p2[0]) / 2).toFixed(1) + " " + ((p1[1] + p2[1]) / 2).toFixed(1);
+    }
+    return d + "Z";
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var rnd = RC.random(P.seed * 6151 + 3);
+      var stage = document.getElementById("stage");
+      var full = P.layout === "full";
+      var W = full ? RC.width : Math.min(RC.width * 0.9, 960 * u);
+      var H = full ? RC.height : W * 0.82;
+      var left = (RC.width - W) / 2;
+      var top = full ? 0 : P.anchor === "top" ? RC.safe.top + 30 * RC.u : P.anchor === "bottom" ? RC.height - RC.safe.bottom - H : (RC.height - H) / 2;
+      if (!full) top += P.offsetY * RC.u;
+      var card = RC.el("div", { class: "card", style: { left: left + "px", top: top + "px", width: W + "px", height: H + "px", borderRadius: full ? "0" : 10 * u + "px", background: P.sea, border: full ? "none" : (6 * u) + "px solid #F3EFE4" } });
+      var svg = svgEl("svg", { width: W, height: H, viewBox: "0 0 " + W + " " + H });
+      // paper grain stripes on the sea
+      var defs = svgEl("defs", {});
+      var pat = svgEl("pattern", { id: "waves", width: 60 * u, height: 26 * u, patternUnits: "userSpaceOnUse" });
+      pat.appendChild(svgEl("path", { d: "M0 " + 13 * u + " q" + 15 * u + " " + -8 * u + " " + 30 * u + " 0 t" + 30 * u + " 0", fill: "none", stroke: "rgba(255,255,255,.28)", "stroke-width": 2 * u }));
+      defs.appendChild(pat);
+      svg.appendChild(defs);
+      svg.appendChild(svgEl("rect", { x: 0, y: 0, width: W, height: H, fill: "url(#waves)" }));
+      // land: blobs around the places + a couple of extra islands
+      var land = svgEl("g", { fill: P.land, stroke: "#5a4416", "stroke-width": 3 * u, "stroke-opacity": 0.55 });
+      P.places.forEach(function (p) {
+        land.appendChild(svgEl("path", { d: blob(p.x * W, p.y * H, W * (0.17 + rnd() * 0.08), rnd, 14) }));
+      });
+      for (var e = 0; e < 3; e++) land.appendChild(svgEl("path", { d: blob(rnd() * W, rnd() * H, W * (0.05 + rnd() * 0.05), rnd, 7) }));
+      svg.appendChild(land);
+      // route: curved segments between places; drawn through a growing mask so the dots appear in travel order
+      var pts = P.places.map(function (p) { return [p.x * W, p.y * H]; });
+      var d = "M" + pts[0][0] + " " + pts[0][1];
+      for (var i = 1; i < pts.length; i++) {
+        var a = pts[i - 1];
+        var b = pts[i];
+        var mx = (a[0] + b[0]) / 2;
+        var my = (a[1] + b[1]) / 2 - Math.abs(b[0] - a[0]) * 0.35 - 30 * u;
+        d += " Q" + mx.toFixed(1) + " " + my.toFixed(1) + " " + b[0].toFixed(1) + " " + b[1].toFixed(1);
+      }
+      var mask = svgEl("mask", { id: "reveal", maskUnits: "userSpaceOnUse", x: 0, y: 0, width: W, height: H });
+      var reveal = svgEl("path", { d: d, fill: "none", stroke: "#fff", "stroke-width": 30 * u, "stroke-linecap": "round" });
+      mask.appendChild(reveal);
+      defs.appendChild(mask);
+      var dots = svgEl("path", { d: d, fill: "none", stroke: P.route, "stroke-width": 9 * u, "stroke-linecap": "round", "stroke-dasharray": "0.1 " + 22 * u, mask: "url(#reveal)" });
+      svg.appendChild(dots);
+      var head = svgEl("circle", { r: 13 * u, fill: P.route, stroke: "#F3EFE4", "stroke-width": 4 * u });
+      svg.appendChild(head);
+      card.appendChild(svg);
+      stage.appendChild(card);
+      var len = reveal.getTotalLength();
+      reveal.setAttribute("stroke-dasharray", len + " " + len);
+      // when the route reaches each stop (fraction of length), found by sampling
+      var stops = pts.map(function (p, idx) {
+        if (idx === 0) return 0;
+        if (idx === pts.length - 1) return 1;
+        var best = 0;
+        var bestD = 1e9;
+        for (var s = 0; s <= 400; s++) {
+          var q = reveal.getPointAtLength((s / 400) * len);
+          var dd = (q.x - p[0]) * (q.x - p[0]) + (q.y - p[1]) * (q.y - p[1]);
+          if (dd < bestD) { bestD = dd; best = s / 400; }
+        }
+        return best;
+      });
+      // pins + tags (tag above the pin, or below when the pin is near the top)
+      pts.forEach(function (p, idx) {
+        var pin = svgEl("g", {});
+        var pr = 18 * u;
+        pin.appendChild(svgEl("path", { d: "M0 0 C" + -pr + " " + -pr * 1.4 + " " + -pr * 1.3 + " " + -pr * 2.6 + " 0 " + -pr * 2.8 + " C" + pr * 1.3 + " " + -pr * 2.6 + " " + pr + " " + -pr * 1.4 + " 0 0Z", fill: P.route, stroke: "#111", "stroke-width": 3 * u }));
+        pin.appendChild(svgEl("circle", { cx: 0, cy: -pr * 1.85, r: pr * 0.42, fill: "#F3EFE4" }));
+        svg.appendChild(pin);
+        var tag = RC.el("div", { class: "tag", text: P.places[idx].name, style: { background: P.accent, fontSize: 26 * u + "px", padding: 6 * u + "px " + 12 * u + "px" } });
+        card.appendChild(tag);
+        var tw = tag.offsetWidth;
+        var th = tag.offsetHeight;
+        var tx = Math.max(10 * u, Math.min(W - tw - 10 * u, p[0] - tw / 2));
+        var below = p[1] < H * 0.3;
+        var ty = below ? p[1] + 18 * u : p[1] - pr * 2.8 - th - 14 * u;
+        tag.style.left = tx + "px";
+        tag.style.top = ty + "px";
+        MR.pins.push({ node: pin, x: p[0], y: p[1], at: stops[idx] });
+        MR.tags.push({ node: tag, at: stops[idx], rot: (rnd() - 0.5) * 6 });
+      });
+      if (P.title) {
+        MR.title = RC.el("div", { class: "title", text: P.title, style: { left: 24 * u + "px", top: (full ? RC.safe.top : 24 * u) + "px", fontSize: 28 * u + "px", padding: 8 * u + "px " + 14 * u + "px" } });
+        card.appendChild(MR.title);
+      }
+      MR.card = card;
+      MR.reveal = reveal;
+      MR.len = len;
+      MR.head = head;
+      MR.full = full;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      var inP = RC.progress(t, 0, 0.45, "snappy");
+      if (MR.full) RC.set(MR.card, { opacity: RC.clamp(t / 0.25, 0, 1) * (1 - out) });
+      else RC.set(MR.card, { x: (1 - inP) * -RC.width + out * RC.width, rotate: (1 - inP) * -4 - 0.8, opacity: RC.clamp(t / 0.1, 0, 1) });
+      var r = RC.progress(t, 0.55, 2.0, P.ease);
+      MR.reveal.setAttribute("stroke-dashoffset", String(MR.len * (1 - r)));
+      var q = MR.reveal.getPointAtLength(r * MR.len);
+      MR.head.setAttribute("cx", q.x);
+      MR.head.setAttribute("cy", q.y);
+      MR.head.style.opacity = r > 0 && r < 1 ? "1" : "0";
+      for (var i = 0; i < MR.pins.length; i++) {
+        var pin = MR.pins[i];
+        var at = 0.55 + pin.at * 2.0;
+        var pp = RC.progress(t, at - 0.05, 0.35, "bouncy");
+        pin.node.setAttribute("transform", "translate(" + pin.x + " " + (pin.y - (1 - pp) * 60 * RC.u) + ") scale(" + pp + ")");
+        var tg = MR.tags[i];
+        var tp = RC.progress(t, at + 0.1, 0.25, "bouncy");
+        RC.set(tg.node, { scale: 0.5 + 0.5 * tp, rotate: tg.rot, opacity: tp });
+      }
+      if (MR.title) RC.set(MR.title, { opacity: RC.progress(t, 0.35, 0.2, "linear") });
+    },
+  });
+</script>
+</body>
+</html>

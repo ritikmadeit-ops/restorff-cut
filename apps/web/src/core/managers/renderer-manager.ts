@@ -5,9 +5,10 @@ import { CanvasRenderer } from "@/services/renderer/canvas-renderer";
 import { SceneExporter } from "@/services/renderer/scene-exporter";
 import { buildScene } from "@/services/renderer/scene-builder";
 import { createTimelineAudioBuffer } from "@/media/audio";
-import { formatTimecode } from "opencut-wasm";
+import { formatTimecode } from "restorffcut-wasm";
 import { frameRateToFloat } from "@/fps/utils";
 import { downloadBlob } from "@/utils/browser";
+import { resolveExportDelivery } from "@/export/delivery";
 
 type SnapshotResult =
 	| { success: true; blob: Blob; filename: string }
@@ -163,8 +164,16 @@ export class RendererManager {
 				return { success: false, error: "Project is empty" };
 			}
 
-			const exportFps = fps ?? activeProject.settings.fps;
 			const canvasSize = activeProject.settings.canvasSize;
+			// Restorff: delivery preset, output size, bitrates and master loudness (media agent).
+			const delivery = resolveExportDelivery({
+				options,
+				canvasSize,
+				projectFps: fps ?? activeProject.settings.fps,
+				projectLoudness: activeProject.settings.loudness,
+				projectDelivery: activeProject.settings.delivery,
+			});
+			const exportFps = delivery.fps;
 
 			let audioBuffer: AudioBuffer | null = null;
 			if (includeAudio) {
@@ -192,6 +201,13 @@ export class RendererManager {
 				quality,
 				shouldIncludeAudio: !!includeAudio,
 				audioBuffer: audioBuffer || undefined,
+				outputWidth: delivery.width,
+				outputHeight: delivery.height,
+				fit: delivery.fit,
+				letterboxColor: delivery.letterboxColor(activeProject.settings.background),
+				videoBitrate: delivery.videoBitrate,
+				audioBitrate: delivery.audioBitrate,
+				loudness: delivery.loudness,
 			});
 
 			exporter.on("progress", (progress) => {
@@ -226,6 +242,9 @@ export class RendererManager {
 				return {
 					success: true,
 					buffer,
+					width: delivery.width,
+					height: delivery.height,
+					loudness: exporter.loudnessReport,
 				};
 			} finally {
 				clearInterval(cancelInterval);

@@ -1,0 +1,11 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/chart-story); fictional.",
+  "type": "bars",
+  "data": "12,28,45,61,88",
+  "labels": "Q1,Q2,Q3,Q4,Q5",
+  "emphasize": 4,
+  "unit": "%",
+  "accent": "green",
+  "exit": "none",
+  "speed": 1
+}

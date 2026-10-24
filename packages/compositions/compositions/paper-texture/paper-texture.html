@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paper texture</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "paper-texture",
+  "title": "Paper texture",
+  "description": "Collage kit: paper. As an overlay it lays fibres, grain, faint stains and a warm vignette over footage or other layers, with a gentle 'scanned' flicker; as a background it is a full sheet of cream, old, mustard, kraft, grid or map paper. Use under cut-outs and maps (background) or on top of a whole collage scene to glue it together (overlay) (EFFECTS.md FX-53).",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "tags": ["collage", "paper", "texture", "background", "grain", "kit", "explainer"],
+  "effect": {
+    "fx": ["FX-53"],
+    "stack": ["self"],
+    "inputs": {
+      "mode": "background: on a track under the collage pieces; overlay: on the top track over everything (it is mostly transparent)"
+    },
+    "note": "Text on top stays readable: the overlay's opacity param keeps it light."
+  },
+  "params": {
+    "mode": { "type": "enum", "options": ["overlay", "background"], "default": "overlay", "label": "Mode", "description": "overlay = transparent texture over what is below; background = an opaque sheet of paper." },
+    "kind": { "type": "enum", "options": ["cream", "old", "mustard", "kraft", "grid", "map"], "default": "old", "label": "Paper", "description": "Which paper (background mode; the overlay takes its tint from it)." },
+    "amount": { "type": "number", "default": 0.6, "min": 0, "max": 1, "step": 0.05, "label": "Amount", "description": "Strength of fibres, grain and stains." },
+    "vignette": { "type": "number", "default": 0.35, "min": 0, "max": 1, "step": 0.05, "label": "Vignette", "description": "Darkening toward the edges." },
+    "flickerFps": { "type": "number", "default": 8, "min": 0, "max": 30, "step": 1, "unit": "fps", "label": "Flicker", "description": "How often the grain changes, like a scanned or filmed page (0 = still)." },
+    "folds": { "type": "boolean", "default": false, "label": "Folds", "description": "Two soft crease lines, like a folded map." },
+    "seed": { "type": "number", "default": 9, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the fibre and stain pattern." },
+    "fade": { "type": "boolean", "default": false, "label": "Fade in/out", "description": "Fade over the first and last 0.3 s (off = cut)." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Speed of the fades (the scanned flicker keeps its own rate)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  svg { position: absolute; left: 0; top: 0; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var PT = {};
+  var NS = "http://www.w3.org/2000/svg";
+  function S(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  var PAPER = {
+    cream: { base: "#F1EADB", ink: "#6B5A3A", line: null },
+    old: { base: "#E6D7B8", ink: "#6E5532", line: null },
+    mustard: { base: "#D6A23A", ink: "#5A3E10", line: null },
+    kraft: { base: "#C49A6C", ink: "#4E3520", line: null },
+    grid: { base: "#F3EFE4", ink: "#5E6A7A", line: "rgba(70,110,170,.22)" },
+    map: { base: "#E3D3B0", ink: "#6A5230", line: "rgba(120,90,50,.18)" },
+  };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var W = RC.width, H = RC.height, u = RC.u;
+      var pk = PAPER[P.kind];
+      var bg = P.mode === "background";
+      var svg = S("svg", { width: W, height: H, viewBox: "0 0 " + W + " " + H });
+      document.getElementById("stage").appendChild(svg);
+      var defs = S("defs", {}, svg);
+      var inkC = pk.ink;
+      var r = parseInt(inkC.slice(1, 3), 16) / 255, g = parseInt(inkC.slice(3, 5), 16) / 255, b = parseInt(inkC.slice(5, 7), 16) / 255;
+      // fibres: the crease lines of 'turbulence' noise (near-zero values) in every direction, sparse and thin
+      var f1 = S("filter", { id: "fib", x: 0, y: 0, width: "100%", height: "100%", "color-interpolation-filters": "sRGB" }, defs);
+      S("feTurbulence", { type: "turbulence", baseFrequency: 0.012 / u, numOctaves: 2, seed: P.seed }, f1);
+      S("feColorMatrix", { type: "matrix", values: "0 0 0 0 " + r + " 0 0 0 0 " + g + " 0 0 0 0 " + b + " -9 0 0 0 1" }, f1);
+      // mottling: soft low-frequency clouds, the uneven pulp of real paper
+      var f2 = S("filter", { id: "stn", x: 0, y: 0, width: "100%", height: "100%", "color-interpolation-filters": "sRGB" }, defs);
+      S("feTurbulence", { type: "fractalNoise", baseFrequency: 0.004 / u, numOctaves: 3, seed: P.seed + 7 }, f2);
+      S("feColorMatrix", { type: "matrix", values: "0 0 0 0 " + r + " 0 0 0 0 " + g + " 0 0 0 0 " + b + " 2.6 0 0 0 -1.05" }, f2);
+      // grain: fine speckle, reseeded by the flicker
+      var f3 = S("filter", { id: "grn", x: 0, y: 0, width: "100%", height: "100%", "color-interpolation-filters": "sRGB" }, defs);
+      PT.grainNoise = S("feTurbulence", { type: "fractalNoise", baseFrequency: 0.75 / Math.max(0.5, u), numOctaves: 1, seed: P.seed + 3 }, f3);
+      S("feColorMatrix", { type: "matrix", values: "0 0 0 0 " + r * 0.6 + " 0 0 0 0 " + g * 0.6 + " 0 0 0 0 " + b * 0.6 + " 4 0 0 0 -2.3" }, f3);
+      var vg = S("radialGradient", { id: "vig", cx: 0.5, cy: 0.48, r: 0.75 }, defs);
+      S("stop", { offset: 0.55, "stop-color": inkC, "stop-opacity": 0 }, vg);
+      S("stop", { offset: 1, "stop-color": inkC, "stop-opacity": 0.9 }, vg);
+      var root = S("g", {}, svg);
+      PT.root = root;
+      if (bg) {
+        S("rect", { x: -4, y: -4, width: W + 8, height: H + 8, fill: pk.base }, root);
+        if (pk.line && P.kind === "grid") {
+          var pat = S("pattern", { id: "gp", width: 44 * u, height: 44 * u, patternUnits: "userSpaceOnUse" }, defs);
+          S("path", { d: "M" + 44 * u + " 0 H0 V" + 44 * u, fill: "none", stroke: pk.line, "stroke-width": Math.max(1, 1.4 * u) }, pat);
+          S("rect", { x: -4, y: -4, width: W + 8, height: H + 8, fill: "url(#gp)" }, root);
+        }
+        if (P.kind === "map") {
+          // faint route lines and a dotted contour, like an old survey map
+          var rnd = RC.random(P.seed * 13 + 1);
+          for (var i = 0; i < 5; i++) {
+            var y0 = rnd() * H, y1 = rnd() * H;
+            S("path", { d: "M-20 " + y0 + " C" + W * 0.3 + " " + (y0 + (rnd() - 0.5) * 400 * u) + " " + W * 0.7 + " " + (y1 + (rnd() - 0.5) * 400 * u) + " " + (W + 20) + " " + y1, fill: "none", stroke: pk.line, "stroke-width": (2 + rnd() * 3) * u }, root);
+          }
+          S("ellipse", { cx: W * 0.62, cy: H * 0.3, rx: W * 0.3, ry: H * 0.12, fill: "none", stroke: pk.line, "stroke-width": 3 * u, "stroke-dasharray": 4 * u + " " + 10 * u }, root);
+          S("ellipse", { cx: W * 0.62, cy: H * 0.3, rx: W * 0.2, ry: H * 0.08, fill: "none", stroke: pk.line, "stroke-width": 3 * u, "stroke-dasharray": 4 * u + " " + 10 * u }, root);
+        }
+      } else {
+        // overlay: a whisper of the paper's warmth over everything
+        S("rect", { x: -4, y: -4, width: W + 8, height: H + 8, fill: pk.base, opacity: 0.08 * P.amount }, root);
+      }
+      S("rect", { x: -4, y: -4, width: W + 8, height: H + 8, filter: "url(#stn)", opacity: (bg ? 0.22 : 0.16) * P.amount }, root);
+      S("rect", { x: -4, y: -4, width: W + 8, height: H + 8, filter: "url(#fib)", opacity: (bg ? 0.2 : 0.11) * P.amount }, root);
+      PT.grain = S("rect", { x: -4, y: -4, width: W + 8, height: H + 8, filter: "url(#grn)", opacity: (bg ? 0.3 : 0.22) * P.amount }, root);
+      if (P.folds) {
+        [[0, H * 0.34, W, H * 0.3], [W * 0.5, 0, W * 0.52, H]].forEach(function (l) {
+          S("line", { x1: l[0], y1: l[1], x2: l[2], y2: l[3], stroke: "rgba(255,255,255,.35)", "stroke-width": 3 * u }, root);
+          S("line", { x1: l[0], y1: l[1] + 3 * u, x2: l[2], y2: l[3] + 3 * u, stroke: "rgba(0,0,0,.12)", "stroke-width": 3 * u }, root);
+        });
+      }
+      S("rect", { x: -4, y: -4, width: W + 8, height: H + 8, fill: "url(#vig)", opacity: P.vignette * (bg ? 0.55 : 0.45) }, root);
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var step = P.flickerFps > 0 ? Math.floor(time.T * P.flickerFps) : 0;
+      PT.grainNoise.setAttribute("seed", String(P.seed + 3 + step));
+      // scanned-page jitter: the texture shifts by up to a pixel and breathes a little
+      var rnd = RC.random(P.seed * 97 + step * 31 + 1);
+      var jx = P.flickerFps > 0 ? Math.round((rnd() - 0.5) * 2) : 0, jy = P.flickerFps > 0 ? Math.round((rnd() - 0.5) * 2) : 0;
+      PT.root.setAttribute("transform", "translate(" + jx + " " + jy + ")");
+      var fade = P.fade ? RC.progress(time.t, 0, 0.3, "linear") * RC.clamp(time.left / 0.3, 0, 1) : 1;
+      PT.root.setAttribute("opacity", String(RC.clamp(fade, 0, 1) * (P.flickerFps > 0 ? 0.97 + rnd() * 0.03 : 1)));
+    },
+  });
+</script>
+</body>
+</html>

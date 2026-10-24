@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/focus-rack); fictional.",
+  "labelA": "Working copy",
+  "labelB": "Approved",
+  "accent": "violet",
+  "speed": 1
+}

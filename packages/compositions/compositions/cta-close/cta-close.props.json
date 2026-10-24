@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/cta-close); fictional.",
+  "actionLine": "Ship your first film",
+  "buttonLabel": "Get started free",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

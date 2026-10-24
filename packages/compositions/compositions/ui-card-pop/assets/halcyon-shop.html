@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Halcyon shop page (fictional screenshot asset)</title>
+<!--
+  Source of halcyon-shop.png, the example image for ui-card-pop. Fictional brand, fictional page.
+  Rebuild (from restorffcut/):
+    bun packages/compositions/src/cli.ts still packages/compositions/compositions/ui-card-pop/assets/halcyon-shop.html --t 0 --plate none --out packages/compositions/compositions/ui-card-pop/assets/halcyon-shop.png
+-->
+<script src="../../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "halcyon-shop",
+  "title": "Halcyon shop page (asset)",
+  "description": "A still, fictional product page used as the example screenshot for ui-card-pop.",
+  "duration": 0.1,
+  "size": [900, 1400],
+  "fps": 30,
+  "params": {}
+}
+</script>
+<style>
+  .page { position: absolute; inset: 0; background: #F7F6F2; color: #141416; font-family: "Archivo", sans-serif; }
+  .bar { height: 96px; display: flex; align-items: center; justify-content: space-between; padding: 0 44px; border-bottom: 1px solid #E2E0DA; }
+  .brand { font-family: "Instrument Serif", serif; font-size: 46px; letter-spacing: -.01em; }
+  .brand small { font-family: "JetBrains Mono", monospace; font-size: 15px; letter-spacing: .14em; color: #8C8C95; margin-left: 14px; text-transform: uppercase; }
+  .cart { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #141416; display: grid; place-items: center; font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 18px; }
+  .hero { margin: 36px 44px 0; height: 640px; border-radius: 28px; background: linear-gradient(160deg, #E9E6DE, #D9D5CB); position: relative; overflow: hidden; }
+  .glow { position: absolute; width: 520px; height: 520px; border-radius: 50%; left: 170px; top: 80px; background: radial-gradient(circle, rgba(246,255,0,.55), rgba(246,255,0,0) 65%); }
+  .can { position: absolute; left: 300px; top: 92px; width: 212px; height: 452px; border-radius: 34px / 22px; background: linear-gradient(90deg, #0C0C0E 0%, #2A2A31 38%, #16161A 62%, #050506 100%); box-shadow: 30px 40px 60px rgba(0,0,0,.28); }
+  .can .lid { position: absolute; left: 10px; right: 10px; top: -8px; height: 26px; border-radius: 50%; background: linear-gradient(#cfcfd4, #8c8c95); }
+  .can .label { position: absolute; left: 0; right: 0; top: 120px; text-align: center; color: #EDEBE6; }
+  .can .label b { display: block; font-family: "Instrument Serif", serif; font-weight: 400; font-size: 52px; letter-spacing: -.01em; }
+  .can .label i { display: block; font-style: normal; font-family: "JetBrains Mono", monospace; font-size: 15px; letter-spacing: .16em; margin-top: 8px; color: #F6FF00; }
+  .can .label em { display: block; font-style: normal; font-family: "Archivo", sans-serif; font-stretch: 125%; font-weight: 800; font-size: 13px; letter-spacing: .14em; margin-top: 150px; color: #8C8C95; }
+  .tag { position: absolute; left: 28px; top: 28px; padding: 10px 18px; border-radius: 999px; background: #141416; color: #F7F6F2; font-family: "JetBrains Mono", monospace; font-size: 16px; letter-spacing: .1em; }
+  .info { padding: 34px 44px 0; }
+  h1 { margin: 0; font-size: 52px; font-weight: 800; font-stretch: 112%; letter-spacing: -.01em; line-height: 1.05; }
+  .meta { margin-top: 12px; font-family: "JetBrains Mono", monospace; font-size: 18px; color: #6E6E76; letter-spacing: .04em; }
+  .price { margin-top: 26px; display: flex; align-items: baseline; gap: 16px; }
+  .price b { font-size: 60px; font-weight: 800; }
+  .price span { font-size: 24px; color: #6E6E76; }
+  .sub { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; padding: 22px 26px; border-radius: 18px; border: 2px solid #141416; font-size: 24px; font-weight: 600; }
+  .toggle { width: 70px; height: 40px; border-radius: 999px; background: #141416; position: relative; }
+  .toggle::after { content: ""; position: absolute; right: 5px; top: 5px; width: 30px; height: 30px; border-radius: 50%; background: #F6FF00; }
+  .buy { margin-top: 22px; height: 92px; border-radius: 999px; background: #141416; color: #F7F6F2; display: grid; place-items: center; font-size: 26px; font-weight: 800; font-stretch: 125%; letter-spacing: .14em; text-transform: uppercase; }
+  .fine { margin-top: 20px; text-align: center; font-family: "JetBrains Mono", monospace; font-size: 16px; color: #8C8C95; letter-spacing: .06em; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="bar"><div class="brand">Halcyon<small>Cold Brew Co.</small></div><div class="cart">2</div></div>
+  <div class="hero"><div class="glow"></div><div class="tag">NEW · DROP 03</div>
+    <div class="can"><div class="lid"></div><div class="label"><b>Halcyon</b><i>12H COLD BREW</i><em>250 ML · NO SUGAR</em></div></div>
+  </div>
+  <div class="info">
+    <h1>Original Black,<br>steeped 12 hours</h1>
+    <div class="meta">SINGLE ORIGIN · OAT MILK READY · CASE OF 12</div>
+    <div class="price"><b>$38</b><span>per case · $3.17 a can</span></div>
+    <div class="sub"><span>Subscribe and save 15 %</span><div class="toggle"></div></div>
+    <div class="buy">Add to cart</div>
+    <div class="fine">Ships in 2 days · recyclable cans</div>
+  </div>
+</div>
+<script>
+  RC.composition({ render: function () {} });
+</script>
+</body>
+</html>

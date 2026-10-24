@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 520" width="200" height="520">
+  <!-- Fictional Halcyon Cold Brew bottle (our own drawing, collage-fx 2026-10-20) -->
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#1B1714"/><stop offset=".35" stop-color="#3A2A20"/><stop offset=".6" stop-color="#241B16"/><stop offset="1" stop-color="#120F0D"/>
+    </linearGradient>
+  </defs>
+  <rect x="70" y="10" width="60" height="44" rx="8" fill="#C8553D"/>
+  <rect x="66" y="48" width="68" height="14" rx="4" fill="#A9442F"/>
+  <path d="M76 62 L124 62 L124 110 C124 140 172 150 172 200 L172 486 C172 504 160 512 142 512 L58 512 C40 512 28 504 28 486 L28 200 C28 150 76 140 76 110 Z" fill="url(#g)"/>
+  <path d="M48 210 C48 180 60 166 70 160 L70 470 L48 470 Z" fill="#FFFFFF" opacity=".12"/>
+  <rect x="28" y="250" width="144" height="170" fill="#EDE3CF"/>
+  <text x="100" y="300" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#2F4A3A">Halcyon</text>
+  <rect x="44" y="318" width="112" height="2" fill="#2F4A3A"/>
+  <text x="100" y="352" text-anchor="middle" font-family="monospace" font-weight="700" font-size="17" fill="#2F4A3A">12 H COLD BREW</text>
+  <text x="100" y="398" text-anchor="middle" font-family="monospace" font-size="13" fill="#7A5638">NO SUGAR · 250 ML</text>
+</svg>

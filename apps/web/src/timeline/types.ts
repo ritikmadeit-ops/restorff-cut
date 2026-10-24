@@ -84,10 +84,39 @@ export interface RetimeConfig {
 	maintainPitch?: boolean;
 }
 
+/**
+ * Restorff (project v32): a transition INTO this clip from the clip that ends where it
+ * starts on the same track, centred on the cut (half before, half after). With no clip
+ * touching its start it transitions from what is underneath (e.g. a fade in from black).
+ * Rendered by the wasm compositor (`apps/web/src/transitions`, `rust/crates/effects`).
+ */
+export interface ClipTransition {
+	/** Registry id from `@/transitions/definitions` (e.g. "whip-left", "dissolve"). */
+	type: string;
+	/** Total length in ticks. */
+	duration: MediaTime;
+}
+
+/**
+ * Restorff (project v32): beats found in a music element's SOURCE media, so they move and
+ * trim with the clip. Timeline time of a beat = startTime + (beat − trimStart) / rate.
+ */
+export interface BeatGrid {
+	/** Tempo the tracker locked to, beats per minute. */
+	bpm: number;
+	/** Beat times in source ticks, ascending. */
+	times: MediaTime[];
+	/** Indices into `times` that start a bar (estimated), when known. */
+	downbeats?: number[];
+	/** Where the grid came from. */
+	source: "detected" | "board" | "manual";
+}
+
 interface BaseAudioElement extends BaseTimelineElement {
 	type: "audio";
 	buffer?: AudioBuffer;
 	retime?: RetimeConfig;
+	beats?: BeatGrid;
 }
 
 export interface UploadAudioElement extends BaseAudioElement {
@@ -122,6 +151,7 @@ export interface VideoElement extends BaseTimelineElement {
 	retime?: RetimeConfig;
 	effects?: Effect[];
 	masks?: Mask[];
+	transitionIn?: ClipTransition;
 }
 
 export interface ImageElement extends BaseTimelineElement {
@@ -130,6 +160,7 @@ export interface ImageElement extends BaseTimelineElement {
 	hidden?: boolean;
 	effects?: Effect[];
 	masks?: Mask[];
+	transitionIn?: ClipTransition;
 }
 
 export interface TextElement extends BaseTimelineElement {

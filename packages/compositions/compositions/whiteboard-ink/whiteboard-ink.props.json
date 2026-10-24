@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/whiteboard-ink); fictional.",
+  "sketch": "rocket",
+  "caption": "Sketch the launch",
+  "pen": "show",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

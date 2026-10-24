@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 560" width="300" height="560">
+  <!-- Fictional Halcyon bottle riding a skateboard (our own drawing, collage-fx 2026-10-20) -->
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#1B1714"/><stop offset=".35" stop-color="#3A2A20"/><stop offset=".6" stop-color="#241B16"/><stop offset="1" stop-color="#120F0D"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(50 0)">
+    <rect x="70" y="10" width="60" height="44" rx="8" fill="#C8553D"/>
+    <rect x="66" y="48" width="68" height="14" rx="4" fill="#A9442F"/>
+    <path d="M76 62 L124 62 L124 110 C124 140 172 150 172 200 L172 456 C172 474 160 482 142 482 L58 482 C40 482 28 474 28 456 L28 200 C28 150 76 140 76 110 Z" fill="url(#g)"/>
+    <rect x="28" y="240" width="144" height="150" fill="#EDE3CF"/>
+    <text x="100" y="292" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#2F4A3A">Halcyon</text>
+    <text x="100" y="336" text-anchor="middle" font-family="monospace" font-weight="700" font-size="17" fill="#2F4A3A">12 H COLD BREW</text>
+    <circle cx="78" cy="180" r="9" fill="#F7F2E8"/><circle cx="122" cy="180" r="9" fill="#F7F2E8"/>
+    <circle cx="80" cy="182" r="4" fill="#111"/><circle cx="124" cy="182" r="4" fill="#111"/>
+    <path d="M86 206 Q100 218 114 206" fill="none" stroke="#F7F2E8" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <path d="M10 496 Q20 512 40 512 L260 512 Q280 512 290 496" fill="none" stroke="#C8553D" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="70" cy="536" r="18" fill="#1E1E22"/><circle cx="230" cy="536" r="18" fill="#1E1E22"/>
+  <circle cx="70" cy="536" r="6" fill="#EDE3CF"/><circle cx="230" cy="536" r="6" fill="#EDE3CF"/>
+</svg>

@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/swipe-rail); fictional.",
+  "cardCount": 5,
+  "accent": "violet",
+  "cardLabelPrefix": "Chapter",
+  "speed": 1
+}

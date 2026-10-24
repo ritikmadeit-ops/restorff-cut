@@ -1,4 +1,4 @@
-import type { FrameRate } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
 import { EXPORT_MIME_TYPES } from "./mime-types";
 
 export const EXPORT_QUALITY_VALUES = [
@@ -18,6 +18,36 @@ export interface ExportOptions {
 	quality: ExportQuality;
 	fps?: FrameRate;
 	includeAudio?: boolean;
+	/**
+	 * Restorff additions (all optional; old callers keep working).
+	 * A delivery preset id from `@/export/presets` (size, bitrates, fps cap).
+	 */
+	preset?: string;
+	/** Output size in px; defaults to the preset's, else the project canvas. */
+	width?: number;
+	height?: number;
+	/** When the output aspect differs from the canvas: "contain" letterboxes, "cover" crops. */
+	fit?: "contain" | "cover";
+	/** Video / audio bitrate in bit/s (override the quality word and the preset). */
+	videoBitrate?: number;
+	audioBitrate?: number;
+	/**
+	 * Master loudness, measured on the encoded audio. Default: the project's
+	 * `settings.loudness`, else −14 LUFS / −1 dBTP. `false` exports the mix untouched.
+	 */
+	loudness?: { integratedLufs: number; truePeakDb: number } | false;
+}
+
+export interface ExportLoudnessReport {
+	target: { integratedLufs: number; truePeakDb: number };
+	/** The mix before mastering. */
+	input: { integratedLufs: number; truePeakDb: number; loudnessRangeLu: number };
+	/** Measured on the audio decoded back from the finished file. */
+	output: { integratedLufs: number; truePeakDb: number; loudnessRangeLu: number } | null;
+	gainDb: number;
+	limitedSamples: number;
+	/** EXPORT-GATE "LOUD": within ±1 LU and at or under the true-peak ceiling. */
+	pass: boolean;
 }
 
 export interface ExportResult {
@@ -25,6 +55,10 @@ export interface ExportResult {
 	buffer?: ArrayBuffer;
 	error?: string;
 	cancelled?: boolean;
+	/** Restorff: the encoded size and the loudness report (null when audio was off or silent). */
+	width?: number;
+	height?: number;
+	loudness?: ExportLoudnessReport | null;
 }
 
 export interface ExportState {

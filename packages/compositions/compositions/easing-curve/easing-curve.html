@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Easing curve</title>
+<script src="../../src/runtime.js"></script>
+<!-- Promoted from the neon-grid recreation's scene 4 (docs/restorff/recreations/neon-grid-type/compositions/
+     extraction-curve.html, our own code), generalised: a real cubic-bezier curve with its handles (presets or custom),
+     a riding dot with a read-out, tags that pop as the dot passes them, a preview square that moves on the curve. -->
+<script type="application/json" id="params">
+{
+  "name": "easing-curve",
+  "title": "Easing curve",
+  "description": "A graph-editor panel: an easing curve draws itself, its two bezier handles appear, then a dot rides the curve with a live read-out while a small square below moves with that easing; tags pop where the dot passes them, a big title ignites above. Use to explain 'how fast, then how slow' — extraction over hours, growth that eases out, an animation curve (EFFECTS.md FX-50).",
+  "duration": 6,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["curve", "easing", "graph", "chart", "explainer", "motion-design"],
+  "params": {
+    "title": { "type": "string", "default": "EXTRACTION", "maxLength": 18, "label": "Title", "description": "Big word above the panel; it ignites in the accent and cools to white. Empty to hide." },
+    "kicker": { "type": "string", "default": "EASE · OUT", "maxLength": 20, "label": "Kicker", "description": "Small outlined pill under the title. Empty to hide." },
+    "label": { "type": "string", "default": "extraction(t)", "maxLength": 24, "label": "Panel label", "description": "Mono label at the panel's top left (what the curve is). Empty to hide." },
+    "note": { "type": "string", "default": "18 h steep", "maxLength": 20, "label": "Panel note", "description": "Mono note at the panel's top right. Empty to hide." },
+    "curve": { "type": "enum", "options": ["ease-out", "ease-in", "ease-in-out", "linear", "overshoot", "custom"], "default": "ease-out", "label": "Curve", "description": "The easing drawn: ease-out = fast then slow; ease-in = slow then fast; ease-in-out = S; overshoot = passes the end and settles; custom = the bezier param." },
+    "bezier": { "type": "list", "of": { "type": "number", "min": -1, "max": 2 }, "minItems": 4, "maxItems": 4, "default": [0.16, 1, 0.3, 1], "label": "Bezier", "description": "curve custom: the two handles x1, y1, x2, y2 as in CSS cubic-bezier() (x between 0 and 1)." },
+    "xTicks": { "type": "list", "of": { "type": "string", "maxLength": 8 }, "minItems": 0, "maxItems": 6, "default": ["0", "6", "12", "18 h"], "label": "X ticks", "description": "Labels spread evenly under the x axis, first at 0, last at the end." },
+    "xMax": { "type": "number", "default": 18, "min": 0, "max": 100000, "label": "X at the end", "description": "The x value at the end of the curve, for the read-out (t = 8.4 h · 0.74). 0 = the read-out shows a percentage." },
+    "xUnit": { "type": "string", "display": false, "default": "h", "maxLength": 6, "label": "X unit", "description": "Unit after the read-out's x value." },
+    "tags": { "type": "list", "minItems": 0, "maxItems": 4, "label": "Tags", "description": "Pills on the curve; each pops when the dot passes its x (0 = start, 1 = end).",
+      "of": { "type": "object", "fields": { "at": { "type": "number", "min": 0, "max": 1, "description": "Where on the x axis (0..1)." }, "text": { "type": "string", "maxLength": 16, "description": "The tag." } } },
+      "default": [ { "at": 0.14, "text": "SWEETNESS" }, { "at": 0.62, "text": "BITTERNESS" } ] },
+    "curveColor": { "type": "color", "default": "#F2EEE6", "label": "Curve colour", "description": "The curve itself." },
+    "dotColor": { "type": "color", "default": "#FF5A1F", "label": "Dot colour", "description": "The riding dot, its read-out and the preview square." },
+    "accent": { "type": "color", "default": "#FF5A1F", "label": "Accent", "description": "Title ignite and the kicker's outline." },
+    "rideFrom": { "type": "number", "default": 1, "min": 0, "max": 20, "step": 0.05, "unit": "s", "label": "Ride starts", "description": "Animation seconds when the dot sets off." },
+    "rideFor": { "type": "number", "default": 4, "min": 0.3, "max": 30, "step": 0.05, "unit": "s", "label": "Ride length", "description": "Animation seconds the dot takes from start to end." },
+    "loop": { "type": "boolean", "default": false, "label": "Loop", "description": "The dot rides again and again until the end." },
+    "preview": { "type": "boolean", "default": true, "label": "Preview square", "description": "A square on a track under the plot moves with the curve's easing." },
+    "backdrop": { "type": "enum", "options": ["none", "dark"], "default": "none", "label": "Backdrop", "description": "none = a panel over the footage; dark = a full-frame dark background (a motion-graphic scene)." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 1.5, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "top", "label": "Anchor", "description": "Vertical placement inside the safe area." },
+    "offsetY": { "type": "number", "default": 0, "min": -600, "max": 900, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed: draw, handles, ride." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades and settles over the last 0.3 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .big { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 125%; text-transform: uppercase; letter-spacing: -0.01em; line-height: 0.92; color: #F2EEE6; }
+  .pill { position: absolute; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 800; letter-spacing: .2em; border-radius: 999px; color: #F2EEE6; }
+  .tag { position: absolute; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .14em; border-radius: 999px; background: rgba(7,7,10,.85); transform-origin: 0% 50%; }
+  .read { position: absolute; white-space: pre; font-family: "JetBrains Mono", monospace; font-weight: 700; background: rgba(7,7,10,.88); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var EC = { tags: [] };
+  var PRESETS = { "ease-out": [0.16, 1, 0.3, 1], "ease-in": [0.7, 0, 0.84, 0], "ease-in-out": [0.65, 0, 0.35, 1], linear: [0.25, 0.25, 0.75, 0.75], overshoot: [0.34, 1.56, 0.64, 1] };
+  function bz(a, b, s) { return 3 * (1 - s) * (1 - s) * s * a + 3 * (1 - s) * s * s * b + s * s * s; }
+  /** y of the cubic-bezier easing at x (0..1): bisection on x(s), like CSS. */
+  function ease(c, x) {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    var lo = 0, hi = 1, s = x;
+    for (var i = 0; i < 40; i++) { s = (lo + hi) / 2; if (bz(c[0], c[2], s) < x) lo = s; else hi = s; }
+    return bz(c[1], c[3], s);
+  }
+  function two(v) { return (v < 10 ? "0" : "") + v.toFixed(1); }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params, U = RC.u, u = RC.u * P.scale, W = RC.width, H = RC.height, st = document.getElementById("stage");
+      EC.c = P.curve === "custom" ? P.bezier.map(function (v, i) { return i % 2 === 0 ? RC.clamp(v, 0, 1) : v; }) : PRESETS[P.curve];
+      // the y range: 0..1, widened for an overshoot (or an undershoot) so the whole curve fits the plot
+      var lo = 0, hi = 1;
+      for (var k = 0; k <= 60; k++) { var v = ease(EC.c, k / 60); lo = Math.min(lo, v); hi = Math.max(hi, v); }
+      lo = Math.min(lo, EC.c[1], EC.c[3]); hi = Math.max(hi, EC.c[1], EC.c[3]);
+      EC.lo = lo; EC.hi = hi;
+      EC.cv = RC.el("canvas", { width: W, height: H, style: { position: "absolute", left: "0", top: "0" } });
+      st.appendChild(EC.cv);
+      EC.ctx = EC.cv.getContext("2d");
+      // the block: title, kicker, panel (+ preview track), measured first, then anchored
+      var y = 0, parts = [];
+      if (P.title) {
+        EC.title = RC.el("div", { class: "big", text: P.title, style: { fontSize: 150 * u + "px" } });
+        st.appendChild(EC.title);
+        RC.fitText(EC.title, W - RC.safe.left - RC.safe.right, 150 * u, 60 * u);
+        parts.push([EC.title, y]); y += EC.title.offsetHeight + 24 * u;
+      }
+      if (P.kicker) {
+        EC.kick = RC.el("div", { class: "pill", text: P.kicker, style: { fontSize: 30 * u + "px", padding: 10 * u + "px " + 24 * u + "px", border: 2 * u + "px solid " + P.accent } });
+        st.appendChild(EC.kick);
+        parts.push([EC.kick, y]); y += EC.kick.offsetHeight + 40 * u;
+      }
+      var panelH = 640 * u, previewH = P.preview ? 120 * u : 0;
+      var blockH = y + panelH + previewH;
+      var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? H - RC.safe.bottom - blockH : (H - blockH) / 2;
+      top += P.offsetY * U;
+      parts.forEach(function (p) { p[0].style.left = (W - p[0].offsetWidth) / 2 + "px"; p[0].style.top = top + p[1] + "px"; });
+      EC.px0 = Math.max(RC.safe.left * 0.6, (W - 940 * u) / 2); EC.px1 = W - EC.px0;
+      EC.py0 = top + y; EC.py1 = EC.py0 + panelH;
+      EC.ax0 = EC.px0 + 110 * u; EC.ax1 = EC.px1 - 60 * u; EC.ay0 = EC.py0 + 120 * u; EC.ay1 = EC.py1 - 100 * u;
+      EC.trackY = EC.py1 + 60 * u;
+      EC.u = u;
+      P.tags.forEach(function (tg) {
+        var n = RC.el("div", { class: "tag", text: tg.text, style: { fontSize: 26 * u + "px", padding: 8 * u + "px " + 18 * u + "px", border: 2 * u + "px solid rgba(242,238,230,.8)", color: "#F2EEE6" } });
+        st.appendChild(n);
+        var x = EC.X(tg.at), yy = EC.Y(ease(EC.c, tg.at));
+        // below the curve when it is high, above when it is low; never past the panel's right edge
+        var below = yy < (EC.ay0 + EC.ay1) / 2;
+        n.style.left = Math.min(x + 24 * u, EC.px1 - 20 * u - n.offsetWidth) + "px";
+        n.style.top = (below ? yy + 26 * u : yy - 26 * u - n.offsetHeight) + "px";
+        EC.tags.push({ el: n, at: tg.at });
+      });
+      EC.read = RC.el("div", { class: "read", style: { fontSize: 26 * u + "px", padding: 6 * u + "px " + 12 * u + "px", borderRadius: 8 * u + "px", color: P.dotColor } });
+      st.appendChild(EC.read);
+    },
+    render: function (time, RC) {
+      var P = RC.params, t = time.t, u = EC.u, W = RC.width, H = RC.height, ctx = EC.ctx, c = EC.c;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.3, 0, 1)) : 0;
+      ctx.clearRect(0, 0, W, H);
+      if (P.backdrop === "dark") {
+        ctx.fillStyle = "#07070A"; ctx.fillRect(0, 0, W, H);
+        var g = ctx.createRadialGradient(W / 2, H * 0.42, 0, W / 2, H * 0.42, H * 0.62);
+        g.addColorStop(0, "#16161C"); g.addColorStop(1, "rgba(7,7,10,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      }
+      var pin = RC.progress(t, 0, 0.35, "snappy");
+      var vis = pin * (1 - out);
+      ctx.save();
+      ctx.globalAlpha = vis;
+      var cy = (EC.py0 + EC.py1) / 2, s = 0.94 + 0.06 * pin - 0.04 * out;
+      ctx.translate(W / 2, cy); ctx.scale(s, s); ctx.translate(-W / 2, -cy);
+      ctx.fillStyle = "rgba(14,14,18,.93)"; ctx.strokeStyle = "rgba(242,238,230,.2)"; ctx.lineWidth = 2 * u;
+      ctx.beginPath(); ctx.roundRect(EC.px0, EC.py0, EC.px1 - EC.px0, EC.py1 - EC.py0, 28 * u); ctx.fill(); ctx.stroke();
+      ctx.font = "700 " + 26 * u + "px 'JetBrains Mono'"; ctx.fillStyle = "rgba(242,238,230,.55)"; ctx.textBaseline = "middle";
+      if (P.label) { ctx.textAlign = "left"; ctx.fillText(P.label, EC.px0 + 34 * u, EC.py0 + 52 * u); }
+      if (P.note) { ctx.textAlign = "right"; ctx.fillText(P.note, EC.px1 - 34 * u, EC.py0 + 52 * u); }
+      // axes, grid, ticks
+      var y0 = EC.Y(0), y1 = EC.Y(1);
+      ctx.strokeStyle = "rgba(242,238,230,.35)"; ctx.lineWidth = 2 * u;
+      ctx.beginPath(); ctx.moveTo(EC.ax0, EC.ay0); ctx.lineTo(EC.ax0, EC.ay1); ctx.lineTo(EC.ax1, EC.ay1); ctx.stroke();
+      ctx.strokeStyle = "rgba(242,238,230,.08)";
+      ctx.beginPath();
+      for (var k = 1; k <= 4; k++) { var gy = RC.mix(y0, y1, k / 4); ctx.moveTo(EC.ax0, gy); ctx.lineTo(EC.ax1, gy); }
+      ctx.stroke();
+      ctx.fillStyle = "rgba(242,238,230,.6)"; ctx.font = "600 " + 24 * u + "px 'JetBrains Mono'";
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      var nt = P.xTicks.length;
+      P.xTicks.forEach(function (tx, i) { ctx.fillText(tx, EC.X(nt > 1 ? i / (nt - 1) : 0), EC.ay1 + 16 * u); });
+      ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      ctx.fillText("1.0", EC.ax0 - 16 * u, y1); ctx.fillText("0", EC.ax0 - 16 * u, y0);
+      // the curve draws itself
+      var d = RC.progress(t, 0.3, 1.1, "smooth");
+      if (d > 0) {
+        ctx.strokeStyle = P.curveColor; ctx.lineWidth = 6 * u; ctx.lineCap = "round"; ctx.lineJoin = "round";
+        ctx.shadowColor = P.curveColor; ctx.shadowBlur = 14 * u;
+        ctx.beginPath();
+        var N = 120;
+        for (var i = 0; i <= N * d; i++) { var x = i / N; if (i === 0) ctx.moveTo(EC.X(x), EC.Y(ease(c, x))); else ctx.lineTo(EC.X(x), EC.Y(ease(c, x))); }
+        ctx.stroke(); ctx.shadowBlur = 0;
+      }
+      // the bezier handles, as in a graph editor
+      var hd = RC.progress(t, 1.2, 0.4, "smooth");
+      if (hd > 0) {
+        ctx.globalAlpha = vis * hd;
+        var p0 = [EC.X(0), EC.Y(0)], p3 = [EC.X(1), EC.Y(1)], h1 = [EC.X(c[0]), EC.Y(c[1])], h2 = [EC.X(c[2]), EC.Y(c[3])];
+        ctx.strokeStyle = "rgba(242,238,230,.45)"; ctx.lineWidth = 2 * u;
+        ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(h1[0], h1[1]); ctx.moveTo(p3[0], p3[1]); ctx.lineTo(h2[0], h2[1]); ctx.stroke();
+        ctx.fillStyle = "#07070A"; ctx.strokeStyle = "#F2EEE6"; ctx.lineWidth = 3 * u;
+        [h1, h2].forEach(function (q) { ctx.beginPath(); ctx.rect(q[0] - 9 * u, q[1] - 9 * u, 18 * u, 18 * u); ctx.fill(); ctx.stroke(); });
+        [p0, p3].forEach(function (q) { ctx.beginPath(); ctx.arc(q[0], q[1], 9 * u, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+        ctx.globalAlpha = vis;
+      }
+      // the ride: x runs linearly in time, the dot sits on the eased value
+      var period = P.rideFor + 0.5;
+      var since = t - P.rideFrom;
+      var r = P.loop && since > period ? RC.clamp((since % period) / P.rideFor, 0, 1) : RC.clamp(since / P.rideFor, 0, 1);
+      var ev = ease(c, r), dx = EC.X(r), dy = EC.Y(ev);
+      var on = RC.progress(t, P.rideFrom - 0.15, 0.2, "smooth");
+      if (on > 0) {
+        ctx.globalAlpha = vis * on;
+        ctx.fillStyle = P.dotColor; ctx.shadowColor = P.dotColor; ctx.shadowBlur = 30 * u;
+        ctx.beginPath(); ctx.arc(dx, dy, 16 * u, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = RC.alpha(P.dotColor, 0.5); ctx.lineWidth = 2 * u; ctx.setLineDash([6 * u, 8 * u]);
+        ctx.beginPath(); ctx.moveTo(dx, dy); ctx.lineTo(dx, EC.ay1); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      // the preview: a square on a track moves with the same easing
+      if (P.preview) {
+        ctx.globalAlpha = vis * RC.progress(t, 0.6, 0.3, "linear");
+        var tx0 = EC.ax0, tx1 = EC.ax1, ty = EC.trackY, sq = 44 * u;
+        ctx.strokeStyle = "rgba(242,238,230,.35)"; ctx.lineWidth = 2 * u;
+        ctx.beginPath(); ctx.moveTo(tx0, ty); ctx.lineTo(tx1, ty); ctx.stroke();
+        var sx = RC.mix(tx0, tx1 - sq, ev);
+        ctx.fillStyle = P.dotColor;
+        ctx.beginPath(); ctx.roundRect(sx, ty - sq / 2, sq, sq, 8 * u); ctx.fill();
+      }
+      ctx.restore();
+      // read-out
+      var label = P.xMax > 0 ? "t = " + two(r * P.xMax) + (P.xUnit ? " " + P.xUnit : "") + " · " + ev.toFixed(2) : Math.round(ev * 100) + " %";
+      if (EC.read.textContent !== label) EC.read.textContent = label;
+      EC.read.style.left = Math.max(EC.ax0, Math.min(dx - EC.read.offsetWidth - 26 * u, EC.ax1 - EC.read.offsetWidth)) + "px";
+      EC.read.style.top = Math.max(EC.py0 + 80 * u, dy - 70 * u) + "px";
+      EC.read.style.opacity = String(on * (1 - out));
+      // type: the title reveals and ignites, the kicker pops, tags pop as the dot passes them
+      if (EC.title) {
+        var rv = RC.progress(t, 0.1, 0.32, "smooth");
+        EC.title.style.clipPath = "inset(-60% " + ((1 - rv) * 100).toFixed(3) + "% -60% -12%)";
+        var cool = RC.progress(t, 0.1 + 0.28, 0.5, "smooth"), glow = t < 0.1 ? 0 : 1 - cool;
+        EC.title.style.color = RC.mixColor(P.accent, "#F2EEE6", cool);
+        EC.title.style.textShadow = "0 0 " + 12 * u + "px " + RC.alpha(P.accent, 0.95 * glow) + ", 0 0 " + 42 * u + "px " + RC.alpha(P.accent, 0.75 * glow) + ", 0 " + 6 * u + "px " + 24 * u + "px rgba(0,0,0,.55)";
+        // hidden until the reveal starts: the clip's left bleed would otherwise show the drop shadow (SEEN on frame 0)
+        EC.title.style.opacity = String(rv > 0 ? 1 - out : 0);
+      }
+      if (EC.kick) { var e = RC.progress(t, 0.5, 0.3, "bouncy"); RC.set(EC.kick, { scale: 0.7 + 0.3 * e, opacity: RC.clamp(e * 1.5, 0, 1) * (1 - out) }); }
+      var reached = since >= 0 ? (P.loop ? 1 : r) : 0;
+      EC.tags.forEach(function (tg) {
+        var p = reached >= tg.at ? RC.progress(t, P.rideFrom + tg.at * P.rideFor, 0.3, "bouncy") : 0;
+        RC.set(tg.el, { scale: 0.7 + 0.3 * p, opacity: RC.clamp(p * 1.5, 0, 1) * (1 - out) });
+      });
+    },
+  });
+  // plot mapping (pure; filled in build)
+  EC.X = function (x) { return RC.mix(EC.ax0, EC.ax1, x); };
+  EC.Y = function (v) { return RC.mix(EC.ay1, EC.ay0, (v - EC.lo) / (EC.hi - EC.lo)); };
+</script>
+</body>
+</html>

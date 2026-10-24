@@ -12,3 +12,5 @@
 next-env.d.ts
 
 *.tsbuildinfo
+# Project store (PGlite data dir, src/lib/db/store.ts)
+.data/

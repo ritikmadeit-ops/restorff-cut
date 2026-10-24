@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/comparison-split); fictional.",
+  "split": 64,
+  "orientation": "horizontal",
+  "labelA": "Manual",
+  "labelB": "Automated",
+  "speed": 1
+}

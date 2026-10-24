@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/matrix-decode); fictional.",
+  "text": "HALCYON",
+  "accent": "green",
+  "size": 64,
+  "glow": "standard",
+  "speed": 1
+}

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Triptych</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "triptych",
+  "title": "Triptych",
+  "description": "Collage kit: three stacked 16:9 panels on black, each its own mini-scene (paper with a cut-out, a big serif year, a yellow label tag, a red stamp; a colour or a photo; or a hole where a clip below plays), sliding in one after another, with mono boxed captions sitting on the seams. Use to compare three moments (then / now / next) in a collage explainer (EFFECTS.md FX-57).",
+  "duration": 4.5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["collage", "triptych", "panels", "split", "kit", "explainer"],
+  "effect": {
+    "fx": ["FX-57"],
+    "stack": ["plate", "self"],
+    "inputs": {
+      "clips": "a panel of kind hole shows the track below: with one hole in the middle panel the clip needs no keys (its middle band shows); for a hole in the top or bottom panel key the clip's y so the subject sits in it, and with two or more holes give each clip its own track masked to its panel",
+      "images": "panel images: cut-outs with a transparent background (fit cutout) or photos (fit cover)"
+    },
+    "panels": "panel rects for 1080x1920 (fractions): x 0.04-0.96; y 0.0352-0.3263, 0.3544-0.6455, 0.6736-0.9647",
+    "note": "Captions sit on the seams, never over a panel's subject."
+  },
+  "params": {
+    "panels": {
+      "type": "list", "minItems": 1, "maxItems": 3, "label": "Panels",
+      "description": "Top to bottom. kind: paper | color | hole (transparent: the clip below plays there). image + fit: a cut-out (right side, white paper edge) or cover (fills the panel). title = big serif (a year, a number), tag = yellow mono label, stamp = red rubber stamp.",
+      "of": { "type": "object", "fields": {
+        "kind": { "type": "enum", "options": ["paper", "color", "hole"], "default": "paper" },
+        "color": { "type": "color", "default": "#E6D7B8" },
+        "image": { "type": "image", "default": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" },
+        "fit": { "type": "enum", "options": ["cutout", "cover"], "default": "cutout" },
+        "title": { "type": "string", "default": "", "maxLength": 12 },
+        "tag": { "type": "string", "default": "", "maxLength": 40 },
+        "stamp": { "type": "string", "default": "", "maxLength": 12 }
+      } },
+      "default": [
+        { "kind": "paper", "color": "#E6D7B8", "image": "assets/beans.svg", "fit": "cutout", "title": "2019", "tag": "FIRST BATCH · A GARAGE KITCHEN" },
+        { "kind": "hole", "tag": "TODAY · 12 HOURS, STILL" },
+        { "kind": "color", "color": "#2A2420", "image": "assets/bottle.svg", "fit": "cutout", "tag": "DROP 03 · 40 MINUTES", "stamp": "SOLD OUT" }
+      ]
+    },
+    "seams": { "type": "list", "of": { "type": "string", "maxLength": 28 }, "minItems": 0, "maxItems": 2, "default": ["THE SLOW WAY", "NO SHORTCUTS"], "label": "Seam captions", "description": "Mono boxed captions on the two seams (top seam first). Empty strings skip one." },
+    "margin": { "type": "number", "default": 0.04, "min": 0, "max": 0.2, "step": 0.005, "label": "Side margin", "description": "Black margin left and right, fraction of the width (panels keep 16:9)." },
+    "gap": { "type": "number", "default": 0.05, "min": 0.01, "max": 0.2, "step": 0.005, "label": "Seam", "description": "Height of the black seams, fraction of the width." },
+    "background": { "type": "color", "default": "#0C0C0E", "label": "Background", "description": "Colour around and between the panels." },
+    "accent": { "type": "color", "default": "#F2D04B", "label": "Tag colour", "description": "Yellow of the label tags." },
+    "ink": { "type": "color", "default": "#C8352B", "label": "Stamp red", "description": "Colour of the stamp." },
+    "stagger": { "type": "number", "default": 0.3, "min": 0.05, "max": 1.5, "step": 0.05, "unit": "s", "label": "Panel stagger", "description": "Delay between panels sliding in." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Panels slide away over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  svg.bg { position: absolute; left: 0; top: 0; }
+  .panel { position: absolute; overflow: hidden; }
+  .pt { position: absolute; font-family: "Instrument Serif", serif; color: #1A1A1D; line-height: .9; }
+  .tag { position: absolute; font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .06em; color: #111; white-space: nowrap; box-shadow: 0 3px 8px rgba(0,0,0,.3); }
+  .stamp { position: absolute; font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 110%; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+  .cut { position: absolute; }
+  .cut img { display: block; height: 100%; width: auto; }
+  .seam { position: absolute; left: 0; width: 100%; display: flex; justify-content: center; }
+  .seam span { font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .14em; color: #F7F2E8; background: #0C0C0E; border: 2px solid rgba(247,242,232,.85); border-radius: 8px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="te" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+    <feMorphology id="teDil" in="SourceAlpha" operator="dilate" radius="8" result="d"/>
+    <feFlood flood-color="#FFFFFF"/><feComposite in2="d" operator="in" result="edge"/>
+    <feGaussianBlur id="teBlur" in="d" stdDeviation="6" result="sb"/>
+    <feOffset id="teOff" in="sb" dx="4" dy="8" result="so"/>
+    <feFlood flood-color="#000000" flood-opacity="0.35"/><feComposite in2="so" operator="in" result="sh"/>
+    <feMerge><feMergeNode in="sh"/><feMergeNode in="edge"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="mottle" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence id="moNoise" type="fractalNoise" baseFrequency="0.01" numOctaves="3" seed="3"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0.42 0 0 0 0 0.33 0 0 0 0 0.2 2.4 0 0 0 -1"/>
+  </filter>
+</defs></svg>
+<script>
+  var TP = { panels: [], seams: [] };
+  var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  var NS = "http://www.w3.org/2000/svg";
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var W = RC.width, H = RC.height, u = RC.u;
+      var stage = document.getElementById("stage");
+      document.getElementById("teDil").setAttribute("radius", String(Math.max(0.5, 8 * u)));
+      document.getElementById("teBlur").setAttribute("stdDeviation", String(6 * u));
+      document.getElementById("teOff").setAttribute("dx", String(4 * u));
+      document.getElementById("teOff").setAttribute("dy", String(8 * u));
+      document.getElementById("moNoise").setAttribute("baseFrequency", String(0.01 / Math.max(0.25, u)));
+      var mx = P.margin * W, pw = W - 2 * mx, ph = pw * 9 / 16, g = P.gap * W;
+      var n = P.panels.length;
+      var total = n * ph + (n - 1) * g;
+      var top = (H - total) / 2;
+      TP.rects = [];
+      for (var i = 0; i < n; i++) TP.rects.push({ x: mx, y: top + i * (ph + g), w: pw, h: ph });
+      // background with holes cut where a panel is a hole (even-odd path)
+      var svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("class", "bg");
+      svg.setAttribute("width", W);
+      svg.setAttribute("height", H);
+      var path = document.createElementNS(NS, "path");
+      path.setAttribute("fill", P.background);
+      path.setAttribute("fill-rule", "evenodd");
+      svg.appendChild(path);
+      stage.appendChild(svg);
+      TP.bgPath = path;
+      P.panels.forEach(function (pn, i) {
+        var r = TP.rects[i];
+        var el = RC.el("div", { class: "panel", style: { left: r.x + "px", top: r.y + "px", width: r.w + "px", height: r.h + "px", borderRadius: 6 * u + "px" } });
+        var hole = pn.kind === "hole";
+        if (!hole) {
+          el.style.background = pn.color;
+          if (pn.kind === "paper") {
+            var mo = document.createElementNS(NS, "svg");
+            mo.setAttribute("width", r.w); mo.setAttribute("height", r.h);
+            mo.style.position = "absolute"; mo.style.left = "0"; mo.style.top = "0";
+            var rect = document.createElementNS(NS, "rect");
+            rect.setAttribute("width", r.w); rect.setAttribute("height", r.h); rect.setAttribute("filter", "url(#mottle)"); rect.setAttribute("opacity", "0.17");
+            mo.appendChild(rect);
+            el.appendChild(mo);
+          }
+        }
+        var item = { el: el, i: i, hole: hole, r: r };
+        if (!hole && pn.image !== BLANK) {
+          if (pn.fit === "cover") {
+            el.appendChild(RC.el("img", { src: pn.image, style: { position: "absolute", left: 0, top: 0, width: "100%", height: "100%", objectFit: "cover" } }));
+          } else {
+            var cut = RC.el("div", { class: "cut", style: { height: r.h * 0.82 + "px", right: r.w * 0.08 + "px", top: r.h * 0.09 + "px", filter: "url(#te)" } }, [RC.el("img", { src: pn.image })]);
+            el.appendChild(cut);
+            item.cut = cut;
+          }
+        }
+        var dark = !hole && pn.kind === "color" && RC.mixColor(pn.color, "#000000", 0) && luminance(pn.color) < 0.4;
+        if (pn.title) {
+          item.title = RC.el("div", { class: "pt", text: pn.title, style: { left: r.w * 0.06 + "px", top: r.h * 0.12 + "px", fontSize: r.h * 0.48 + "px", color: dark ? "#F7F2E8" : "#1A1A1D" } });
+          el.appendChild(item.title);
+        }
+        if (pn.stamp) {
+          item.stamp = RC.el("div", { class: "stamp", text: pn.stamp, style: { left: r.w * 0.07 + "px", top: r.h * 0.3 + "px", fontSize: r.h * 0.17 + "px", color: P.ink, border: Math.max(2, 6 * u) + "px solid " + P.ink, padding: 6 * u + "px " + 18 * u + "px", borderRadius: 6 * u + "px", mixBlendMode: "normal" } });
+          el.appendChild(item.stamp);
+        }
+        stage.appendChild(el);
+        if (pn.tag) {
+          // tags sit inside the panel's bottom-left, above the panel's own content (holes included)
+          item.tag = RC.el("div", { class: "tag", text: pn.tag, style: { left: r.x + r.w * 0.05 + "px", top: r.y + r.h - 64 * u + "px", fontSize: 24 * u + "px", padding: 6 * u + "px " + 12 * u + "px", background: P.accent } });
+          stage.appendChild(item.tag);
+        }
+        TP.panels.push(item);
+      });
+      P.seams.forEach(function (s, k) {
+        if (!s || k >= n - 1) return;
+        var sy = TP.rects[k].y + ph + g / 2;
+        var el = RC.el("div", { class: "seam", style: { top: sy - 26 * u + "px", height: 52 * u + "px" } }, [RC.el("span", { text: s, style: { fontSize: 24 * u + "px", padding: 8 * u + "px " + 18 * u + "px" } })]);
+        stage.appendChild(el);
+        TP.seams.push({ el: el, k: k });
+      });
+      TP.u = u;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t, W = RC.width, H = RC.height;
+      var n = TP.panels.length;
+      var d = "M-4 -4 H" + (W + 4) + " V" + (H + 4) + " H-4 Z";
+      TP.panels.forEach(function (it) {
+        var t0 = 0.05 + it.i * P.stagger;
+        var k = RC.progress(t, t0, 0.4, "snappy");
+        var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp((time.left - (n - 1 - it.i) * 0.06) / 0.3, 0, 1)) : 0;
+        var side = it.i % 2 ? 1 : -1;
+        var dx = side * (1 - k) * W * 1.05 + -side * out * W * 1.05;
+        RC.set(it.el, { x: dx });
+        if (it.hole && Math.abs(dx) < W) {
+          // the hole travels with its panel
+          var x = it.r.x + dx, y = it.r.y, w = it.r.w, h = it.r.h;
+          var x0 = Math.max(-4, x), x1 = Math.min(W + 4, x + w);
+          if (x1 > x0) d += " M" + x0 + " " + y + " H" + x1 + " V" + (y + h) + " H" + x0 + " Z";
+        }
+        if (it.cut) {
+          var ck = RC.progress(t, t0 + 0.3, 0.45, "bouncy");
+          RC.set(it.cut, { x: (1 - RC.progress(t, t0 + 0.3, 0.3, "snappy")) * it.r.w * 0.5, rotate: (1 - ck) * 8 - 3, opacity: t >= t0 + 0.3 ? 1 : 0 });
+        }
+        if (it.title) RC.set(it.title, { y: (1 - RC.progress(t, t0 + 0.25, 0.4, "snappy")) * 30 * TP.u, opacity: RC.progress(t, t0 + 0.25, 0.25, "linear") });
+        if (it.stamp) {
+          var sk = RC.progress(t, t0 + 0.75, 0.12, "snappy");
+          RC.set(it.stamp, { scale: t >= t0 + 0.75 ? RC.mix(1.6, 1, sk) : 0, rotate: -9, opacity: t >= t0 + 0.75 ? 0.92 : 0 });
+        }
+        if (it.tag) {
+          var gk = RC.progress(t, t0 + 0.45, 0.25, "bouncy");
+          RC.set(it.tag, { x: dx, scale: RC.mix(0.6, 1, gk), rotate: -2, opacity: t >= t0 + 0.45 ? 1 : 0 });
+        }
+      });
+      TP.bgPath.setAttribute("d", d);
+      var allIn = 0.05 + (n - 1) * P.stagger + 0.45;
+      var sOut = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.2, 0, 1)) : 0;
+      TP.seams.forEach(function (s) {
+        var sk = RC.progress(t, allIn + s.k * 0.15, 0.3, "bouncy");
+        RC.set(s.el, { scale: RC.mix(0.7, 1, sk), opacity: (t >= allIn + s.k * 0.15 ? 1 : 0) * (1 - sOut) });
+      });
+    },
+  });
+  function luminance(hex) {
+    var n = parseInt(hex.slice(1, 7), 16);
+    return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  }
+</script>
+</body>
+</html>

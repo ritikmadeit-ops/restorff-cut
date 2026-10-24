@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/scramble-reveal); fictional.",
+  "text": "SEEK SAFE",
+  "accent": "violet",
+  "style": "clean",
+  "exit": "none",
+  "speed": 1
+}

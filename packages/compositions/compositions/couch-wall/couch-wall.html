@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Couch wall</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "couch-wall",
+  "title": "Couch wall",
+  "description": "A wall of reel thumbnails with view counts builds tile by tile behind the speaker, who stays in front; a two-part caption (small line + heavy word) sits at chest height. Use to show volume or proof (a body of work, a catalogue) without leaving the talking head (EFFECTS.md FX-02). Layer back goes between the clip and its person cutout; layer front (the caption) above it.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["wall", "grid", "thumbnails", "matte", "proof", "reels", "named-effect"],
+  "effect": {
+    "fx": ["FX-02"],
+    "stack": ["plate", "self:back", "cutout", "self:front"],
+    "inputs": {
+      "cutout": "the clip's person cutout on the track above it (editor: Cut out person; MCP: cutout): the speaker covers the tiles behind them",
+      "tiles": "6-16 thumbnails: frames of the brand's earlier videos (or drawn tiles from label/stat/color); stats must be real"
+    },
+    "note": "Without a cutout, render layer all on top of the clip: the wall then covers the speaker (use region to keep it above the head)."
+  },
+  "params": {
+    "tiles": {
+      "type": "list", "minItems": 2, "maxItems": 20, "label": "Tiles",
+      "description": "The thumbnails in reading order. image = a portrait frame; without one the tile is drawn from color + label. stat = the view count pill (real numbers only).",
+      "of": { "type": "object", "fields": {
+        "label": { "type": "string", "default": "", "maxLength": 22, "description": "Title on a drawn tile." },
+        "stat": { "type": "string", "default": "", "maxLength": 10, "description": "View count, e.g. 1.07M." },
+        "color": { "type": "color", "default": "#2F4A3A", "description": "Background of a drawn tile." },
+        "image": { "type": "image", "default": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "description": "Optional portrait image; the 1-pixel default means none." }
+      } },
+      "default": [
+        { "label": "12-hour steep", "stat": "1.07M", "color": "#2F4A3A" },
+        { "label": "Oat vanilla", "stat": "534K", "color": "#C8553D" },
+        { "label": "Pour over ice", "stat": "133K", "color": "#3E5A6E" },
+        { "label": "Bean to bottle", "stat": "412K", "color": "#7A5638" },
+        { "label": "No sugar", "stat": "96K", "color": "#9C8466" },
+        { "label": "Small batch", "stat": "288K", "color": "#24242A" },
+        { "label": "Drop 03", "stat": "701K", "color": "#A9442F" },
+        { "label": "Cold foam", "stat": "64K", "color": "#46667B" },
+        { "label": "The roastery", "stat": "157K", "color": "#5E8A55" },
+        { "label": "Ice math", "stat": "83K", "color": "#35505F" },
+        { "label": "Why 12 hours", "stat": "1.9M", "color": "#1E1E22" },
+        { "label": "Case of 12", "stat": "45K", "color": "#B5603F" }
+      ]
+    },
+    "columns": { "type": "number", "default": 4, "min": 2, "max": 6, "step": 1, "label": "Columns", "description": "Tiles per row (rows follow from the tile count)." },
+    "region": {
+      "type": "object", "label": "Wall area",
+      "description": "Where the wall sits, fractions of the frame: top and bottom edge (the speaker usually covers the middle; keep the bottom above the caption).",
+      "fields": { "top": { "type": "number", "default": 0.07, "min": 0, "max": 1 }, "bottom": { "type": "number", "default": 0.7, "min": 0, "max": 1 } },
+      "default": { "top": 0.07, "bottom": 0.7 }
+    },
+    "layer": { "type": "enum", "options": ["all", "back", "front"], "default": "all", "label": "Layer", "description": "back = the wall (under the person cutout), front = the caption (above the cutout), all = both in one overlay." },
+    "caption": { "type": "string", "default": "steeped for", "maxLength": 30, "label": "Caption", "description": "Small line of the caption. Empty to hide." },
+    "word": { "type": "string", "default": "12 hours", "maxLength": 18, "label": "Heavy word", "description": "The big heavy word under the caption. Empty to hide." },
+    "stagger": { "type": "number", "default": 0.06, "min": 0.01, "max": 0.5, "step": 0.01, "unit": "s", "label": "Tile stagger", "description": "Delay between tiles (the reel: 60 ms)." },
+    "tilt": { "type": "number", "default": 0, "min": -20, "max": 20, "step": 0.5, "unit": "deg", "label": "Wall tilt", "description": "Lean the wall back (positive) to match a wall seen from below. 0 = flat." },
+    "dim": { "type": "number", "default": 0.15, "min": 0, "max": 0.8, "step": 0.01, "label": "Dim", "description": "Darken the tiles a little so the speaker stays the brightest thing." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Colour of the heavy word." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Caption size multiplier." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Caption offset", "description": "Move the caption, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "ease": { "type": "easing", "default": "bouncy", "label": "Easing", "description": "How each tile lands." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Tiles drop away row by row over the last 0.45 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; perspective: calc(2200px * var(--u)); }
+  .wall { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-style: preserve-3d; }
+  .tile { position: absolute; overflow: hidden; }
+  .tile .lab { position: absolute; left: 9%; right: 9%; bottom: 12%; font-family: "Instrument Serif", serif; color: #F7F2E8; line-height: .95; }
+  .tile .pill { position: absolute; left: 7%; bottom: 3.5%; font-family: "JetBrains Mono", monospace; font-weight: 700; color: #fff; display: flex; align-items: center; text-shadow: 0 1px 4px rgba(0,0,0,.7); }
+  .tile .play { position: absolute; width: 0; height: 0; border-style: solid; border-color: transparent transparent transparent rgba(247,242,232,.85); }
+  .tile .shade { position: absolute; inset: 0; background: #000; }
+  .cap { position: absolute; left: 0; width: 100%; text-align: center; color: #fff; }
+  .c1 { font-family: "Archivo", sans-serif; font-weight: 700; text-shadow: 0 2px 14px rgba(0,0,0,.6); }
+  .c2 { font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 110%; letter-spacing: -.01em; line-height: .9; text-shadow: 0 4px 24px rgba(0,0,0,.55); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var CW = { tiles: [] };
+  var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var stage = document.getElementById("stage");
+      var W = RC.width, H = RC.height;
+      var wall = RC.el("div", { class: "wall" });
+      stage.appendChild(wall);
+      CW.wall = wall;
+      var cols = Math.round(P.columns);
+      var rows = Math.ceil(P.tiles.length / cols);
+      var top = P.region.top * H, bottom = Math.max(P.region.top + 0.1, P.region.bottom) * H;
+      var gap = 0.012 * W;
+      var margin = 0.03 * W;
+      // fit 9:16 tiles into the area: limited by width or by height
+      var tw = (W - 2 * margin - (cols - 1) * gap) / cols;
+      var th = tw * 16 / 9;
+      if (rows * th + (rows - 1) * gap > bottom - top) { th = (bottom - top - (rows - 1) * gap) / rows; tw = th * 9 / 16; }
+      var gw = cols * tw + (cols - 1) * gap;
+      var gh = rows * th + (rows - 1) * gap;
+      var x0 = (W - gw) / 2;
+      var y0 = top + (bottom - top - gh) / 2;
+      wall.style.transformOrigin = "50% " + (y0 + gh) + "px";
+      P.tiles.forEach(function (c, i) {
+        var r = Math.floor(i / cols), k = i % cols;
+        var hasImg = c.image && c.image !== BLANK;
+        var tile = RC.el("div", { class: "tile", style: {
+          left: x0 + k * (tw + gap) + "px", top: y0 + r * (th + gap) + "px", width: tw + "px", height: th + "px",
+          borderRadius: tw * 0.06 + "px",
+          background: hasImg ? "#111" : "linear-gradient(165deg, " + RC.mixColor(c.color, "#FFFFFF", 0.16) + ", " + c.color + " 50%, " + RC.mixColor(c.color, "#000000", 0.4) + ")",
+          boxShadow: "0 " + tw * 0.04 + "px " + tw * 0.1 + "px rgba(0,0,0,.35)",
+        } });
+        if (hasImg) tile.appendChild(RC.el("img", { src: c.image, alt: c.label, style: { width: "100%", height: "100%", objectFit: "cover", display: "block" } }));
+        else {
+          tile.appendChild(RC.el("div", { class: "play", style: { left: tw * 0.42 + "px", top: th * 0.38 + "px", borderWidth: tw * 0.08 + "px 0 " + tw * 0.08 + "px " + tw * 0.13 + "px" } }));
+          if (c.label) tile.appendChild(RC.el("div", { class: "lab", text: c.label, style: { fontSize: tw * 0.16 + "px" } }));
+        }
+        if (c.stat) tile.appendChild(RC.el("div", { class: "pill", text: "▷ " + c.stat, style: { fontSize: tw * 0.1 + "px" } }));
+        tile.appendChild(RC.el("div", { class: "shade", style: { opacity: String(P.dim) } }));
+        wall.appendChild(tile);
+        // build order: from the middle of the wall outward (the reel fills around the speaker)
+        var d = Math.abs(k - (cols - 1) / 2) + Math.abs(r - (rows - 1) / 2) * 0.9;
+        CW.tiles.push({ el: tile, d: d, r: r, i: i });
+      });
+      var order = CW.tiles.slice().sort(function (a, b) { return a.d - b.d || a.i - b.i; });
+      order.forEach(function (t, n) { t.n = n; });
+      CW.rows = rows;
+      var u = RC.u * P.scale;
+      var cy = H * 0.66 + P.offsetY * RC.u;
+      if (P.caption) {
+        CW.c1 = RC.el("div", { class: "cap c1", text: P.caption, style: { fontSize: 54 * u + "px", top: cy + "px" } });
+        stage.appendChild(CW.c1);
+      }
+      if (P.word) {
+        CW.c2 = RC.el("div", { class: "cap c2", style: { top: cy + 62 * u + "px", color: P.accent } }, [RC.el("span", { text: P.word, style: { display: "inline-block" } })]);
+        stage.appendChild(CW.c2);
+        RC.fitText(CW.c2.firstChild, W - RC.safe.left - RC.safe.right, 150 * u, 60 * u);
+      }
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var showWall = P.layer !== "front";
+      var showCap = P.layer !== "back";
+      RC.set(CW.wall, { rx: P.tilt });
+      CW.tiles.forEach(function (c) {
+        var t0 = 0.05 + c.n * P.stagger;
+        var k = RC.progress(t, t0, 0.32, P.ease);
+        var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp((time.left - (CW.rows - 1 - c.r) * 0.05) / 0.3, 0, 1)) : 0;
+        RC.set(c.el, { scale: RC.mix(0.6, 1, k), y: out * RC.height * 0.6, rotate: out * (c.i % 2 ? 6 : -6), opacity: showWall ? RC.clamp(k * 2.5, 0, 1) * (1 - out) : 0 });
+      });
+      var outCap = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.3, 0, 1)) : 0;
+      var p1 = RC.progress(t, 0.25, 0.3, "snappy");
+      if (CW.c1) RC.set(CW.c1, { y: (1 - p1) * 24 * RC.u, opacity: showCap ? p1 * (1 - outCap) : 0 });
+      var p2 = RC.progress(t, 0.5, 0.35, "bouncy");
+      if (CW.c2) RC.set(CW.c2, { scale: RC.mix(1.25, 1, p2), opacity: showCap ? RC.clamp(p2 * 3, 0, 1) * (1 - outCap) : 0, blur: (1 - RC.clamp(p2 * 2, 0, 1)) * 10 * RC.u });
+    },
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/headline-slam); fictional.",
+  "text": "Make the moment count",
+  "accentWordIndex": 3,
+  "accent": "violet",
+  "shadow": true,
+  "speed": 1
+}

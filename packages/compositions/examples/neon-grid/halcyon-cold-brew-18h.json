@@ -1,0 +1,655 @@
+{
+ "$comment": "neon-grid kit, product 1 (fictional Halcyon Cold Brew, 18 h). Each scene = one library piece placed at t for duration seconds with these props; every piece also gets `words` (the voice-over's timings, timeline seconds) and t0 = t. Items with no time (-1 / omitted) land on their own first word in the voice. Place: bun packages/compositions/examples/neon-grid/place.ts <this file>; local renders: bun packages/compositions/examples/neon-grid/render.ts <this file>.",
+ "product": "Halcyon Cold Brew",
+ "script": "What if cold brew was a function of time? At Halcyon, we steep for eighteen hours. Not twelve. Not twenty-four. Cold water, ground beans, and time. That's the whole recipe. Extraction climbs fast, then eases out. Sweetness first, bitterness last. So we wrote it down. Strength, as a function of t. Hot brew in four minutes? Bitter. Eighteen hours, cold? Smooth. Every hour on that curve is a choice we made on purpose. Halcyon Cold Brew. Steeped, not rushed.",
+ "voice": {
+  "voice": "david-desktop",
+  "rate": 1.12,
+  "t": 0.6,
+  "note": "word timings from the 2026-10-20 Opus run (neon-grid-type)"
+ },
+ "duration": 38,
+ "words": [
+  {
+   "w": "What",
+   "s": 0.7,
+   "e": 0.84
+  },
+  {
+   "w": "if",
+   "s": 0.86,
+   "e": 0.96
+  },
+  {
+   "w": "cold",
+   "s": 0.98,
+   "e": 1.16
+  },
+  {
+   "w": "brew",
+   "s": 1.18,
+   "e": 1.34
+  },
+  {
+   "w": "was",
+   "s": 1.36,
+   "e": 1.48
+  },
+  {
+   "w": "a",
+   "s": 1.5,
+   "e": 1.6
+  },
+  {
+   "w": "function",
+   "s": 1.68,
+   "e": 2.02
+  },
+  {
+   "w": "of",
+   "s": 2.06,
+   "e": 2.16
+  },
+  {
+   "w": "time?",
+   "s": 2.18,
+   "e": 2.6
+  },
+  {
+   "w": "At",
+   "s": 3.33,
+   "e": 3.461
+  },
+  {
+   "w": "Halcyon,",
+   "s": 3.461,
+   "e": 4.1
+  },
+  {
+   "w": "we",
+   "s": 4.37,
+   "e": 4.506
+  },
+  {
+   "w": "steep",
+   "s": 4.506,
+   "e": 4.796
+  },
+  {
+   "w": "for",
+   "s": 4.796,
+   "e": 4.956
+  },
+  {
+   "w": "eighteen",
+   "s": 4.956,
+   "e": 5.251
+  },
+  {
+   "w": "hours.",
+   "s": 5.251,
+   "e": 5.69
+  },
+  {
+   "w": "Not",
+   "s": 6.46,
+   "e": 6.67
+  },
+  {
+   "w": "twelve.",
+   "s": 6.67,
+   "e": 7.11
+  },
+  {
+   "w": "Not",
+   "s": 7.88,
+   "e": 8.09
+  },
+  {
+   "w": "twenty-four.",
+   "s": 8.09,
+   "e": 8.74
+  },
+  {
+   "w": "Cold",
+   "s": 9.51,
+   "e": 9.81
+  },
+  {
+   "w": "water,",
+   "s": 9.81,
+   "e": 10.2
+  },
+  {
+   "w": "ground",
+   "s": 10.29,
+   "e": 10.605
+  },
+  {
+   "w": "beans,",
+   "s": 10.605,
+   "e": 10.99
+  },
+  {
+   "w": "and",
+   "s": 11.1,
+   "e": 11.255
+  },
+  {
+   "w": "time.",
+   "s": 11.255,
+   "e": 11.61
+  },
+  {
+   "w": "That's",
+   "s": 12.4,
+   "e": 12.62
+  },
+  {
+   "w": "the",
+   "s": 12.62,
+   "e": 12.705
+  },
+  {
+   "w": "whole",
+   "s": 12.705,
+   "e": 12.939
+  },
+  {
+   "w": "recipe.",
+   "s": 12.939,
+   "e": 13.39
+  },
+  {
+   "w": "Extraction",
+   "s": 14.17,
+   "e": 14.754
+  },
+  {
+   "w": "climbs",
+   "s": 14.754,
+   "e": 15.119
+  },
+  {
+   "w": "fast,",
+   "s": 15.119,
+   "e": 15.55
+  },
+  {
+   "w": "then",
+   "s": 15.91,
+   "e": 16.079
+  },
+  {
+   "w": "eases",
+   "s": 16.079,
+   "e": 16.414
+  },
+  {
+   "w": "out.",
+   "s": 16.414,
+   "e": 16.64
+  },
+  {
+   "w": "Sweetness",
+   "s": 17.46,
+   "e": 17.909
+  },
+  {
+   "w": "first,",
+   "s": 17.909,
+   "e": 18.37
+  },
+  {
+   "w": "bitterness",
+   "s": 18.7,
+   "e": 19.099
+  },
+  {
+   "w": "last.",
+   "s": 19.099,
+   "e": 19.5
+  },
+  {
+   "w": "So",
+   "s": 20.28,
+   "e": 20.45
+  },
+  {
+   "w": "we",
+   "s": 20.47,
+   "e": 20.59
+  },
+  {
+   "w": "wrote",
+   "s": 20.61,
+   "e": 20.8
+  },
+  {
+   "w": "it",
+   "s": 20.82,
+   "e": 20.9
+  },
+  {
+   "w": "down.",
+   "s": 20.92,
+   "e": 21.3
+  },
+  {
+   "w": "Strength,",
+   "s": 22.04,
+   "e": 22.59
+  },
+  {
+   "w": "as",
+   "s": 22.9,
+   "e": 23.068
+  },
+  {
+   "w": "a",
+   "s": 23.068,
+   "e": 23.123
+  },
+  {
+   "w": "function",
+   "s": 23.123,
+   "e": 23.504
+  },
+  {
+   "w": "of",
+   "s": 23.504,
+   "e": 23.64
+  },
+  {
+   "w": "t.",
+   "s": 23.64,
+   "e": 23.838
+  },
+  {
+   "w": "Hot",
+   "s": 23.838,
+   "e": 24.05
+  },
+  {
+   "w": "brew",
+   "s": 24.05,
+   "e": 24.255
+  },
+  {
+   "w": "in",
+   "s": 24.255,
+   "e": 24.384
+  },
+  {
+   "w": "four",
+   "s": 24.384,
+   "e": 24.604
+  },
+  {
+   "w": "minutes?",
+   "s": 24.604,
+   "e": 25.04
+  },
+  {
+   "w": "Bitter.",
+   "s": 25.82,
+   "e": 26.11
+  },
+  {
+   "w": "Eighteen",
+   "s": 26.87,
+   "e": 27.204
+  },
+  {
+   "w": "hours,",
+   "s": 27.204,
+   "e": 27.63
+  },
+  {
+   "w": "cold?",
+   "s": 27.98,
+   "e": 28.34
+  },
+  {
+   "w": "Smooth.",
+   "s": 29.12,
+   "e": 29.55
+  },
+  {
+   "w": "Every",
+   "s": 30.32,
+   "e": 30.594
+  },
+  {
+   "w": "hour",
+   "s": 30.594,
+   "e": 30.874
+  },
+  {
+   "w": "on",
+   "s": 30.874,
+   "e": 31.014
+  },
+  {
+   "w": "that",
+   "s": 31.014,
+   "e": 31.184
+  },
+  {
+   "w": "curve",
+   "s": 31.184,
+   "e": 31.409
+  },
+  {
+   "w": "is",
+   "s": 31.409,
+   "e": 31.539
+  },
+  {
+   "w": "a",
+   "s": 31.539,
+   "e": 31.593
+  },
+  {
+   "w": "choice",
+   "s": 31.593,
+   "e": 31.908
+  },
+  {
+   "w": "we",
+   "s": 31.908,
+   "e": 32.038
+  },
+  {
+   "w": "made",
+   "s": 32.038,
+   "e": 32.253
+  },
+  {
+   "w": "on",
+   "s": 32.253,
+   "e": 32.403
+  },
+  {
+   "w": "purpose.",
+   "s": 32.403,
+   "e": 32.87
+  },
+  {
+   "w": "Halcyon",
+   "s": 33.65,
+   "e": 34.1
+  },
+  {
+   "w": "Cold",
+   "s": 34.12,
+   "e": 34.4
+  },
+  {
+   "w": "Brew.",
+   "s": 34.42,
+   "e": 34.9
+  },
+  {
+   "w": "Steeped,",
+   "s": 35.52,
+   "e": 36.1
+  },
+  {
+   "w": "not",
+   "s": 36.29,
+   "e": 36.42
+  },
+  {
+   "w": "rushed.",
+   "s": 36.44,
+   "e": 37
+  }
+ ],
+ "scenes": [
+  {
+   "piece": "neon-hook",
+   "t": 0,
+   "duration": 3.2,
+   "props": {
+    "prompt": "> what if cold brew was a",
+    "lines": [
+     {
+      "text": "FUNCTION"
+     },
+     {
+      "text": "OF TIME?"
+     }
+    ],
+    "keyword": "TIME?"
+   }
+  },
+  {
+   "piece": "neon-grid-ruler",
+   "t": 3.2,
+   "duration": 6.1,
+   "props": {
+    "kicker": "HALCYON · STEEP TIME",
+    "lines": [
+     {
+      "text": "EIGHTEEN"
+     },
+     {
+      "text": "HOURS"
+     }
+    ],
+    "ruler": {
+     "from": 0,
+     "to": 24,
+     "step": 1,
+     "major": 6,
+     "unit": "H",
+     "marks": [
+      {
+       "value": 18,
+       "kind": "keep"
+      },
+      {
+       "value": 12,
+       "kind": "strike"
+      },
+      {
+       "value": 24,
+       "kind": "strike"
+      }
+     ]
+    },
+    "keys": [
+     "eighteen",
+     "hours"
+    ]
+   }
+  },
+  {
+   "piece": "neon-flow",
+   "t": 9.3,
+   "duration": 4.75,
+   "props": {
+    "heading": "STEEP PIPELINE · 3 INPUTS",
+    "nodes": [
+     {
+      "text": "COLD WATER"
+     },
+     {
+      "text": "GROUND BEANS"
+     },
+     {
+      "text": "TIME"
+     }
+    ],
+    "label": "= THE WHOLE RECIPE",
+    "keys": [
+     "time",
+     "recipe"
+    ]
+   }
+  },
+  {
+   "piece": "neon-curve",
+   "t": 14.05,
+   "duration": 6,
+   "props": {
+    "title": "EXTRACTION",
+    "tag": "EASE · OUT",
+    "curve": {
+     "label": "extraction(t)",
+     "note": "τ = 6.2 h",
+     "shape": "exp",
+     "tau": 6.2,
+     "end": 18,
+     "unit": "h",
+     "ticks": 3
+    },
+    "marks": [
+     {
+      "text": "SWEETNESS",
+      "tone": "bright"
+     },
+     {
+      "text": "BITTERNESS",
+      "tone": "dim"
+     }
+    ],
+    "readout": "t = {x} h · {y}",
+    "keys": [
+     "extraction",
+     "eases"
+    ]
+   }
+  },
+  {
+   "piece": "neon-beats",
+   "t": 20.05,
+   "duration": 1.65,
+   "props": {
+    "beats": [
+     {
+      "text": "SO"
+     },
+     {
+      "text": "WE"
+     },
+     {
+      "text": "WROTE"
+     },
+     {
+      "text": "IT"
+     },
+     {
+      "text": "DOWN."
+     }
+    ]
+   }
+  },
+  {
+   "piece": "neon-code",
+   "t": 21.7,
+   "duration": 2.1,
+   "props": {
+    "title": "STRENGTH",
+    "suffix": "(t)",
+    "file": "steep.js",
+    "code": [
+     "// halcyon cold brew",
+     "const TAU = 6.2;   // hours",
+     "function strength(t) {",
+     "  return 1 - Math.exp(-t / TAU);",
+     "}",
+     "",
+     "strength(18);   // 0.95"
+    ],
+    "keyword": "strength",
+    "preview": "PREVIEW · strength(18)",
+    "previewValue": 0.95,
+    "previewDecimals": 2,
+    "keys": [
+     "strength"
+    ]
+   }
+  },
+  {
+   "piece": "neon-form",
+   "t": 23.8,
+   "duration": 6.1,
+   "props": {
+    "form": {
+     "title": "FORM 18-H",
+     "subtitle": "STEEP LOG · HALCYON COLD BREW",
+     "number": "No. 018"
+    },
+    "rows": [
+     {
+      "label": "METHOD A · HOT",
+      "cells": [
+       {
+        "text": "HOT WATER"
+       },
+       {
+        "text": "4 MIN"
+       },
+       {
+        "text": "BITTER"
+       }
+      ],
+      "verdict": "strike",
+      "check": "A — HOT, 4 MIN"
+     },
+     {
+      "label": "METHOD B · COLD",
+      "cells": [
+       {
+        "text": "COLD WATER"
+       },
+       {
+        "text": "18 H"
+       },
+       {
+        "text": "SMOOTH"
+       }
+      ],
+      "verdict": "tick",
+      "check": "B — COLD, 18 H"
+     }
+    ],
+    "stamp": "NO SHORTCUTS",
+    "keys": [
+     "bitter",
+     "smooth"
+    ],
+    "seed": 18
+   }
+  },
+  {
+   "piece": "neon-outro",
+   "t": 29.9,
+   "duration": 8.1,
+   "props": {
+    "dial": {
+     "count": 18,
+     "major": 3,
+     "unit": "H"
+    },
+    "pulseWord": "choice",
+    "kicker": "HALCYON COLD BREW",
+    "lines": [
+     {
+      "text": "STEEPED,"
+     },
+     {
+      "text": "NOT RUSHED."
+     }
+    ],
+    "keyword": "RUSHED.",
+    "keys": [
+     "hour",
+     "choice"
+    ]
+   }
+  }
+ ]
+}

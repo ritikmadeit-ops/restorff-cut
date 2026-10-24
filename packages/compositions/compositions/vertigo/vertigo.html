@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vertigo</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "vertigo",
+  "title": "Vertigo",
+  "description": "A dolly zoom: the room behind the speaker stretches toward the camera over about a second while the speaker keeps their size (they are the person cutout on top). The background is a clean plate (the room without the person) or, without one, a still of the clip whose person-shaped hole is filled from the surroundings. Use for a 'wait, what?' realisation beat (EFFECTS.md FX-15). Without either image it dolly-zooms a drawn corridor.",
+  "duration": 1.6,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["vertigo", "dolly-zoom", "zolly", "matte", "camera", "reels", "named-effect"],
+  "effect": {
+    "fx": ["FX-15"],
+    "stack": ["plate", "self", "cutout"],
+    "inputs": {
+      "cutout": "the clip's person cutout on the track above it, no keys (editor: Cut out person; MCP: cutout): it keeps its size while the room moves",
+      "background": "props.background = a clean plate: a frame of the same shot without the person (shoot 2 s of the empty room), best result",
+      "plate+matte": "else props.plate = a still of the clip at the effect's start and props.matte = [the cutout frame at that moment]; the hole is filled from the surroundings (soft, reads as depth blur)",
+      "face": "props.face = the face box: the zoom is anchored on the speaker"
+    },
+    "note": "Opaque: covers the clip below. A real dolly-zoom shot needs nothing (use the clip as it is)."
+  },
+  "params": {
+    "background": { "type": "image", "default": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "label": "Clean plate", "description": "The room without the person, same framing as the clip. The 1-pixel default means none." },
+    "plate": { "type": "image", "default": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "label": "Clip still", "description": "Used when there is no clean plate: a frame of the clip at the effect's start." },
+    "matte": { "type": "list", "of": { "type": "image" }, "minItems": 0, "maxItems": 1800, "default": [], "label": "Person matte", "description": "Cut-out frames (PNG alpha, or masks with matteChannel luma). The first one (same moment as Clip still) marks the hole to fill; with drawSubject they are also drawn on top." },
+    "matteFps": { "type": "number", "default": 30, "min": 1, "max": 60, "step": 1, "unit": "fps", "label": "Matte rate", "description": "Frames per second of the matte frames (drawSubject only)." },
+    "matteChannel": { "type": "enum", "options": ["alpha", "luma"], "default": "alpha", "label": "Matte channel", "description": "alpha = cut-out PNGs; luma = white-on-black masks." },
+    "drawSubject": { "type": "boolean", "default": false, "label": "Draw subject", "description": "Also draw the matte frames (cut-out PNGs) on top, for a one-layer version without the cutout track." },
+    "face": {
+      "type": "object", "label": "Face box",
+      "description": "The speaker's face as fractions of the frame (centre x, centre y, width, height). The zoom is anchored at the top of the head.",
+      "fields": { "x": { "type": "number", "default": 0.5, "min": 0, "max": 1 }, "y": { "type": "number", "default": 0.42, "min": 0, "max": 1 }, "w": { "type": "number", "default": 0.26, "min": 0.02, "max": 1 }, "h": { "type": "number", "default": 0.17, "min": 0.02, "max": 1 } },
+      "default": { "x": 0.5, "y": 0.42, "w": 0.26, "h": 0.17 }
+    },
+    "amount": { "type": "number", "default": 0.42, "min": 0.05, "max": 1.5, "step": 0.01, "label": "Zoom amount", "description": "How much the room grows (0.42 = to 1.42x; the acceptance check wants at least 0.25)." },
+    "stretch": { "type": "number", "default": 0.06, "min": 0, "max": 0.3, "step": 0.01, "label": "Stretch", "description": "Extra vertical stretch at the end of the move (the lens-change feel)." },
+    "at": { "type": "number", "default": 0.15, "min": 0, "max": 30, "step": 0.05, "unit": "s", "label": "Start", "description": "When the move starts." },
+    "move": { "type": "number", "default": 1.0, "min": 0.2, "max": 10, "step": 0.05, "unit": "s", "label": "Move time", "description": "Seconds for the move (the reel: about 1 s)." },
+    "direction": { "type": "enum", "options": ["in", "out"], "default": "in", "label": "Direction", "description": "in = the room rushes toward the camera (grows); out = it falls away (shrinks from the zoomed state)." },
+    "ease": { "type": "easing", "default": "smooth", "label": "Easing", "description": "Move curve (the reel: ease in-out)." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #0C0C0E; }
+  .bg { position: absolute; left: 0; top: 0; }
+  .subj { position: absolute; left: 0; top: 0; display: none; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var VG = { subj: [] };
+  var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  function loadImg(src) {
+    var im = new Image();
+    im.src = src;
+    return im.decode().then(function () { return im; });
+  }
+  // a drawn one-point-perspective corridor (fallback when there is no image at all)
+  function corridor(W, H, ax, ay) {
+    var c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    var g = c.getContext("2d");
+    var cols = ["#2B2B33", "#3A3A44", "#474752", "#5A5A66"];
+    for (var i = 0; i < 14; i++) {
+      var f = 1 - i / 14;
+      var w = W * 1.6 * f, h = H * 1.6 * f;
+      g.fillStyle = cols[i % cols.length];
+      g.fillRect(ax - w / 2, ay - h / 2, w, h);
+    }
+    g.strokeStyle = "rgba(246,255,0,.35)";
+    g.lineWidth = Math.max(1, W / 540);
+    [[0, 0], [W, 0], [0, H], [W, H]].forEach(function (p) { g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(ax, ay); g.stroke(); });
+    return c;
+  }
+  // fill the person-shaped hole of `plate` from its surroundings (push-pull), at a working size, then paste it back
+  function fillHole(plate, matte, luma, W, H) {
+    var w = 192, h = Math.max(2, Math.round((192 * H) / W));
+    var pc = document.createElement("canvas"); pc.width = w; pc.height = h;
+    var pg = pc.getContext("2d");
+    pg.drawImage(plate, 0, 0, w, h);
+    var px = pg.getImageData(0, 0, w, h).data;
+    var mc = document.createElement("canvas"); mc.width = w; mc.height = h;
+    var mg = mc.getContext("2d");
+    mg.filter = "blur(2px)";
+    mg.drawImage(matte, 0, 0, w, h);
+    var mx = mg.getImageData(0, 0, w, h).data;
+    var levels = [];
+    var r = new Float32Array(w * h), gg = new Float32Array(w * h), b = new Float32Array(w * h), k = new Float32Array(w * h);
+    for (var i = 0; i < w * h; i++) {
+      var m = luma ? (mx[i * 4] * 0.3 + mx[i * 4 + 1] * 0.59 + mx[i * 4 + 2] * 0.11) / 255 : mx[i * 4 + 3] / 255;
+      var known = m > 0.02 ? 0 : 1;
+      k[i] = known; r[i] = px[i * 4] * known; gg[i] = px[i * 4 + 1] * known; b[i] = px[i * 4 + 2] * known;
+    }
+    levels.push({ w: w, h: h, r: r, g: gg, b: b, k: k });
+    while (levels[levels.length - 1].w > 2 && levels[levels.length - 1].h > 2) {
+      var L = levels[levels.length - 1];
+      var nw = Math.ceil(L.w / 2), nh = Math.ceil(L.h / 2);
+      var N = { w: nw, h: nh, r: new Float32Array(nw * nh), g: new Float32Array(nw * nh), b: new Float32Array(nw * nh), k: new Float32Array(nw * nh) };
+      for (var y = 0; y < L.h; y++) for (var x = 0; x < L.w; x++) {
+        var s = y * L.w + x, d = (y >> 1) * nw + (x >> 1);
+        N.r[d] += L.r[s]; N.g[d] += L.g[s]; N.b[d] += L.b[s]; N.k[d] += L.k[s];
+      }
+      levels.push(N);
+    }
+    for (var li = levels.length - 2; li >= 0; li--) {
+      var A = levels[li], Bv = levels[li + 1];
+      for (var yy = 0; yy < A.h; yy++) for (var xx = 0; xx < A.w; xx++) {
+        var si = yy * A.w + xx, di = (yy >> 1) * Bv.w + (xx >> 1);
+        var kk = Math.min(1, A.k[si]);
+        var bk = Bv.k[di] > 1e-6 ? Bv.k[di] : 1e-6;
+        // blend each pixel's own (known) colour with the coarser level's average by how much is known here
+        var ar = A.k[si] > 1e-6 ? A.r[si] / A.k[si] : 0, ag = A.k[si] > 1e-6 ? A.g[si] / A.k[si] : 0, ab = A.k[si] > 1e-6 ? A.b[si] / A.k[si] : 0;
+        A.r[si] = ar * kk + (Bv.r[di] / bk) * (1 - kk);
+        A.g[si] = ag * kk + (Bv.g[di] / bk) * (1 - kk);
+        A.b[si] = ab * kk + (Bv.b[di] / bk) * (1 - kk);
+        A.k[si] = 1;
+      }
+    }
+    var F = levels[0];
+    var fill = pg.createImageData(w, h);
+    for (var q = 0; q < w * h; q++) { fill.data[q * 4] = F.r[q]; fill.data[q * 4 + 1] = F.g[q]; fill.data[q * 4 + 2] = F.b[q]; fill.data[q * 4 + 3] = 255; }
+    pg.putImageData(fill, 0, 0);
+    // full size: the plate, then the filled picture inside a grown, feathered person mask
+    var out = document.createElement("canvas"); out.width = W; out.height = H;
+    var og = out.getContext("2d");
+    og.drawImage(plate, 0, 0, W, H);
+    var tmp = document.createElement("canvas"); tmp.width = W; tmp.height = H;
+    var tg = tmp.getContext("2d");
+    tg.imageSmoothingQuality = "high";
+    tg.filter = "blur(" + Math.max(1, W / 270) + "px)";
+    tg.drawImage(pc, 0, 0, W, H);
+    tg.filter = "none";
+    var mk = document.createElement("canvas"); mk.width = W; mk.height = H;
+    var kg = mk.getContext("2d");
+    kg.filter = "blur(" + Math.max(2, W / 60) + "px)";
+    kg.drawImage(matte, 0, 0, W, H);
+    var md = kg.getImageData(0, 0, W, H);
+    for (var z = 0; z < W * H; z++) {
+      var a = luma ? md.data[z * 4] : md.data[z * 4 + 3];
+      md.data[z * 4] = 0; md.data[z * 4 + 1] = 0; md.data[z * 4 + 2] = 0;
+      md.data[z * 4 + 3] = Math.min(255, a * 4);
+    }
+    kg.putImageData(md, 0, 0);
+    tg.globalCompositeOperation = "destination-in";
+    tg.drawImage(mk, 0, 0);
+    og.drawImage(tmp, 0, 0);
+    return out;
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var W = RC.width, H = RC.height;
+      var stage = document.getElementById("stage");
+      VG.ax = P.face.x * W;
+      // anchored at the top of the head: the filled hole then grows down and sideways, behind the body
+      VG.ay = Math.max(0.02, P.face.y - P.face.h * 0.6) * H;
+      var luma = P.matteChannel === "luma";
+      var job;
+      if (P.background !== BLANK) {
+        job = loadImg(P.background).then(function (im) { var c = document.createElement("canvas"); c.width = W; c.height = H; c.getContext("2d").drawImage(im, 0, 0, W, H); return c; });
+      } else if (P.plate !== BLANK && P.matte.length) {
+        job = Promise.all([loadImg(P.plate), loadImg(P.matte[0])]).then(function (ims) { return fillHole(ims[0], ims[1], luma, W, H); });
+      } else if (P.plate !== BLANK) {
+        job = loadImg(P.plate).then(function (im) { var c = document.createElement("canvas"); c.width = W; c.height = H; c.getContext("2d").drawImage(im, 0, 0, W, H); return c; });
+      } else {
+        job = Promise.resolve(corridor(W, H, VG.ax, VG.ay));
+      }
+      return job.then(function (c) {
+        c.className = "bg";
+        c.style.transformOrigin = VG.ax + "px " + VG.ay + "px";
+        stage.appendChild(c);
+        VG.bg = c;
+        if (P.drawSubject) {
+          P.matte.forEach(function (src) {
+            var im = RC.el("img", { src: src, class: "subj", style: { width: W + "px", height: H + "px" } });
+            stage.appendChild(im);
+            VG.subj.push(im);
+          });
+        }
+      });
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var k = RC.progress(time.t, P.at, P.move, P.ease);
+      if (P.direction === "out") k = 1 - k;
+      var s = 1 + P.amount * k;
+      VG.bg.style.transform = "scale(" + s.toFixed(5) + "," + (s * (1 + P.stretch * k)).toFixed(5) + ")";
+      if (VG.subj.length) {
+        var i = Math.max(0, Math.min(VG.subj.length - 1, Math.floor(time.T * P.matteFps + 1e-6)));
+        for (var j = 0; j < VG.subj.length; j++) VG.subj[j].style.display = j === i ? "block" : "none";
+      }
+    },
+  });
+</script>
+</body>
+</html>

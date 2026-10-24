@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/gesture-tap); fictional.",
+  "tapLabel": "Connect",
+  "responseLabel": "Connected",
+  "accent": "violet",
+  "speed": 1
+}

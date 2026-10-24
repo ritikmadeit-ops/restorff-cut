@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/input-feedback); fictional.",
+  "status": "valid",
+  "value": "mia@example.com",
+  "hint": "Looks good.",
+  "speed": 1
+}

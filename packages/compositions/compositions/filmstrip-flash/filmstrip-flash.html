@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Filmstrip flash</title>
+<script src="../../src/runtime.js"></script>
+<!-- Promoted from the explainer-overlay recreation's kit, widget "filmstrip" (docs/restorff/recreations/explainer-overlay/
+     inputs/kit.html, our own code), generalised: real frames or drawn tiles, a sprocketed film band, a true count,
+     an optional flagged-then-fixed frame, a status bar and a done chip. -->
+<script type="application/json" id="params">
+{
+  "name": "filmstrip-flash",
+  "title": "Filmstrip flash",
+  "description": "A filmstrip builds frame by frame on a sprocketed band, each frame flashes white as a scan line passes and a counter counts the frames checked; one frame can be flagged (LOOKS OFF) and then fixed (✓ FIXED); a status bar fills and a done chip lands. Use for 'it checks every frame' / a render or review beat above the speaker (EFFECTS.md FX-34). The count and the flagged frame must be the real ones.",
+  "duration": 5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["filmstrip", "frames", "check", "scan", "render", "explainer"],
+  "params": {
+    "frames": { "type": "list", "of": { "type": "image" }, "minItems": 0, "maxItems": 10, "default": [], "label": "Frames", "description": "Real stills of the video, left to right (data: URLs or files). Empty = drawn frames." },
+    "tiles": { "type": "number", "default": 8, "min": 3, "max": 10, "step": 1, "label": "Frame count", "description": "How many frames the strip shows when no stills are sent." },
+    "count": { "type": "number", "default": 0, "min": 0, "max": 100000000, "step": 1, "label": "Count to", "description": "The number the counter lands on (the real frame count, e.g. 1484). 0 = no counter." },
+    "countLabel": { "type": "string", "display": false, "default": "FRAMES", "maxLength": 14, "label": "Count label", "description": "Word after the number." },
+    "flag": { "type": "number", "default": -1, "min": -1, "max": 9, "step": 1, "label": "Flagged frame", "description": "Index of the frame that gets flagged and then fixed (0 = first). -1 = none." },
+    "flagText": { "type": "string", "display": false, "default": "LOOKS OFF", "maxLength": 14, "label": "Flag text", "description": "The tag on the flagged frame." },
+    "fixText": { "type": "string", "display": false, "default": "FIXED", "maxLength": 14, "label": "Fix text", "description": "What the tag flips to (a tick is added)." },
+    "status": { "type": "string", "default": "", "maxLength": 24, "label": "Status", "description": "Mono label over the progress bar, e.g. RENDERING. Empty (with no done chip) = no bar." },
+    "done": { "type": "string", "default": "", "maxLength": 28, "label": "Done chip", "description": "Chip that lands at the end, e.g. halcyon-ad-014.mp4 (a tick is added). Empty to hide." },
+    "tileColor": { "type": "color", "default": "#EDEBE6", "label": "Frame colour", "description": "Colour of the drawn frames." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Scan line, progress fill and ticks." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 1.5, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "top", "label": "Anchor", "description": "Vertical placement inside the safe area (top = above the speaker)." },
+    "offsetY": { "type": "number", "default": 0, "min": -600, "max": 1200, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.2 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .grp { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  .a { position: absolute; }
+  .band { position: absolute; background: rgba(16,16,18,.92); box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+  .hole { position: absolute; background: rgba(237,235,230,.32); }
+  .tile { position: absolute; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .tile img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .flash { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: #FFFFFF; opacity: 0; }
+  .mono { position: absolute; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #FFFFFF; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
+  .pill { position: absolute; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 700; color: #FFFFFF; background: rgba(16,16,18,.9); border-radius: 999px; box-shadow: 0 8px 22px rgba(0,0,0,.25); transform-origin: 50% 50%; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var FS = { tiles: [] };
+  var CHECK = '<svg viewBox="0 0 24 24" style="display:inline-block;vertical-align:-0.12em;width:0.95em;height:0.95em;margin-right:0.35em"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="ACC" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function setText(n, text, tick, acc) {
+    var key = (tick ? "✓" : "") + text;
+    if (n._t === key) return;
+    n._t = key;
+    n.innerHTML = tick ? CHECK.replace("ACC", acc) : "";
+    n.appendChild(document.createTextNode(text));
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params, U = RC.u, u = RC.u * P.scale, W = RC.width, H = RC.height, st = document.getElementById("stage");
+      var grp = RC.el("div", { class: "grp" });
+      st.appendChild(grp);
+      FS.grp = grp;
+      var n = P.frames.length || Math.round(P.tiles);
+      var aw = Math.min(W - 2 * RC.safe.left * 0.9, 960 * u), gap = 12 * u;
+      var tw = Math.min(150 * u, (aw - 60 * u - (n - 1) * gap) / n), th = tw * 1.5;
+      var rowW = n * tw + (n - 1) * gap, bandW = rowW + 60 * u, bandH = th + 96 * u;
+      var hasBar = !!(P.status || P.done);
+      var blockH = bandH + (P.count > 0 ? 120 * u : 0) + (hasBar ? 170 * u : 0);
+      var tagRoom = P.flag >= 0 ? 74 * u : 0; // the flag tag sits above the band, inside the safe area
+      var top = P.anchor === "top" ? RC.safe.top + 20 * U + tagRoom : P.anchor === "bottom" ? H - RC.safe.bottom - blockH : (H - blockH) / 2 + tagRoom / 2;
+      top += P.offsetY * U;
+      var bx = (W - bandW) / 2, x0 = (W - rowW) / 2, ty = top + 48 * u;
+      FS.band = RC.el("div", { class: "band", style: { left: bx + "px", top: top + "px", width: bandW + "px", height: bandH + "px", borderRadius: 14 * u + "px" } });
+      grp.appendChild(FS.band);
+      // sprocket holes, top and bottom
+      var hw = 16 * u, hh = 20 * u, holes = Math.floor((bandW - 30 * u) / (34 * u));
+      for (var k = 0; k < holes; k++) {
+        var hx = 15 * u + k * ((bandW - 30 * u - hw) / Math.max(1, holes - 1));
+        FS.band.appendChild(RC.el("div", { class: "hole", style: { left: hx + "px", top: 14 * u + "px", width: hw + "px", height: hh + "px", borderRadius: 4 * u + "px" } }));
+        FS.band.appendChild(RC.el("div", { class: "hole", style: { left: hx + "px", top: bandH - 14 * u - hh + "px", width: hw + "px", height: hh + "px", borderRadius: 4 * u + "px" } }));
+      }
+      for (var i = 0; i < n; i++) {
+        var src = P.frames[i];
+        var tile = RC.el("div", { class: "tile", style: { left: x0 + i * (tw + gap) + "px", top: ty + "px", width: tw + "px", height: th + "px", borderRadius: 8 * u + "px", background: src ? "#111" : "linear-gradient(180deg, " + P.tileColor + ", " + RC.mixColor(P.tileColor, "#8C7A60", 0.25) + ")" } });
+        if (src) tile.appendChild(RC.el("img", { src: src }));
+        else {
+          // a drawn frame: a little bottle-and-horizon picture so it reads as a video still
+          tile.appendChild(RC.el("div", { class: "a", style: { left: "0", right: "0", bottom: "0", height: th * 0.32 + "px", background: RC.alpha("#3B2416", 0.22) } }));
+          tile.appendChild(RC.el("div", { class: "a", style: { left: tw * 0.38 + "px", top: th * (0.3 + 0.04 * (i % 3)) + "px", width: tw * 0.24 + "px", height: th * 0.46 + "px", background: "#3B2416", borderRadius: tw * 0.06 + "px " + tw * 0.06 + "px " + tw * 0.03 + "px " + tw * 0.03 + "px" } }));
+          tile.appendChild(RC.el("div", { class: "a", style: { left: tw * 0.38 + "px", top: th * (0.5 + 0.04 * (i % 3)) + "px", width: tw * 0.24 + "px", height: th * 0.1 + "px", background: P.tileColor } }));
+        }
+        var fl = RC.el("div", { class: "flash" });
+        tile.appendChild(fl);
+        grp.appendChild(tile);
+        FS.tiles.push({ el: tile, fl: fl, x: x0 + i * (tw + gap) });
+      }
+      FS.n = n; FS.tw = tw; FS.th = th; FS.ty = ty; FS.x0 = x0; FS.rowW = rowW; FS.u = u;
+      FS.scan = RC.el("div", { class: "a", style: { left: x0 + "px", top: ty - 10 * u + "px", width: 4 * u + "px", height: th + 20 * u + "px", background: P.accent, boxShadow: "0 0 " + 18 * u + "px " + P.accent } });
+      grp.appendChild(FS.scan);
+      var y = top + bandH + 30 * u;
+      if (P.count > 0) {
+        FS.cnt = RC.el("div", { class: "mono", style: { fontSize: 64 * u + "px", letterSpacing: ".02em", left: x0 + "px", top: y + "px" } });
+        grp.appendChild(FS.cnt);
+        y += 120 * u;
+      }
+      if (P.flag >= 0 && P.flag < n) {
+        var f = FS.tiles[P.flag];
+        FS.out = RC.el("div", { class: "a", style: { left: f.x - 6 * u + "px", top: ty - 6 * u + "px", width: tw + 12 * u + "px", height: th + 12 * u + "px", border: 5 * u + "px solid #FFFFFF", borderRadius: 12 * u + "px", boxSizing: "border-box" } });
+        grp.appendChild(FS.out);
+        // above the band: below it, it sat on the sprocket holes and the counter (SEEN)
+        FS.tag = RC.el("div", { class: "pill", style: { fontSize: 30 * u + "px", padding: 10 * u + "px " + 20 * u + "px" } });
+        grp.appendChild(FS.tag);
+        setText(FS.tag, P.flagText, false, P.accent);
+        FS.tag.style.top = top - FS.tag.offsetHeight - 14 * u + "px";
+        FS.flagX = f.x + tw / 2;
+      }
+      if (hasBar) {
+        if (P.status) {
+          FS.bl = RC.el("div", { class: "mono", text: P.status, style: { fontSize: 28 * u + "px", left: x0 + "px", top: y + "px" } });
+          grp.appendChild(FS.bl);
+        }
+        FS.track = RC.el("div", { class: "a", style: { left: x0 + "px", top: y + 46 * u + "px", width: rowW + "px", height: 16 * u + "px", background: "rgba(255,255,255,.22)", borderRadius: 8 * u + "px" } });
+        FS.fill = RC.el("div", { class: "a", style: { left: x0 + "px", top: y + 46 * u + "px", width: rowW + "px", height: 16 * u + "px", background: P.accent, borderRadius: 8 * u + "px", transformOrigin: "0% 50%" } });
+        grp.appendChild(FS.track); grp.appendChild(FS.fill);
+        if (P.done) {
+          FS.chip = RC.el("div", { class: "pill", style: { fontSize: 30 * u + "px", padding: 12 * u + "px " + 24 * u + "px", left: x0 + "px", top: y + 86 * u + "px" } });
+          grp.appendChild(FS.chip);
+          setText(FS.chip, P.done, true, P.accent);
+        }
+      }
+    },
+    render: function (time, RC) {
+      var P = RC.params, t = time.t, u = FS.u, n = FS.n;
+      var out = P.exit ? RC.progress(0.2 - time.left, 0, 0.2, "linear") : 0;
+      // beats (animation seconds): build · scan + flash + count · flag · fix · bar · chip
+      var build = 0.1, step = 0.9 / n, scanAt = 1.2, scanFor = 1.0, flagAt = 2.3, fixAt = 2.8, barAt = 3.6, chipAt = 4.3;
+      RC.set(FS.band, { opacity: RC.progress(t, 0, 0.15, "linear"), sx: 0.9 + 0.1 * RC.progress(t, 0, 0.3, "snappy") });
+      for (var i = 0; i < n; i++) {
+        var T0 = FS.tiles[i];
+        var p = RC.progress(t, build + i * step, 0.25, "snappy");
+        var fixed = P.flag === i ? RC.progress(t, fixAt, 0.3, "bouncy") : 0;
+        RC.set(T0.el, { opacity: RC.progress(t, build + i * step, 0.12, "linear"), y: (1 - p) * 30 * RC.u, scale: 1 + 0.08 * Math.sin(Math.PI * fixed) });
+        var fa = scanAt + (i / n) * scanFor;
+        var fl = t >= fa && t < fa + 0.16 ? 1 - (t - fa) / 0.16 : 0;
+        if (P.flag === i && t >= fixAt && t < fixAt + 0.2) fl = Math.max(fl, 1 - (t - fixAt) / 0.2);
+        T0.fl.style.opacity = String(fl);
+      }
+      var sc = RC.clamp((t - scanAt) / scanFor, 0, 1);
+      RC.set(FS.scan, { x: sc * (FS.rowW - 4 * u), opacity: t >= scanAt && t <= scanAt + scanFor ? 1 : 0 });
+      if (FS.cnt) {
+        var cn = Math.round(P.count * RC.ease("smooth", sc));
+        var s = cn.toLocaleString("en-US") + " " + P.countLabel;
+        if (FS.cnt.textContent !== s) FS.cnt.textContent = s;
+        FS.cnt.style.opacity = String(RC.progress(t, scanAt - 0.1, 0.15, "linear"));
+      }
+      if (FS.out) {
+        var o = RC.progress(t, flagAt, 0.2, "smooth");
+        var gone = RC.progress(t, barAt - 0.15, 0.15, "linear");
+        RC.set(FS.out, { opacity: o * (1 - gone), scale: 1.1 - 0.1 * o });
+        var isFixed = t >= fixAt;
+        setText(FS.tag, isFixed ? P.fixText : P.flagText, isFixed, P.accent);
+        FS.tag.style.left = FS.flagX - FS.tag.offsetWidth / 2 + "px";
+        RC.set(FS.tag, { opacity: o * (1 - gone), scale: isFixed ? 1 + 0.12 * Math.sin(RC.clamp((t - fixAt) / 0.25, 0, 1) * Math.PI) : 1 });
+      }
+      if (FS.track) {
+        var on = RC.progress(t, barAt, 0.15, "linear");
+        if (FS.bl) FS.bl.style.opacity = String(on);
+        FS.track.style.opacity = String(on);
+        RC.set(FS.fill, { sx: RC.progress(t, barAt + 0.1, chipAt - barAt - 0.15, "smooth"), opacity: on });
+        if (FS.chip) { var c = RC.progress(t, chipAt, 0.32, "bouncy"); RC.set(FS.chip, { scale: 0.6 + 0.4 * c, opacity: RC.progress(t, chipAt, 0.14, "linear") }); }
+      }
+      FS.grp.style.opacity = String(1 - out);
+    },
+  });
+</script>
+</body>
+</html>

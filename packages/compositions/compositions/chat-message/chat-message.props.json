@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/chat-message); fictional.",
+  "type": "sent",
+  "text": "wait look 👀",
+  "cardTitle": "Halcyon — Write HTML, render pixel-perfect video",
+  "cardDomain": "halcyon.example",
+  "tail": "on",
+  "delivered": "on",
+  "speed": 1
+}

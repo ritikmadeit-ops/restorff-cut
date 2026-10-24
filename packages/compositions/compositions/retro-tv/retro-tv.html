@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Retro TV</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "retro-tv",
+  "title": "Retro TV",
+  "description": "A wooden 1950s TV set slides in over a patterned paper wall; its screen is a hole, so the footage on the track below plays inside the TV (with scanlines and a curved-glass vignette), plus a label tag and colour chips. Use for archival or 'back in the day' beats in a collage edit (EFFECTS.md FX-55). Covers the whole frame except the screen: scale the clip below (Scale ~0.7) if you want all of it inside the screen.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["collage", "retro", "frame", "tv", "archival", "kit"],
+  "effect": {
+    "fx": ["FX-55"],
+    "stack": ["plate", "self"],
+    "inputs": { "clip": "the footage for the screen on the track below; its part behind the screen plays there (screenY ~ the face). To fit the whole clip in, key it to scale ~0.7 with y = screenY - 0.5" },
+    "note": "Collage kit: pairs with paper-texture (overlay) and cutout-outline; the wall is opaque except the screen."
+  },
+  "params": {
+    "label": { "type": "string", "default": "HALCYON TV · EST. 1956", "maxLength": 32, "label": "Label tag", "description": "Typed label on the yellow tag. Empty to hide." },
+    "chips": { "type": "list", "of": { "type": "color" }, "minItems": 0, "maxItems": 6, "default": ["#C8352B", "#E2B84A", "#2F5D50", "#8DB7C7"], "label": "Colour chips", "description": "Paint-chip squares at the bottom (the palette of the edit). Empty list to hide." },
+    "wall": { "type": "color", "default": "#E9DFC8", "label": "Wall", "description": "Wall / paper colour around the TV." },
+    "pattern": { "type": "enum", "options": ["dots", "stripes", "plain"], "default": "dots", "label": "Wall pattern", "description": "Pattern printed on the wall." },
+    "wood": { "type": "color", "default": "#7A4A2A", "label": "Wood", "description": "Cabinet colour." },
+    "accent": { "type": "color", "default": "#F2D04B", "label": "Tag", "description": "Label tag colour." },
+    "scanlines": { "type": "boolean", "default": true, "label": "Scanlines", "description": "Faint CRT lines and a glass vignette over the screen." },
+    "screenY": { "type": "number", "default": 0.42, "min": 0.25, "max": 0.65, "step": 0.01, "label": "Screen height", "description": "Where the screen's centre sits, as a fraction of the frame height (0.42 = around a talking head's face)." },
+    "scale": { "type": "number", "default": 1, "min": 0.6, "max": 1.4, "step": 0.01, "unit": "x", "label": "Scale", "description": "TV size multiplier." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "ease": { "type": "easing", "default": "bouncy", "label": "Slide easing", "description": "How the TV lands." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "The TV slides out and the wall fades over the last 0.45 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  svg { position: absolute; left: 0; top: 0; }
+  .tag { position: absolute; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #111; box-shadow: 0 calc(3px * var(--u)) calc(8px * var(--u)) rgba(0,0,0,.3); }
+  .chips { position: absolute; display: flex; }
+  .chip { box-shadow: 0 calc(3px * var(--u)) calc(6px * var(--u)) rgba(0,0,0,.25); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var NS = "http://www.w3.org/2000/svg";
+  var TV = { chips: [] };
+  function S(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  function shade(hex, f) {
+    var h = hex.replace("#", "");
+    var n = parseInt(h.slice(0, 6), 16);
+    var r = Math.round(Math.min(255, ((n >> 16) & 255) * f));
+    var g = Math.round(Math.min(255, ((n >> 8) & 255) * f));
+    var b = Math.round(Math.min(255, (n & 255) * f));
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var Wf = RC.width;
+      var Hf = RC.height;
+      var stage = document.getElementById("stage");
+      var svg = S("svg", { width: Wf, height: Hf, viewBox: "0 0 " + Wf + " " + Hf });
+      stage.appendChild(svg);
+      var defs = S("defs", {}, svg);
+      // geometry (TV coordinates are relative to the screen centre)
+      var sw = 720 * u;
+      var sh = 560 * u;
+      var cx = Wf / 2;
+      var cy = Hf * P.screenY;
+      var bw = sw + 150 * u;
+      var bh = sh + 380 * u;
+      var bx = -bw / 2;
+      var by = -sh / 2 - 70 * u;
+      // wall pattern
+      if (P.pattern !== "plain") {
+        var pat = S("pattern", { id: "wallpat", width: 48 * RC.u, height: 48 * RC.u, patternUnits: "userSpaceOnUse" }, defs);
+        if (P.pattern === "dots") S("circle", { cx: 24 * RC.u, cy: 24 * RC.u, r: 5 * RC.u, fill: "rgba(90,60,30,.16)" }, pat);
+        else S("rect", { x: 0, y: 0, width: 16 * RC.u, height: 48 * RC.u, fill: "rgba(90,60,30,.09)" }, pat);
+      }
+      var wood = S("linearGradient", { id: "wood", x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+      S("stop", { offset: "0", "stop-color": shade(P.wood, 1.25) }, wood);
+      S("stop", { offset: "0.5", "stop-color": P.wood }, wood);
+      S("stop", { offset: "1", "stop-color": shade(P.wood, 0.7) }, wood);
+      var vig = S("radialGradient", { id: "vig", cx: 0.5, cy: 0.5, r: 0.7 }, defs);
+      S("stop", { offset: "0.6", "stop-color": "#000", "stop-opacity": 0 }, vig);
+      S("stop", { offset: "1", "stop-color": "#000", "stop-opacity": 0.55 }, vig);
+      var glare = S("linearGradient", { id: "glare", x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+      S("stop", { offset: "0", "stop-color": "#fff", "stop-opacity": 0.18 }, glare);
+      S("stop", { offset: "0.35", "stop-color": "#fff", "stop-opacity": 0 }, glare);
+      var lines = S("pattern", { id: "scan", width: 8, height: 6 * RC.u, patternUnits: "userSpaceOnUse" }, defs);
+      S("rect", { x: 0, y: 0, width: 8, height: 2 * RC.u, fill: "rgba(0,0,0,.22)" }, lines);
+      // mask: everything opaque except the screen hole (the hole moves with the TV)
+      var mask = S("mask", { id: "hole", maskUnits: "userSpaceOnUse", x: 0, y: 0, width: Wf, height: Hf }, defs);
+      S("rect", { x: 0, y: 0, width: Wf, height: Hf, fill: "#fff" }, mask);
+      TV.holeG = S("g", {}, mask);
+      S("rect", { x: -sw / 2, y: -sh / 2, width: sw, height: sh, rx: 70 * u, ry: 70 * u, fill: "#000" }, TV.holeG);
+      var masked = S("g", { mask: "url(#hole)" }, svg);
+      TV.wall = S("g", {}, masked);
+      S("rect", { x: 0, y: 0, width: Wf, height: Hf, fill: P.wall }, TV.wall);
+      if (P.pattern !== "plain") S("rect", { x: 0, y: 0, width: Wf, height: Hf, fill: "url(#wallpat)" }, TV.wall);
+      // the set
+      TV.set = S("g", {}, masked);
+      var g = TV.set;
+      S("rect", { x: bx + 14 * u, y: by + 24 * u, width: bw, height: bh, rx: 46 * u, fill: "rgba(0,0,0,.28)" }, g); // shadow
+      // legs + antenna (behind the cabinet)
+      S("path", { d: "M" + (bx + 110 * u) + " " + (by + bh - 10 * u) + " L" + (bx + 80 * u) + " " + (by + bh + 120 * u) + " L" + (bx + 104 * u) + " " + (by + bh + 120 * u) + " L" + (bx + 150 * u) + " " + (by + bh - 10 * u) + "Z", fill: shade(P.wood, 0.55) }, g);
+      S("path", { d: "M" + (bx + bw - 110 * u) + " " + (by + bh - 10 * u) + " L" + (bx + bw - 80 * u) + " " + (by + bh + 120 * u) + " L" + (bx + bw - 104 * u) + " " + (by + bh + 120 * u) + " L" + (bx + bw - 150 * u) + " " + (by + bh - 10 * u) + "Z", fill: shade(P.wood, 0.55) }, g);
+      S("path", { d: "M0 " + by + " L" + (-150 * u) + " " + (by - 210 * u) + " M0 " + by + " L" + (170 * u) + " " + (by - 190 * u), stroke: "#2a2a2e", "stroke-width": 7 * u, "stroke-linecap": "round", fill: "none" }, g);
+      S("circle", { cx: -150 * u, cy: by - 210 * u, r: 12 * u, fill: "#2a2a2e" }, g);
+      S("circle", { cx: 170 * u, cy: by - 190 * u, r: 12 * u, fill: "#2a2a2e" }, g);
+      S("ellipse", { cx: 0, cy: by + 4 * u, rx: 46 * u, ry: 22 * u, fill: "#2a2a2e" }, g);
+      // cabinet
+      S("rect", { x: bx, y: by, width: bw, height: bh, rx: 46 * u, fill: "url(#wood)", stroke: shade(P.wood, 0.45), "stroke-width": 5 * u }, g);
+      for (var k = 0; k < 14; k++) {
+        var gy = by + 30 * u + k * (bh - 60 * u) / 14;
+        S("path", { d: "M" + (bx + 20 * u) + " " + gy + " q" + bw * 0.3 + " " + ((k % 3) - 1) * 10 * u + " " + (bw - 40 * u) + " " + ((k % 2) ? 6 : -4) * u, stroke: "rgba(40,20,8,.18)", "stroke-width": 3 * u, fill: "none" }, g);
+      }
+      // bezel around the screen
+      S("rect", { x: -sw / 2 - 34 * u, y: -sh / 2 - 34 * u, width: sw + 68 * u, height: sh + 68 * u, rx: 92 * u, fill: "#E9DFC8", stroke: shade(P.wood, 0.45), "stroke-width": 4 * u }, g);
+      S("rect", { x: -sw / 2 - 10 * u, y: -sh / 2 - 10 * u, width: sw + 20 * u, height: sh + 20 * u, rx: 78 * u, fill: "#1a1a1d" }, g);
+      // control strip: grille + knobs
+      var gy0 = sh / 2 + 70 * u;
+      S("rect", { x: -sw / 2, y: gy0, width: sw * 0.62, height: 170 * u, rx: 18 * u, fill: shade(P.wood, 0.6) }, g);
+      for (var l = 0; l < 16; l++) S("rect", { x: -sw / 2 + 18 * u + l * (sw * 0.62 - 36 * u) / 16, y: gy0 + 18 * u, width: 9 * u, height: 134 * u, rx: 4 * u, fill: "rgba(20,10,4,.55)" }, g);
+      for (var kn = 0; kn < 2; kn++) {
+        var kx = sw * 0.24 + kn * 120 * u;
+        S("circle", { cx: kx, cy: gy0 + 85 * u, r: 44 * u, fill: "#E9DFC8", stroke: "#2a2a2e", "stroke-width": 4 * u }, g);
+        S("path", { d: "M" + kx + " " + (gy0 + 85 * u) + " l" + 22 * u + " " + -26 * u, stroke: "#2a2a2e", "stroke-width": 6 * u, "stroke-linecap": "round" }, g);
+      }
+      // screen overlays (outside the mask: partly transparent over the footage)
+      TV.glass = S("g", {}, svg);
+      if (P.scanlines) {
+        S("rect", { x: -sw / 2, y: -sh / 2, width: sw, height: sh, rx: 70 * u, fill: "url(#scan)" }, TV.glass);
+        S("rect", { x: -sw / 2, y: -sh / 2, width: sw, height: sh, rx: 70 * u, fill: "url(#vig)" }, TV.glass);
+      }
+      S("rect", { x: -sw / 2, y: -sh / 2, width: sw, height: sh, rx: 70 * u, fill: "url(#glare)" }, TV.glass);
+      TV.cx = cx;
+      TV.cy = cy;
+      // label tag + chips (HTML)
+      if (P.label) {
+        TV.tag = RC.el("div", { class: "tag", text: P.label, style: { background: P.accent, fontSize: 30 * RC.u + "px", padding: 8 * RC.u + "px " + 14 * RC.u + "px", left: cx - bw / 2 - 10 * u + "px", top: cy + by - 40 * u + "px" } });
+        stage.appendChild(TV.tag);
+      }
+      if (P.chips.length) {
+        var chips = RC.el("div", { class: "chips", style: { gap: 14 * RC.u + "px", left: RC.safe.left + "px", top: Math.min(Hf - RC.safe.bottom, cy + by + bh + 170 * u) + "px" } });
+        P.chips.forEach(function (c, i) {
+          var chip = RC.el("div", { class: "chip", style: { width: 70 * RC.u + "px", height: 70 * RC.u + "px", background: c, border: (6 * RC.u) + "px solid #F3EFE4" } });
+          chips.appendChild(chip);
+          TV.chips.push({ node: chip, i: i });
+        });
+        stage.appendChild(chips);
+      }
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.45, 0, 1)) : 0;
+      var wallIn = RC.progress(t, 0, 0.3, "linear");
+      var slide = RC.progress(t, 0.1, 0.6, P.ease);
+      var x = TV.cx + (1 - slide) * RC.width * 1.1 + out * RC.width * 1.1;
+      var rot = (1 - slide) * 6;
+      var tf = "translate(" + x + " " + TV.cy + ") rotate(" + rot + ")";
+      TV.set.setAttribute("transform", tf);
+      TV.holeG.setAttribute("transform", tf);
+      TV.glass.setAttribute("transform", tf);
+      TV.wall.setAttribute("opacity", String(wallIn * (1 - out)));
+      if (TV.tag) {
+        var tp = RC.progress(t, 0.7, 0.3, "bouncy");
+        RC.set(TV.tag, { scale: 0.5 + 0.5 * tp, rotate: -4, opacity: tp * (1 - out), x: out * RC.width });
+      }
+      for (var i = 0; i < TV.chips.length; i++) {
+        var cp = RC.progress(t, 0.85 + i * 0.08, 0.25, "bouncy");
+        RC.set(TV.chips[i].node, { scale: cp, rotate: (i % 2 ? 3 : -3), opacity: (cp > 0 ? 1 : 0) * (1 - out) });
+      }
+    },
+  });
+</script>
+</body>
+</html>

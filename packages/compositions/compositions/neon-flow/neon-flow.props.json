@@ -1,0 +1,73 @@
+{
+ "$comment": "Example (fictional Halcyon Cold Brew, from packages/compositions/examples/neon-grid/halcyon-cold-brew-18h.json): the scene at 9.3 s, its voice words moved to the clip (t0 = 0). On a timeline, send the voice's real words and t0 = the clip's start (composition write fills t0 from t).",
+ "t0": 0,
+ "heading": "STEEP PIPELINE · 3 INPUTS",
+ "nodes": [
+  {
+   "text": "COLD WATER"
+  },
+  {
+   "text": "GROUND BEANS"
+  },
+  {
+   "text": "TIME"
+  }
+ ],
+ "label": "= THE WHOLE RECIPE",
+ "keys": [
+  "time",
+  "recipe"
+ ],
+ "words": [
+  {
+   "w": "Cold",
+   "s": 0.21,
+   "e": 0.51
+  },
+  {
+   "w": "water,",
+   "s": 0.51,
+   "e": 0.9
+  },
+  {
+   "w": "ground",
+   "s": 0.99,
+   "e": 1.305
+  },
+  {
+   "w": "beans,",
+   "s": 1.305,
+   "e": 1.69
+  },
+  {
+   "w": "and",
+   "s": 1.8,
+   "e": 1.955
+  },
+  {
+   "w": "time.",
+   "s": 1.955,
+   "e": 2.31
+  },
+  {
+   "w": "That's",
+   "s": 3.1,
+   "e": 3.32
+  },
+  {
+   "w": "the",
+   "s": 3.32,
+   "e": 3.405
+  },
+  {
+   "w": "whole",
+   "s": 3.405,
+   "e": 3.639
+  },
+  {
+   "w": "recipe.",
+   "s": 3.639,
+   "e": 4.09
+  }
+ ]
+}

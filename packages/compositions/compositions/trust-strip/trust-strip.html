@@ -1,0 +1,340 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/trust-strip@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-id="trust-strip"
+  data-composition-duration="3.5"
+  data-composition-variables='[
+    { "id": "marks", "type": "string", "role": "content", "label": "Marks", "description": "Comma-separated wordmark texts (3 to 7 recommended).", "default": "Northwind, Acme Corp, Globex, Initech, Umbra" },
+    { "id": "tone", "type": "enum", "role": "style", "label": "Tone", "description": "Mark color: quiet muted or full-contrast ink.", "default": "muted", "options": [{ "value": "muted", "label": "Muted" }, { "value": "ink", "label": "Ink" }] },
+    { "id": "cues", "type": "string", "role": "timing", "label": "Cues", "description": "Comma-separated reveal starts in seconds from mount start. Empty uses the authored 0.15s stagger.", "default": "" },
+    { "id": "accent", "type": "enum", "role": "style", "label": "Accent", "description": "Faint palette tint mixed into the mark color.", "default": "green", "options": [{ "value": "green", "label": "Green" }, { "value": "blue", "label": "Blue" }, { "value": "violet", "label": "Violet" }] },
+    { "id": "exit", "type": "enum", "role": "timing", "label": "Exit", "description": "End-of-clip behavior. None holds to the last frame.", "default": "none", "options": [{ "value": "none", "label": "None" }, { "value": "fade", "label": "Fade" }, { "value": "up", "label": "Up" }] }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "trust-strip",
+  "title": "Trust Strip",
+  "description": "A monochrome trust row of wide-tracked mono wordmarks that fade in with an opacity-only left-to-right stagger, then hold dead still. Imported from a HyperFrames component (proof; provenance below).",
+  "duration": 3.5,
+  "size": [
+    1728,
+    540
+  ],
+  "fps": 30,
+  "tags": [
+    "proof",
+    "motion-primitive",
+    "trust",
+    "logo-strip",
+    "wordmarks",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "marks": {
+      "type": "string",
+      "default": "Northwind, Acme Corp, Globex, Initech, Umbra",
+      "label": "Marks",
+      "description": "Comma-separated wordmark texts (3 to 7 recommended).",
+      "required": true
+    },
+    "tone": {
+      "type": "enum",
+      "options": [
+        "muted",
+        "ink"
+      ],
+      "default": "muted",
+      "label": "Tone",
+      "description": "Mark color: quiet muted or full-contrast ink."
+    },
+    "cues": {
+      "type": "string",
+      "default": "",
+      "label": "Cues",
+      "description": "Comma-separated reveal starts in seconds from mount start. Empty uses the authored 0.15s stagger.",
+      "display": false
+    },
+    "accent": {
+      "type": "enum",
+      "options": [
+        "green",
+        "blue",
+        "violet"
+      ],
+      "default": "green",
+      "label": "Accent",
+      "description": "Faint palette tint mixed into the mark color."
+    },
+    "exit": {
+      "type": "enum",
+      "options": [
+        "none",
+        "fade",
+        "up"
+      ],
+      "default": "none",
+      "label": "Exit",
+      "description": "End-of-clip behavior. None holds to the last frame."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1728x540 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "marks": "marks",
+      "tone": "tone",
+      "cues": "cues",
+      "accent": "accent",
+      "exit": "exit"
+    },
+    "width": 1728,
+    "height": 540,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/trust-strip",
+    "path": "registry/components/trust-strip",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="trust-strip" data-start="0" data-duration="3.5" data-width="1728" data-height="540" style="position:absolute;left:0;top:0;width:1728px;height:540px">
+
+      <div id="root" data-composition-id="trust-strip" data-duration="3.5" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            container-type: size;
+            isolation: isolate;
+            background: var(--bg, transparent);
+            font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+            pointer-events: none;
+          }
+
+          .ts-clip {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+          }
+
+          .ts-strip {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: center;
+            width: 86cqw;
+            max-width: 86cqw;
+            column-gap: var(--space-3, 4.8cqw);
+            row-gap: var(--space-2, 4.2cqh);
+            
+          }
+
+          .ts-mark {
+            /* Monochrome by law: the tone token carries the color; the accent
+               token only tints it 10% so the strip sits in the palette. */
+            color: color-mix(in srgb, var(--ts-tone) 90%, var(--ts-accent));
+            font-size: min(1.9cqw, 6.4cqh);
+            font-weight: 400;
+            line-height: 1;
+            letter-spacing: 0.32em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            
+          }
+        </style>
+
+        <div
+          id="trust-strip-clip"
+          class="ts-clip clip"
+          data-start="0"
+          data-duration="3.5"
+          data-track-index="0"
+        >
+          <div class="ts-strip" role="img"></div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var strip = root.querySelector(".ts-strip");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            var marks = String(vars.marks == null ? "" : vars.marks)
+              .split(",")
+              .map(function (mark) {
+                return mark.trim();
+              })
+              .filter(Boolean);
+            if (marks.length === 0)
+              marks = ["Northwind", "Acme Corp", "Globex", "Initech", "Umbra"];
+
+            var tone = vars.tone === "ink" ? "ink" : "muted";
+            var toneColors = {
+              muted: "var(--muted, #93939f)",
+              ink: "var(--fg, #f8fafc)",
+            };
+            // Each enum choice routes to a DIFFERENT contract token so the
+            // variable stays meaningful under a theme.
+            var accentColors = {
+              green: "var(--brand, #71f5a7)",
+              blue: "var(--accent, #61a8ff)",
+              violet: "var(--accent-2, #c5a3ff)",
+            };
+            var accent = Object.prototype.hasOwnProperty.call(accentColors, vars.accent)
+              ? vars.accent
+              : "green";
+            var exit = vars.exit === "fade" || vars.exit === "up" ? vars.exit : "none";
+
+            root.style.setProperty("--ts-tone", toneColors[tone]);
+            root.style.setProperty("--ts-accent", accentColors[accent]);
+            strip.setAttribute("aria-label", marks.join(", "));
+
+            var spans = marks.map(function (mark) {
+              var span = document.createElement("span");
+              span.className = "ts-mark";
+              span.textContent = mark;
+              span.setAttribute("aria-hidden", "true");
+              strip.appendChild(span);
+              return span;
+            });
+
+            var LEAD_BASE = 0.2;
+            var GAP_BASE = 0.15;
+            var FADE_BASE = 0.5;
+            var OUT_BASE = exit === "none" ? 0 : 0.45;
+            var duration = Math.max(0.001, parseFloat(root.dataset.duration || "3.5"));
+
+            // Reveal starts: caller cues win; missing tail entries extend from
+            // the last known start by the authored gap.
+            var cues = String(vars.cues == null ? "" : vars.cues)
+              .split(",")
+              .map(function (cue) {
+                return parseFloat(cue);
+              })
+              .filter(function (cue) {
+                return isFinite(cue) && cue >= 0;
+              });
+            var starts = marks.map(function (mark, index) {
+              if (index < cues.length) return cues[index];
+              if (cues.length > 0)
+                return cues[cues.length - 1] + GAP_BASE * (index - cues.length + 1);
+              return LEAD_BASE + GAP_BASE * index;
+            });
+
+            var IN_BASE = Math.max.apply(null, starts) + FADE_BASE;
+            var totalBase = IN_BASE + OUT_BASE;
+            var scale = duration < totalBase ? duration / totalBase : 1;
+            var FADE = FADE_BASE * scale;
+            var OUT = OUT_BASE * scale;
+            var OUT_START = duration - OUT;
+
+            var tl = gsap.timeline({ paused: true });
+
+            // IN: opacity-only stagger, left to right in reading order.
+            spans.forEach(function (span, index) {
+              tl.fromTo(
+                span,
+                { opacity: 0 },
+                { opacity: 1, duration: FADE, ease: "power2.out" },
+                starts[index] * scale,
+              );
+            });
+
+            // HOLD: dead still. Nothing is authored here on purpose.
+
+            // OUT: optional whole-strip departure; frame roots own transitions
+            // by default, so exit "none" holds to the last frame.
+            if (exit === "fade") {
+              tl.to(strip, { opacity: 0, duration: OUT, ease: "power2.in" }, OUT_START);
+            } else if (exit === "up") {
+              tl.to(strip, { opacity: 0, duration: OUT, ease: "power2.in" }, OUT_START);
+              tl.to(strip, { y: "-1.6cqh", duration: OUT, ease: "power2.in" }, OUT_START);
+            }
+
+            tl.seek(0);
+            window.__timelines = window.__timelines || {};
+            window.__timelines["trust-strip"] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

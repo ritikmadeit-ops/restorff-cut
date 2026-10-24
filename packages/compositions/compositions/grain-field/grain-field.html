@@ -1,0 +1,267 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/grain-field@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-id="grain-field"
+  data-composition-duration="4"
+  data-composition-variables='[
+    { "id": "density", "type": "enum", "role": "style", "label": "Density", "description": "Dot size and spacing across the grain field.", "default": "fine", "options": [{ "value": "fine", "label": "Fine" }, { "value": "coarse", "label": "Coarse" }] },
+    { "id": "accent", "type": "enum", "role": "style", "label": "Accent", "description": "Accent token family used to color the dots and luminance wash.", "default": "green", "options": [{ "value": "green", "label": "Green" }, { "value": "blue", "label": "Blue" }, { "value": "violet", "label": "Violet" }] }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "grain-field",
+  "title": "Grain Field",
+  "description": "A clearly visible accent-tinted dot field drifts over a subtle luminance gradient in an exact ambient loop. Imported from a HyperFrames component (backgrounds; provenance below).",
+  "duration": 4,
+  "size": [
+    1440,
+    756
+  ],
+  "fps": 30,
+  "tags": [
+    "backgrounds",
+    "motion-primitive",
+    "background",
+    "grain",
+    "dots",
+    "texture",
+    "ambient",
+    "loopable",
+    "imported",
+    "hyperframes"
+  ],
+  "opaque": true,
+  "kit": "hf-compat",
+  "params": {
+    "density": {
+      "type": "enum",
+      "options": [
+        "fine",
+        "coarse"
+      ],
+      "default": "fine",
+      "label": "Density",
+      "description": "Dot size and spacing across the grain field."
+    },
+    "accent": {
+      "type": "enum",
+      "options": [
+        "green",
+        "blue",
+        "violet"
+      ],
+      "default": "green",
+      "label": "Accent",
+      "description": "Accent token family used to color the dots and luminance wash."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1440x756 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "density": "density",
+      "accent": "accent"
+    },
+    "width": 1440,
+    "height": 756,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/grain-field",
+    "path": "registry/components/grain-field",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="grain-field" data-start="0" data-duration="4" data-width="1440" data-height="756" style="position:absolute;left:0;top:0;width:1440px;height:756px">
+
+      <div id="root" data-composition-id="grain-field" data-duration="4" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            container-type: size;
+            isolation: isolate;
+            pointer-events: none;
+          }
+
+          .gf-clip,
+          .gf-base,
+          .gf-field {
+            position: absolute;
+          }
+
+          .gf-clip,
+          .gf-base {
+            inset: 0;
+          }
+
+          .gf-clip {
+            overflow: hidden;
+          }
+
+          .gf-base {
+            background:
+              radial-gradient(
+                ellipse at 28% 20%,
+                color-mix(in srgb, var(--gf-color) 18%, transparent) 0%,
+                transparent 56%
+              ),
+              linear-gradient(
+                145deg,
+                color-mix(in srgb, var(--gf-base) 90%, var(--gf-color)) 0%,
+                var(--gf-base) 72%
+              );
+          }
+
+          .gf-field {
+            inset: -8cqw;
+            background-image: radial-gradient(
+              circle,
+              color-mix(in srgb, var(--gf-color) 70%, white) 0 var(--gf-dot),
+              transparent calc(var(--gf-dot) + 0.12cqmin)
+            );
+            background-position: 0 0;
+            background-size: var(--gf-cell) var(--gf-cell);
+            opacity: 0.82;
+            
+          }
+        </style>
+
+        <div
+          id="grain-field-clip"
+          class="gf-clip clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="0"
+        >
+          <div class="gf-base"></div>
+          <div class="gf-field"></div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var field = root.querySelector(".gf-field");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            // Invalid enum overrides return to their declared defaults.
+            var accentTokens = {
+              green: "var(--brand, #34d399)",
+              blue: "var(--accent, #38bdf8)",
+              violet: "var(--accent-2, #a78bfa)",
+            };
+            var densityStyles = {
+              fine: { cell: "3.2cqmin", dot: "0.48cqmin" },
+              coarse: { cell: "5.8cqmin", dot: "0.86cqmin" },
+            };
+            var accent = Object.prototype.hasOwnProperty.call(accentTokens, vars.accent)
+              ? vars.accent
+              : "green";
+            var density = vars.density === "coarse" ? "coarse" : "fine";
+
+            root.style.setProperty("--gf-color", accentTokens[accent]);
+            root.style.setProperty("--gf-base", "var(--bg, #080a10)");
+            root.style.setProperty("--gf-cell", densityStyles[density].cell);
+            root.style.setProperty("--gf-dot", densityStyles[density].dot);
+
+            var TAU = Math.PI * 2;
+            var duration = Math.max(0.001, parseFloat(root.dataset.duration || "4"));
+            var state = { phase: 0 };
+
+            function renderPose() {
+              var phase = state.phase === TAU ? 0 : state.phase;
+              var drift = Math.sin(phase);
+              gsap.set(field, { x: drift * 2.8 + "cqw", y: drift * 2.2 + "cqh" });
+            }
+
+            var tl = gsap.timeline({ paused: true });
+
+            // HOLD: uniform phase travel becomes a smooth sine drift. One full
+            // cycle restores the exact starting pose at the duration boundary.
+            tl.to(state, { phase: TAU, duration: duration, ease: "none", onUpdate: renderPose }, 0);
+
+            renderPose();
+            tl.seek(0);
+
+            window.__timelines = window.__timelines || {};
+            window.__timelines["grain-field"] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

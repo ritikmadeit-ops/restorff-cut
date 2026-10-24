@@ -1,0 +1,6 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew). Put strikeAt on the word that gets corrected.",
+  "text": "add sugar",
+  "correction": "steep it longer",
+  "strikeAt": 0.6
+}

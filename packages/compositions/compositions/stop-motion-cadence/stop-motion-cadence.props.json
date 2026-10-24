@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/stop-motion-cadence); fictional.",
+  "fps": "8",
+  "boil": "on",
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

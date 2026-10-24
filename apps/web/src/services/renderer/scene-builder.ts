@@ -1,5 +1,12 @@
-import type { SceneTracks, TimelineTrack } from "@/timeline";
+import type {
+	ImageElement,
+	SceneTracks,
+	TimelineTrack,
+	VideoElement,
+} from "@/timeline";
 import type { MediaAsset } from "@/media/types";
+import { getTrackTransitions } from "@/transitions/timeline";
+import { TransitionNode } from "./nodes/transition-node";
 import { RootNode } from "./nodes/root-node";
 import { VideoNode } from "./nodes/video-node";
 import { ImageNode } from "./nodes/image-node";
@@ -30,6 +37,131 @@ function getVisibleSortedElements({ track }: { track: TimelineTrack }) {
 		});
 }
 
+function buildMediaNode({
+	element,
+	mediaMap,
+	isPreview,
+	suppress,
+	holdOutsideSpan,
+	frameCacheKey,
+}: {
+	element: VideoElement | ImageElement;
+	mediaMap: Map<string, MediaAsset>;
+	isPreview?: boolean;
+	suppress?: Array<{ start: number; end: number }>;
+	holdOutsideSpan?: boolean;
+	frameCacheKey?: string;
+}): VideoNode | ImageNode | null {
+	const mediaAsset = mediaMap.get(element.mediaId);
+	if (!mediaAsset?.file || !mediaAsset?.url) {
+		return null;
+	}
+
+	const shared = {
+		duration: element.duration,
+		timeOffset: element.startTime,
+		trimStart: element.trimStart,
+		trimEnd: element.trimEnd,
+		transform: buildTransformFromParams({ params: element.params }),
+		animations: element.animations,
+		opacity: readOpacityFromParams({ params: element.params }),
+		blendMode: readBlendModeFromParams({ params: element.params }),
+		effects: element.effects ?? [],
+		masks: element.masks ?? [],
+		...(suppress && suppress.length > 0 && { suppress }),
+		...(holdOutsideSpan && { holdOutsideSpan }),
+	};
+
+	if (element.type === "video" && mediaAsset.type === "video") {
+		return new VideoNode({
+			...shared,
+			mediaId: mediaAsset.id,
+			url: mediaAsset.url,
+			file: mediaAsset.file,
+			retime: element.retime,
+			sourceDuration: element.sourceDuration,
+			...(frameCacheKey && { frameCacheKey }),
+		});
+	}
+	if (element.type === "image" && mediaAsset.type === "image") {
+		return new ImageNode({
+			...shared,
+			url: mediaAsset.url,
+			...(isPreview && {
+				maxSourceSize: PREVIEW_MAX_IMAGE_SIZE,
+			}),
+		});
+	}
+	return null;
+}
+
+/**
+ * Transition nodes for one track, plus the ranges in which each clip's own node must
+ * stay quiet because a transition draws it.
+ */
+function buildTrackTransitions({
+	track,
+	mediaMap,
+	isPreview,
+}: {
+	track: TimelineTrack;
+	mediaMap: Map<string, MediaAsset>;
+	isPreview?: boolean;
+}): {
+	nodes: TransitionNode[];
+	suppressed: Map<string, Array<{ start: number; end: number }>>;
+} {
+	const nodes: TransitionNode[] = [];
+	const suppressed = new Map<string, Array<{ start: number; end: number }>>();
+	const suppress = (elementId: string, start: number, end: number) => {
+		const ranges = suppressed.get(elementId) ?? [];
+		ranges.push({ start, end });
+		suppressed.set(elementId, ranges);
+	};
+
+	for (const placed of getTrackTransitions(track)) {
+		const sameMedia =
+			placed.outgoing !== null &&
+			placed.outgoing.mediaId === placed.incoming.mediaId;
+		const to = buildMediaNode({
+			element: placed.incoming,
+			mediaMap,
+			isPreview,
+			holdOutsideSpan: true,
+			frameCacheKey: sameMedia
+				? `${placed.incoming.mediaId}::transition-in`
+				: undefined,
+		});
+		if (!to) continue;
+		const from = placed.outgoing
+			? buildMediaNode({
+					element: placed.outgoing,
+					mediaMap,
+					isPreview,
+					holdOutsideSpan: true,
+				})
+			: null;
+
+		nodes.push(
+			new TransitionNode({
+				transitionType: placed.definition.id,
+				shader: placed.definition.shader,
+				uniforms: placed.definition.uniforms,
+				start: placed.start,
+				end: placed.end,
+				from,
+				to,
+			}),
+		);
+		suppress(placed.incoming.id, placed.start, placed.end);
+		if (placed.outgoing) {
+			suppress(placed.outgoing.id, placed.start, placed.end);
+		}
+	}
+
+	return { nodes, suppressed };
+}
+
 function buildTrackNodes({
 	tracks,
 	mediaMap,
@@ -45,6 +177,7 @@ function buildTrackNodes({
 
 	for (const track of tracks) {
 		const elements = getVisibleSortedElements({ track });
+		const transitions = buildTrackTransitions({ track, mediaMap, isPreview });
 
 		for (const element of elements) {
 			if (element.type === "effect") {
@@ -60,50 +193,14 @@ function buildTrackNodes({
 			}
 
 			if (element.type === "video" || element.type === "image") {
-				const mediaAsset = mediaMap.get(element.mediaId);
-				if (!mediaAsset?.file || !mediaAsset?.url) {
-					continue;
-				}
-
-				if (element.type === "video" && mediaAsset.type === "video") {
-					nodes.push(
-						new VideoNode({
-							mediaId: mediaAsset.id,
-							url: mediaAsset.url,
-							file: mediaAsset.file,
-							duration: element.duration,
-							timeOffset: element.startTime,
-							trimStart: element.trimStart,
-							trimEnd: element.trimEnd,
-							retime: element.retime,
-							transform: buildTransformFromParams({ params: element.params }),
-							animations: element.animations,
-							opacity: readOpacityFromParams({ params: element.params }),
-							blendMode: readBlendModeFromParams({ params: element.params }),
-							effects: element.effects ?? [],
-							masks: element.masks ?? [],
-						}),
-					);
-				}
-				if (element.type === "image" && mediaAsset.type === "image") {
-					nodes.push(
-						new ImageNode({
-							url: mediaAsset.url,
-							duration: element.duration,
-							timeOffset: element.startTime,
-							trimStart: element.trimStart,
-							trimEnd: element.trimEnd,
-							transform: buildTransformFromParams({ params: element.params }),
-							animations: element.animations,
-							opacity: readOpacityFromParams({ params: element.params }),
-							blendMode: readBlendModeFromParams({ params: element.params }),
-							effects: element.effects ?? [],
-							masks: element.masks ?? [],
-							...(isPreview && {
-								maxSourceSize: PREVIEW_MAX_IMAGE_SIZE,
-							}),
-						}),
-					);
+				const node = buildMediaNode({
+					element,
+					mediaMap,
+					isPreview,
+					suppress: transitions.suppressed.get(element.id),
+				});
+				if (node) {
+					nodes.push(node);
 				}
 			}
 
@@ -160,6 +257,9 @@ function buildTrackNodes({
 				);
 			}
 		}
+
+		// Same z-position as the track's clips (they never overlap on one track).
+		nodes.push(...transitions.nodes);
 	}
 
 	return nodes;

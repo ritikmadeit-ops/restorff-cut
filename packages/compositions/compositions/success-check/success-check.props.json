@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/success-check); fictional.",
+  "tint": "green",
+  "size": "standard",
+  "ring": "standard",
+  "spin": "standard",
+  "speed": 1
+}

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Orbit</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "orbit",
+  "title": "Orbit",
+  "description": "Phone-shaped reel cards circle the speaker on a tilted ring, passing behind them on the far side and in front on the near side, with a small caption and a gold script word. Use to show a body of work or a product range around a talking head (EFFECTS.md FX-01). Render twice: layer back between the clip and its person cutout, layer front above the cutout.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["orbit", "cards", "3d", "matte", "reels", "named-effect"],
+  "effect": {
+    "fx": ["FX-01"],
+    "stack": ["plate", "self:back", "cutout", "self:front"],
+    "inputs": {
+      "cutout": "the clip's person cutout on the track above it (editor: Cut out person; MCP: cutout) — the far cards pass behind it",
+      "face": "props.face = the face box (MCP cutout getFaceBoxes), median over the effect's window: the ring circles it"
+    },
+    "note": "Same props for both renders except layer. A card switches layer only at the ring's sides, where it is beside the body."
+  },
+  "params": {
+    "cards": {
+      "type": "list", "minItems": 3, "maxItems": 10, "label": "Cards",
+      "description": "The cards on the ring, in order. image = a screenshot or thumbnail (portrait); without one the card is drawn from label, stat and color.",
+      "of": { "type": "object", "fields": {
+        "label": { "type": "string", "default": "", "maxLength": 22, "description": "Title on a drawn card (and the alt text of an image card)." },
+        "stat": { "type": "string", "default": "", "maxLength": 10, "description": "Small count pill, e.g. 1.2M. Only real numbers." },
+        "color": { "type": "color", "default": "#2F4A3A", "description": "Background of a drawn card." },
+        "image": { "type": "image", "default": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "description": "Optional portrait image; the 1-pixel default means none." }
+      } },
+      "default": [
+        { "label": "12-hour steep", "stat": "1.2M", "color": "#2F4A3A" },
+        { "label": "Oat vanilla", "stat": "534K", "color": "#C8553D" },
+        { "label": "Pour over ice", "stat": "133K", "color": "#3E5A6E" },
+        { "label": "Bean to bottle", "stat": "88K", "color": "#7A5638" },
+        { "label": "No sugar, ever", "stat": "61K", "color": "#B49F84" },
+        { "label": "Small batch", "stat": "47K", "color": "#24242A" }
+      ]
+    },
+    "face": {
+      "type": "object", "label": "Face box",
+      "description": "The speaker's face as fractions of the frame: centre x, centre y, width, height (from the face detector). The ring is centred under it.",
+      "fields": {
+        "x": { "type": "number", "default": 0.5, "min": 0, "max": 1 },
+        "y": { "type": "number", "default": 0.42, "min": 0, "max": 1 },
+        "w": { "type": "number", "default": 0.26, "min": 0.02, "max": 1 },
+        "h": { "type": "number", "default": 0.17, "min": 0.02, "max": 1 }
+      },
+      "default": { "x": 0.5, "y": 0.42, "w": 0.26, "h": 0.17 }
+    },
+    "layer": { "type": "enum", "options": ["all", "back", "front"], "default": "all", "label": "Layer", "description": "back = the far half of the ring (put it under the person cutout), front = the near half + caption (above the cutout), all = everything in one overlay (no occlusion)." },
+    "caption": { "type": "string", "default": "every bottle is", "maxLength": 32, "label": "Caption", "description": "Small white line above the script word. Empty to hide." },
+    "script": { "type": "string", "default": "slow-steeped", "maxLength": 20, "label": "Script word", "description": "The gold italic word with sparkles under the caption. Empty to hide." },
+    "radius": { "type": "number", "default": 0.4, "min": 0.15, "max": 0.6, "step": 0.01, "label": "Ring radius", "description": "Half the ring's width as a fraction of the frame width (the reel: ~0.32 of the width plus the card)." },
+    "tilt": { "type": "number", "default": 28, "min": 0, "max": 60, "step": 1, "unit": "deg", "label": "Tilt", "description": "How far the ring leans toward the camera (0 = edge-on line, 60 = seen from above)." },
+    "roll": { "type": "number", "default": -7, "min": -30, "max": 30, "step": 1, "unit": "deg", "label": "Roll", "description": "Rotation of the ring in the picture plane." },
+    "drop": { "type": "number", "default": 0.08, "min": -0.3, "max": 0.4, "step": 0.01, "label": "Ring height", "description": "Ring centre below the face centre, fraction of the frame height (0.08 = around the neck and shoulders)." },
+    "period": { "type": "number", "default": 4, "min": 1, "max": 20, "step": 0.1, "unit": "s", "label": "Seconds per turn", "description": "Time for one full turn (the reel: about 4 s)." },
+    "cardSize": { "type": "number", "default": 0.15, "min": 0.06, "max": 0.3, "step": 0.005, "label": "Card width", "description": "Card width as a fraction of the frame width (cards are 9:16)." },
+    "accent": { "type": "color", "default": "#F2C14E", "label": "Gold", "description": "Colour of the script word and its sparkles." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier for the caption." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Entrance speed (the turn rate is set by Seconds per turn)." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Cards fly outward and fade over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; perspective: calc(1800px * var(--u)); }
+  .card { position: absolute; left: 0; top: 0; overflow: hidden; background-size: cover; background-position: center; }
+  .card .lab { position: absolute; left: 8%; right: 8%; bottom: 16%; font-family: "Instrument Serif", serif; color: #F7F2E8; line-height: .95; }
+  .card .pill { position: absolute; left: 8%; top: 6%; font-family: "JetBrains Mono", monospace; font-weight: 700; color: #0C0C0E; background: #F7F2E8; border-radius: 999px; }
+  .card .play { position: absolute; width: 0; height: 0; border-style: solid; border-color: transparent transparent transparent rgba(247,242,232,.9); }
+  .card .bar { position: absolute; left: 8%; right: 8%; bottom: 7%; background: rgba(247,242,232,.35); border-radius: 999px; }
+  .cap { position: absolute; left: 0; width: 100%; text-align: center; }
+  .cap1 { font-family: "Archivo", sans-serif; font-weight: 700; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,.55); }
+  .cap2 { font-family: "Instrument Serif", serif; font-style: italic; text-shadow: 0 2px 0 rgba(60,30,0,.55), 0 4px 26px rgba(0,0,0,.6); }
+  .spark { position: absolute; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var OB = { cards: [], sparks: [] };
+  var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var stage = document.getElementById("stage");
+      var W = RC.width, H = RC.height;
+      var cw = P.cardSize * W;
+      var ch = cw * 16 / 9;
+      OB.cw = cw; OB.ch = ch;
+      OB.cx = P.face.x * W;
+      OB.cy = (P.face.y + P.drop) * H;
+      OB.rx = P.radius * W;
+      OB.ry = OB.rx * Math.sin((P.tilt * Math.PI) / 180);
+      P.cards.forEach(function (c, i) {
+        var hasImg = c.image && c.image !== BLANK;
+        var card = RC.el("div", { class: "card", style: {
+          width: cw + "px", height: ch + "px", borderRadius: cw * 0.09 + "px",
+          background: hasImg ? "#111" : "linear-gradient(160deg, " + RC.mixColor(c.color, "#FFFFFF", 0.18) + ", " + c.color + " 55%, " + RC.mixColor(c.color, "#000000", 0.35) + ")",
+          boxShadow: "0 " + cw * 0.06 + "px " + cw * 0.14 + "px rgba(0,0,0,.45)", border: Math.max(1, cw * 0.012) + "px solid rgba(255,255,255,.55)",
+        } });
+        if (hasImg) card.appendChild(RC.el("img", { src: c.image, alt: c.label, style: { width: "100%", height: "100%", objectFit: "cover", display: "block" } }));
+        else {
+          card.appendChild(RC.el("div", { class: "play", style: { left: cw * 0.42 + "px", top: ch * 0.36 + "px", borderWidth: cw * 0.09 + "px 0 " + cw * 0.09 + "px " + cw * 0.15 + "px" } }));
+          if (c.label) card.appendChild(RC.el("div", { class: "lab", text: c.label, style: { fontSize: cw * 0.17 + "px" } }));
+          card.appendChild(RC.el("div", { class: "bar", style: { height: cw * 0.025 + "px" } }));
+        }
+        if (c.stat) card.appendChild(RC.el("div", { class: "pill", text: "▶ " + c.stat, style: { fontSize: cw * 0.085 + "px", padding: cw * 0.02 + "px " + cw * 0.05 + "px" } }));
+        stage.appendChild(card);
+        OB.cards.push({ el: card, i: i });
+      });
+      var u = RC.u * P.scale;
+      if (P.caption || P.script) {
+        var top = Math.max(RC.safe.top, (P.face.y - P.face.h * 0.5) * H - 330 * u);
+        if (P.caption) {
+          OB.cap1 = RC.el("div", { class: "cap cap1", text: P.caption, style: { fontSize: 46 * u + "px", top: top + "px" } });
+          stage.appendChild(OB.cap1);
+        }
+        if (P.script) {
+          OB.cap2 = RC.el("div", { class: "cap cap2", style: { fontSize: 150 * u + "px", top: top + 52 * u + "px", color: P.accent } }, [RC.el("span", { text: P.script, style: { display: "inline-block" } })]);
+          stage.appendChild(OB.cap2);
+          var span = OB.cap2.firstChild;
+          var r = span.getBoundingClientRect();
+          var rnd = RC.random(41);
+          for (var k = 0; k < 4; k++) {
+            var sz = (28 + rnd() * 26) * u;
+            var sp = RC.el("div", { class: "spark", style: { left: r.left + rnd() * r.width - sz / 2 + "px", top: top + 52 * u + rnd() * r.height * 0.9 - sz / 2 + "px", width: sz + "px", height: sz + "px" } });
+            sp.innerHTML = '<svg viewBox="-10 -10 20 20" width="100%" height="100%"><path d="M0 -10 Q1.2 -1.2 10 0 Q1.2 1.2 0 10 Q-1.2 1.2 -10 0 Q-1.2 -1.2 0 -10Z" fill="' + P.accent + '"/></svg>';
+            stage.appendChild(sp);
+            OB.sparks.push({ el: sp, ph: rnd() * 6.28, at: 0.5 + k * 0.12 });
+          }
+        }
+      }
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t, T = time.T;
+      var n = OB.cards.length;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      var roll = (P.roll * Math.PI) / 180;
+      var spin = (T / P.period) * Math.PI * 2;
+      var list = [];
+      OB.cards.forEach(function (c) {
+        var a = spin + (c.i / n) * Math.PI * 2 + Math.PI * 0.15;
+        var grow = RC.progress(t, 0.05 + c.i * 0.06, 0.55, "snappy");
+        var spread = RC.mix(0.15, 1, grow) * (1 + out * 0.9);
+        var lx = Math.cos(a) * OB.rx * spread;
+        var ly = Math.sin(a) * OB.ry * spread;
+        var x = OB.cx + lx * Math.cos(roll) - ly * Math.sin(roll);
+        var y = OB.cy + lx * Math.sin(roll) + ly * Math.cos(roll);
+        var depth = Math.sin(a);
+        var front = depth >= 0;
+        var show = P.layer === "all" || (P.layer === "front") === front;
+        var s = (1 + 0.2 * depth) * RC.mix(0.3, 1, grow);
+        RC.set(c.el, {
+          x: x - OB.cw / 2, y: y - OB.ch / 2, ry: -Math.cos(a) * 28, rotate: P.roll * 0.5,
+          scale: s, opacity: show ? RC.clamp(grow * 3, 0, 1) * (1 - out) : 0,
+        });
+        c.el.style.filter = "brightness(" + (0.78 + 0.22 * (depth + 1) / 2).toFixed(3) + ")";
+        list.push({ el: c.el, z: depth });
+      });
+      list.sort(function (a, b) { return a.z - b.z; });
+      list.forEach(function (c, k) { c.el.style.zIndex = String(k + 1); });
+      var capShow = P.layer !== "back";
+      var cp = RC.progress(t, 0.35, 0.5, "snappy");
+      if (OB.cap1) RC.set(OB.cap1, { y: (1 - cp) * 20 * RC.u, opacity: capShow ? cp * (1 - out) : 0 });
+      if (OB.cap2) {
+        var sp = RC.progress(t, 0.5, 0.6, "bouncy");
+        RC.set(OB.cap2, { scale: RC.mix(0.85, 1, sp), opacity: capShow ? RC.clamp(sp * 2, 0, 1) * (1 - out) : 0 });
+        OB.cap2.style.zIndex = "50";
+      }
+      OB.sparks.forEach(function (s) {
+        var on = RC.progress(t, s.at, 0.2, "snappy");
+        var tw = 0.55 + 0.45 * Math.abs(Math.sin(T * 5 + s.ph));
+        RC.set(s.el, { scale: on * tw, rotate: T * 60 + s.ph * 30, opacity: capShow ? on * (1 - out) : 0 });
+        s.el.style.zIndex = "51";
+      });
+    },
+  });
+</script>
+</body>
+</html>

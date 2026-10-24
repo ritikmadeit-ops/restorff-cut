@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/browser-device-stage); fictional.",
+  "chrome": "browser",
+  "title": "app.example.com",
+  "swapAt": 2.2,
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

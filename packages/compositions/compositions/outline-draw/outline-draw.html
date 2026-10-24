@@ -1,0 +1,266 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/outline-draw@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-variables='[
+    { "id": "progress", "type": "number", "role": "timing", "label": "Draw progress", "description": "Final percentage of the outline that is drawn.", "default": 100, "min": 0, "max": 100, "step": 1, "unit": "%" },
+    { "id": "thickness", "type": "number", "role": "layout", "label": "Stroke thickness", "description": "Outline stroke in tenths of the host width.", "default": 6, "min": 1, "max": 20, "step": 1, "unit": "0.1cqw" },
+    { "id": "radius", "type": "number", "role": "layout", "label": "Corner radius", "description": "Corner radius in tenths of the host smaller dimension.", "default": 24, "min": 0, "max": 80, "step": 1, "unit": "0.1cqmin" }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "outline-draw",
+  "title": "Outline Draw",
+  "description": "A rounded outline that proves a callout by drawing clockwise as a hollow conic-gradient border with a clean closure. Imported from a HyperFrames component (data; provenance below).",
+  "duration": 4,
+  "size": [
+    1230,
+    606
+  ],
+  "fps": 30,
+  "tags": [
+    "data",
+    "motion-primitive",
+    "effects",
+    "outline",
+    "border",
+    "mask",
+    "proof",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "progress": {
+      "type": "number",
+      "default": 100,
+      "label": "Draw progress",
+      "description": "Final percentage of the outline that is drawn.",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    "thickness": {
+      "type": "number",
+      "default": 6,
+      "label": "Stroke thickness",
+      "description": "Outline stroke in tenths of the host width.",
+      "min": 1,
+      "max": 20,
+      "step": 1
+    },
+    "radius": {
+      "type": "number",
+      "default": 24,
+      "label": "Corner radius",
+      "description": "Corner radius in tenths of the host smaller dimension.",
+      "min": 0,
+      "max": 80,
+      "step": 1
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1229x605 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "progress": "progress",
+      "thickness": "thickness",
+      "radius": "radius"
+    },
+    "width": 1229,
+    "height": 605,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/outline-draw",
+    "path": "registry/components/outline-draw",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="outline-draw" data-start="0" data-duration="4" data-width="1229" data-height="605" style="position:absolute;left:0;top:0;width:1229px;height:605px">
+
+      <div id="root" data-composition-id="outline-draw" data-duration="4" data-fps="30">
+        <style>
+          @property --od-progress {
+            syntax: "<number>";
+            inherits: false;
+            initial-value: 0;
+          }
+
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            position: absolute;
+            inset: 0;
+            container-type: size;
+            isolation: isolate;
+            overflow: hidden;
+            pointer-events: none;
+          }
+
+          .od-clip {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+          }
+
+          /* EDIT ZONE: --space-8 controls the safe inset. The public
+             thickness and radius variables own the remaining geometry. */
+          .od-outline {
+            --od-progress: 0;
+            --od-thickness: 6;
+            --od-radius: 24;
+            --od-seam-overlap: 0.5deg;
+            position: absolute;
+            inset: var(--space-8, 8cqmin);
+            border: calc(var(--od-thickness) * 0.1cqw) solid transparent;
+            border-radius: calc(var(--od-radius) * 0.1cqmin);
+            background: conic-gradient(
+              from -90deg,
+              var(--accent, #38bdf8) 0deg calc(var(--od-progress) * 3.6deg),
+              transparent calc(var(--od-progress) * 3.6deg + var(--od-seam-overlap)) 360deg
+            );
+            background-clip: border-box;
+            background-origin: border-box;
+            mask:
+              linear-gradient(var(--fg, #f8fafc) 0 0) padding-box,
+              linear-gradient(var(--fg, #f8fafc) 0 0) border-box;
+            mask-composite: exclude;
+            
+          }
+
+          /* INVARIANT: the 0.5deg feather overlaps the coincident conic
+             edges at closure so 0deg and 360deg never expose a hard seam. */
+        </style>
+
+        <div
+          id="outline-draw-clip"
+          class="od-clip clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="0"
+        >
+          <div class="od-outline" data-layout-ignore aria-hidden="true"></div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var outline = root.querySelector(".od-outline");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            // INVARIANT: invalid values return to declared defaults. Valid
+            // zero values survive because each scalar is checked explicitly.
+            var progressValue = Number(vars.progress);
+            var thicknessValue = Number(vars.thickness);
+            var radiusValue = Number(vars.radius);
+            var progress = Number.isFinite(progressValue)
+              ? Math.max(0, Math.min(100, progressValue))
+              : 100;
+            var thickness = Number.isFinite(thicknessValue)
+              ? Math.max(1, Math.min(20, thicknessValue))
+              : 6;
+            var radius = Number.isFinite(radiusValue) ? Math.max(0, Math.min(80, radiusValue)) : 24;
+
+            outline.style.setProperty("--od-thickness", String(thickness));
+            outline.style.setProperty("--od-radius", String(radius));
+
+            // RETIME RANGE: only these fixed envelope lengths may be tuned.
+            // HOLD is the sole elastic phase. Never use timeScale.
+            var IN_BASE = 0.8;
+            var OUT_BASE = 0.4;
+            var duration = Math.max(0.001, parseFloat(root.dataset.duration || "4"));
+            var envelope = IN_BASE + OUT_BASE;
+            var scale = duration < envelope ? duration / envelope : 1;
+            var IN = IN_BASE * scale;
+            var OUT = OUT_BASE * scale;
+            var HOLD = Math.max(0, duration - IN - OUT);
+            var OUT_START = IN + HOLD;
+
+            gsap.set(outline, { "--od-progress": 0, opacity: 1 });
+
+            var tl = gsap.timeline({ paused: true });
+            // --ease-standard maps to the production GSAP name power2.out.
+            // The registered scalar is tweened directly, with no proxy clock.
+            tl.to(outline, { "--od-progress": progress, duration: IN, ease: "power2.out" }, 0);
+            tl.to(outline, { opacity: 0, duration: OUT, ease: "power2.out" }, OUT_START);
+            tl.seek(0);
+
+            window.__timelines = window.__timelines || {};
+            window.__timelines["outline-draw"] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

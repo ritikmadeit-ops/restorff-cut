@@ -6,12 +6,13 @@ import {
 	renderFrame,
 	resizeCompositor,
 	uploadTexture,
-} from "opencut-wasm";
+} from "restorffcut-wasm";
 import {
 	incrementCounter,
 	isRenderPerfEnabled,
 	recordWasmFrameProfile,
 } from "@/diagnostics/render-perf";
+import { isExternalCacheHit } from "./texture-cache";
 import type {
 	ExternalTextureDescriptor,
 	FrameDescriptor,
@@ -35,6 +36,8 @@ type RenderedCacheEntry = {
 type ExternalCacheEntry = {
 	kind: "external";
 	source: CanvasImageSource;
+	/** RestorffCut (ui-fix-render): what the source held when uploaded (a pooled video canvas is redrawn). */
+	version: string | undefined;
 	width: number;
 	height: number;
 };
@@ -98,12 +101,7 @@ class WasmCompositor {
 
 	private syncExternalTexture(texture: ExternalTextureDescriptor) {
 		const previous = this.cache.get(texture.id);
-		if (
-			previous?.kind === "external" &&
-			previous.source === texture.source &&
-			previous.width === texture.width &&
-			previous.height === texture.height
-		) {
+		if (isExternalCacheHit(previous, texture)) {
 			incrementCounter({ name: "textureCacheHit" });
 			return;
 		}
@@ -127,6 +125,7 @@ class WasmCompositor {
 		this.cache.set(texture.id, {
 			kind: "external",
 			source: texture.source,
+			version: texture.version,
 			width: texture.width,
 			height: texture.height,
 		});

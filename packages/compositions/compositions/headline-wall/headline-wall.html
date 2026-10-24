@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Headline wall</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "headline-wall",
+  "title": "Headline wall",
+  "description": "Several press-clipping cards (source, date, serif headline) fan in from below one after another and settle into a tilted wall, with a slow push-in. Use for social proof: coverage, reviews, quotes. Only real coverage in real ads.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["social-proof", "press", "cards", "reels", "matte", "named-effect"],
+  "effect": {
+    "fx": ["FX-08"],
+    "stack": ["plate", "self", "cutout"],
+    "inputs": {
+      "cutout": "the clip's person cutout on the track above it (editor: Cut out person; MCP: cutout): cards behind the speaker are hidden by them",
+      "headlines": "4-8 short lines the brand can prove (claim matrix RES-05): no invented press quotes in a real ad",
+      "face": "props.face = the face box (MCP cutout getFaceBoxes), median over the effect's window: layout wall pins its cards around and behind that head, so it also works behind a low-framed speaker"
+    },
+    "note": "FX-08 = layout wall (cards pin onto the wall around and behind the head) between the clip and its cutout. Layout stack is the older centred column for a plain overlay. In layout wall, face moves the whole wall with the head; anchor top/bottom pins it to the safe area instead; offsetY nudges either."
+  },
+  "params": {
+    "layout": { "type": "enum", "options": ["stack", "wall"], "default": "stack", "label": "Layout", "description": "stack = cards fan into a tilted column (an overlay); wall = cards of mixed kinds pin one by one onto the wall around and behind the speaker (put it under the person cutout)." },
+    "headlines": {
+      "type": "list",
+      "minItems": 1,
+      "maxItems": 8,
+      "label": "Headlines",
+      "description": "One card per item, bottom card first. Keep headlines under ~60 characters (two lines).",
+      "of": { "type": "object", "fields": {
+        "source": { "type": "string", "maxLength": 28, "description": "Publication or author, set in mono caps." },
+        "headline": { "type": "string", "maxLength": 90, "description": "The headline or quote." },
+        "date": { "type": "string", "default": "", "maxLength": 16, "description": "Short date, e.g. OCT 2026. Optional." },
+        "kind": { "type": "enum", "options": ["clipping", "note", "post", "search"], "default": "clipping", "description": "Card style in layout wall: press clipping, paper note (handwritten), social post (source = handle, date = age) or search bar (headline = the query)." }
+      } },
+      "default": [
+        { "source": "GRINDSTONE GAZETTE", "headline": "Halcyon's third drop sells out in 40 minutes", "date": "OCT 2026" },
+        { "source": "BREW WEEKLY", "headline": "The 12-hour cold brew people queue for", "date": "SEP 2026" },
+        { "source": "THE MORNING LEDGER", "headline": "Small-batch coffee goes big, without the sugar", "date": "AUG 2026" },
+        { "source": "CAFFEINE QUARTERLY", "headline": "Why Halcyon steeps longer than anyone else", "date": "JUL 2026" }
+      ]
+    },
+    "highlight": { "type": "number", "default": -1, "min": -1, "max": 5, "step": 1, "label": "Highlighted card", "description": "Index of the card that gets the accent edge (0 = first). -1 = the last card." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Edge marker on the highlighted card." },
+    "paper": { "type": "color", "default": "#EDEBE6", "label": "Paper", "description": "Card colour." },
+    "ink": { "type": "color", "default": "#0C0C0E", "label": "Ink", "description": "Headline colour." },
+    "fan": { "type": "number", "default": 6, "min": 0, "max": 20, "step": 0.5, "unit": "deg", "label": "Fan", "description": "How much the cards tilt (max degrees either way)." },
+    "stagger": { "type": "number", "default": 0.12, "min": 0.05, "max": 1.5, "step": 0.01, "unit": "s", "label": "Stagger", "description": "Delay between cards (the reel pins one every 120 ms)." },
+    "push": { "type": "boolean", "default": true, "label": "Push-in", "description": "Slow camera push on the wall while it holds." },
+    "seed": { "type": "number", "default": 7, "min": 1, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the tilt pattern; same seed, same wall." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed. 0.8 = slower, 1.25 = faster." },
+    "ease": { "type": "easing", "default": "springy", "label": "Easing", "description": "How each card lands." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "center", "label": "Anchor", "description": "Vertical placement inside the safe area. Layout wall: center = around the face box; top / bottom pin the wall's top / bottom card to the safe area." },
+    "offsetY": { "type": "number", "default": 0, "min": -900, "max": 900, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up. Works in both layouts." },
+    "face": {
+      "type": "object", "label": "Face box",
+      "description": "Layout wall: the speaker's face as fractions of the frame (centre x, centre y, width, height; from the face detector). The wall is built around and behind this head, so a low-framed speaker gets the wall lower. The default is a centred head in the upper third.",
+      "fields": {
+        "x": { "type": "number", "default": 0.5, "min": 0, "max": 1 },
+        "y": { "type": "number", "default": 0.27, "min": 0, "max": 1 },
+        "w": { "type": "number", "default": 0.3, "min": 0.02, "max": 1 },
+        "h": { "type": "number", "default": 0.18, "min": 0.02, "max": 1 }
+      },
+      "default": { "x": 0.5, "y": 0.27, "w": 0.3, "h": 0.18 }
+    },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Cards fly up and away over the last 0.45 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .wall { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  .card { position: absolute; left: 0; top: 0; overflow: hidden; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  .rule { height: 2px; opacity: .18; }
+  .hl { font-family: "Instrument Serif", serif; font-weight: 400; line-height: 1.02; letter-spacing: -.005em; }
+  .edge { position: absolute; left: 0; top: 0; bottom: 0; }
+  /* layout wall */
+  .wc { position: absolute; left: 0; top: 0; }
+  .wc .pin { position: absolute; left: 50%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #FF8A7A, #C8352B 55%, #7A1C14); box-shadow: 0 3px 6px rgba(0,0,0,.4); }
+  .k-note { font-family: "Instrument Serif", serif; font-style: italic; line-height: 1.05; color: #2A2418; }
+  .k-post { font-family: "Archivo", sans-serif; color: #16161A; }
+  .k-post .hd { display: flex; align-items: center; font-weight: 700; }
+  .k-post .av { border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; color: #fff; font-family: "Instrument Serif", serif; }
+  .k-post .tx { font-weight: 500; line-height: 1.22; }
+  .k-search { display: flex; align-items: center; font-family: "Archivo", sans-serif; font-weight: 500; color: #2A2A2E; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var W = { cards: [] };
+  // layout wall: spots around and behind a centred talking head [centre x, centre y, width] as fractions of the frame
+  var SPOTS = [[0.27, 0.15, 0.46], [0.75, 0.12, 0.42], [0.2, 0.35, 0.36], [0.82, 0.35, 0.32], [0.5, 0.24, 0.36], [0.2, 0.55, 0.34], [0.8, 0.55, 0.34], [0.5, 0.07, 0.34]];
+  // the head the SPOTS were laid out around (centre x, centre y as fractions of the frame) = the face param's default
+  var FACE_REF = { x: 0.5, y: 0.27 };
+  function buildWall(RC) {
+    var P = RC.params;
+    var u = RC.u * P.scale;
+    var stage = document.getElementById("stage");
+    var wall = RC.el("div", { class: "wall" });
+    stage.appendChild(wall);
+    var rnd = RC.random(P.seed);
+    P.headlines.forEach(function (h, i) {
+      var spot = SPOTS[i % SPOTS.length];
+      var w = spot[2] * RC.width * P.scale;
+      var kind = h.kind || "clipping";
+      var body;
+      if (kind === "note") {
+        body = RC.el("div", { class: "k-note", text: h.headline, style: { width: w + "px", padding: 30 * u + "px " + 32 * u + "px", fontSize: 50 * u + "px", background: "linear-gradient(180deg, #FBEFA0, #F3DE73)", boxShadow: "0 " + 14 * u + "px " + 30 * u + "px rgba(0,0,0,.35)" } });
+        if (h.source) body.appendChild(RC.el("div", { text: "— " + h.source, style: { fontSize: 30 * u + "px", marginTop: 12 * u + "px", opacity: ".7" } }));
+      } else if (kind === "post") {
+        body = RC.el("div", { class: "k-post", style: { width: w + "px", padding: 26 * u + "px", borderRadius: 22 * u + "px", background: "#FFFFFF", boxShadow: "0 " + 14 * u + "px " + 34 * u + "px rgba(0,0,0,.35)" } }, [
+          RC.el("div", { class: "hd", style: { gap: 14 * u + "px", fontSize: 26 * u + "px", marginBottom: 14 * u + "px" } }, [
+            RC.el("span", { class: "av", text: (h.source || "?").replace(/^@/, "").slice(0, 1).toUpperCase(), style: { width: 50 * u + "px", height: 50 * u + "px", fontSize: 32 * u + "px", background: ["#2F4A3A", "#C8553D", "#3E5A6E", "#7A5638"][i % 4] } }),
+            RC.el("span", { text: h.source }),
+            h.date ? RC.el("span", { text: "· " + h.date, style: { fontWeight: 500, opacity: ".5" } }) : null,
+          ]),
+          RC.el("div", { class: "tx", text: h.headline, style: { fontSize: 34 * u + "px" } }),
+        ]);
+      } else if (kind === "search") {
+        body = RC.el("div", { class: "k-search", style: { width: w + "px", padding: 22 * u + "px " + 30 * u + "px", gap: 18 * u + "px", borderRadius: 999 + "px", background: "#FFFFFF", fontSize: 32 * u + "px", boxShadow: "0 " + 12 * u + "px " + 30 * u + "px rgba(0,0,0,.35)" } });
+        var mg = RC.el("span");
+        mg.innerHTML = '<svg viewBox="0 0 24 24" width="' + 34 * u + '" height="' + 34 * u + '"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="#2A2A2E" stroke-width="2.4"/><path d="M15.5 15.5 21 21" stroke="#2A2A2E" stroke-width="2.4" stroke-linecap="round"/></svg>';
+        body.appendChild(mg);
+        body.appendChild(RC.el("span", { text: h.headline, style: { overflow: "hidden", textOverflow: "ellipsis" } }));
+      } else {
+        body = RC.el("div", { style: { width: w + "px", padding: 26 * u + "px " + 30 * u + "px " + 30 * u + "px", borderRadius: 10 * u + "px", background: P.paper, color: P.ink, boxShadow: "0 " + 14 * u + "px " + 34 * u + "px rgba(0,0,0,.4)" } }, [
+          RC.el("div", { class: "head", style: { fontSize: 18 * u + "px", color: P.ink } }, [RC.el("span", { text: h.source }), RC.el("span", { text: h.date || "", style: { opacity: ".55", fontWeight: "500" } })]),
+          RC.el("div", { class: "rule", style: { background: P.ink, margin: 12 * u + "px 0 " + 14 * u + "px" } }),
+          RC.el("div", { class: "hl", text: h.headline, style: { fontSize: 46 * u + "px" } }),
+        ]);
+      }
+      var pin = RC.el("span", { class: "pin", style: { width: 26 * u + "px", height: 26 * u + "px", top: -8 * u + "px", marginLeft: -13 * u + "px" } });
+      var card = RC.el("div", { class: "wc" }, [body, pin]);
+      wall.appendChild(card);
+      W.cards.push({ el: card, x: spot[0] * RC.width - w / 2, y: spot[1] * RC.height, rot: (rnd() - 0.5) * 2 * P.fan, i: i });
+    });
+    W.cards.forEach(function (c) {
+      c.y -= c.el.offsetHeight / 2;
+      c.el.style.transformOrigin = "50% 0";
+    });
+    // place the wall: SPOTS are drawn around a head at FACE_REF; follow the real face box (or pin to the safe area)
+    var F = P.face || FACE_REF;
+    var dx = (F.x - FACE_REF.x) * RC.width * 0.6;
+    var dy = (F.y - FACE_REF.y) * RC.height;
+    if (P.anchor !== "center") {
+      var top = Math.min.apply(null, W.cards.map(function (c) { return c.y; }));
+      var bottom = Math.max.apply(null, W.cards.map(function (c) { return c.y + c.el.offsetHeight; }));
+      dy = P.anchor === "top" ? RC.safe.top - top : RC.height - RC.safe.bottom - bottom;
+    }
+    dy += P.offsetY * RC.u;
+    if (dx !== 0 || dy !== 0) {
+      W.cards.forEach(function (c) {
+        var w = c.el.offsetWidth, h = c.el.offsetHeight;
+        c.x = RC.clamp(c.x + dx, -0.15 * w, RC.width - 0.85 * w);
+        c.y = RC.clamp(c.y + dy, 0.02 * RC.height, RC.height - h - 0.02 * RC.height);
+      });
+    }
+    W.wallLayout = true;
+    W.wall = wall;
+    wall.style.transformOrigin = dx !== 0 || dy !== 0 ? (50 + (100 * dx) / RC.width).toFixed(2) + "% " + (35 + (100 * dy) / RC.height).toFixed(2) + "%" : "50% 35%";
+  }
+  function renderWall(time, RC) {
+    var P = RC.params;
+    var t = time.t;
+    var n = W.cards.length;
+    W.cards.forEach(function (c) {
+      var t0 = 0.08 + c.i * P.stagger;
+      var k = RC.progress(t, t0, 0.22, "snappy");
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp((time.left - (n - 1 - c.i) * 0.03) / 0.3, 0, 1)) : 0;
+      RC.set(c.el, { x: c.x, y: c.y + (1 - k) * -18 * RC.u + out * RC.height * 0.4, rotate: c.rot + (1 - k) * 4 + out * (c.i % 2 ? 12 : -12), scale: RC.mix(1.22, 1, k), opacity: (t >= t0 ? RC.clamp(k * 3, 0, 1) : 0) * (1 - out) });
+    });
+    var hold = P.push ? RC.progress(t, 0.2, Math.max(0.5, time.duration * (P.speed || 1)), "linear") : 0;
+    RC.set(W.wall, { scale: 1 + 0.03 * hold });
+  }
+  RC.composition({
+    build: function (RC) {
+      if (RC.params.layout === "wall") return buildWall(RC);
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var wall = RC.el("div", { class: "wall" });
+      stage.appendChild(wall);
+      var rnd = RC.random(P.seed);
+      var hi = P.highlight < 0 ? P.headlines.length - 1 : P.highlight;
+      var cw = Math.min(RC.width * 0.92, RC.width * 0.76 * P.scale);
+      P.headlines.forEach(function (h, i) {
+        var card = RC.el("div", { class: "card", style: {
+          width: cw + "px", padding: 34 * u + "px " + 40 * u + "px " + 40 * u + "px", borderRadius: 18 * u + "px",
+          background: P.paper, color: P.ink, boxShadow: "0 " + 30 * u + "px " + 70 * u + "px rgba(0,0,0,.45), 0 " + 6 * u + "px " + 16 * u + "px rgba(0,0,0,.25)",
+        } }, [
+          RC.el("div", { class: "head", style: { fontSize: 22 * u + "px", color: P.ink } }, [
+            RC.el("span", { text: h.source }),
+            RC.el("span", { text: h.date || "", style: { opacity: ".55", fontWeight: "500" } }),
+          ]),
+          RC.el("div", { class: "rule", style: { background: P.ink, margin: 18 * u + "px 0 " + 20 * u + "px" } }),
+          RC.el("div", { class: "hl", text: h.headline, style: { fontSize: 64 * u + "px" } }),
+          i === hi ? RC.el("div", { class: "edge", style: { width: 14 * u + "px", background: P.accent } }) : null,
+        ]);
+        wall.appendChild(card);
+        W.cards.push({ el: card, rot: (i % 2 ? 1 : -1) * (0.35 + 0.65 * rnd()) * P.fan, dx: (i % 2 ? 1 : -1) * (14 + 26 * rnd()) * u });
+      });
+      // stack the cards with overlap; centre the whole wall on the anchor
+      var heights = W.cards.map(function (c) { return c.el.offsetHeight; });
+      // overlap only the bottom padding, plus room for neighbours tilting opposite ways: never hide a headline line
+      var step = Math.max.apply(null, heights) * 0.94 + cw * 0.5 * Math.sin((P.fan * Math.PI) / 180);
+      var total = step * (W.cards.length - 1) + heights[heights.length - 1];
+      var maxH = RC.height - RC.safe.top - RC.safe.bottom;
+      if (total > maxH) { step = (maxH - heights[heights.length - 1]) / Math.max(1, W.cards.length - 1); total = maxH; }
+      var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - total : (RC.height - total) / 2;
+      top += P.offsetY * RC.u;
+      W.cards.forEach(function (c, i) {
+        c.x = (RC.width - cw) / 2 - (RC.safe.right - RC.safe.left) / 2 + c.dx;
+        c.y = top + i * step;
+      });
+      W.wall = wall;
+      W.u = u;
+      wall.style.transformOrigin = "50% " + (top + total / 2) + "px";
+    },
+    render: function (time, RC) {
+      if (W.wallLayout) return renderWall(time, RC);
+      var P = RC.params;
+      var t = time.t;
+      var n = W.cards.length;
+      W.cards.forEach(function (c, i) {
+        var t0 = 0.1 + i * P.stagger;
+        var k = RC.progress(t, t0, 0.75, P.ease);
+        var lin = RC.progress(t, t0, 0.75, "snappy");
+        var side = i % 2 ? 1 : -1;
+        var out = 0;
+        if (P.exit) out = RC.ease("ease-in", 1 - RC.clamp((time.left - (n - 1 - i) * 0.04) / 0.32, 0, 1));
+        RC.set(c.el, {
+          x: c.x + side * 60 * W.u * (1 - lin),
+          y: c.y + RC.height * 0.75 * (1 - lin) - RC.height * 0.9 * out,
+          rotate: RC.mix(c.rot + side * 22, c.rot, k) - side * 10 * out,
+          scale: RC.mix(0.9, 1, lin),
+          opacity: RC.progress(t, t0, 0.1, "linear"),
+        });
+      });
+      var hold = P.push ? RC.progress(t, 0.2, Math.max(0.5, time.duration * (P.speed || 1)), "linear") : 0;
+      RC.set(W.wall, { scale: 1 + 0.035 * hold });
+    },
+  });
+</script>
+</body>
+</html>

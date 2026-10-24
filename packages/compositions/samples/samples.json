@@ -1,0 +1,94 @@
+{
+  "measuredOn": "2026-10-20",
+  "workers": 4,
+  "rows": [
+    {
+      "name": "badge-pills",
+      "size": "1080x1920",
+      "seconds": 3.5,
+      "frames": 105,
+      "renderSeconds": 3.4,
+      "loadSeconds": 0.3,
+      "secondsPerSecond": 0.97,
+      "mb": 0.37,
+      "crf": 31
+    },
+    {
+      "name": "big-word-punch",
+      "size": "1080x1920",
+      "seconds": 3,
+      "frames": 90,
+      "renderSeconds": 2.9,
+      "loadSeconds": 0.2,
+      "secondsPerSecond": 0.96,
+      "mb": 0.39,
+      "crf": 31
+    },
+    {
+      "name": "chart-grow",
+      "size": "1080x1920",
+      "seconds": 4,
+      "frames": 120,
+      "renderSeconds": 3.8,
+      "loadSeconds": 0.2,
+      "secondsPerSecond": 0.94,
+      "mb": 0.43,
+      "crf": 31
+    },
+    {
+      "name": "checklist",
+      "size": "1080x1920",
+      "seconds": 4,
+      "frames": 120,
+      "renderSeconds": 3.9,
+      "loadSeconds": 0.2,
+      "secondsPerSecond": 0.96,
+      "mb": 0.41,
+      "crf": 31
+    },
+    {
+      "name": "cover-story",
+      "size": "1080x1920",
+      "seconds": 4,
+      "frames": 120,
+      "renderSeconds": 4.2,
+      "loadSeconds": 0.2,
+      "secondsPerSecond": 1.06,
+      "mb": 1.2,
+      "crf": 31
+    },
+    {
+      "name": "headline-wall",
+      "size": "1080x1920",
+      "seconds": 4,
+      "frames": 120,
+      "renderSeconds": 6.8,
+      "loadSeconds": 0.2,
+      "secondsPerSecond": 1.7,
+      "mb": 1.62,
+      "crf": 43
+    },
+    {
+      "name": "ui-card-pop",
+      "size": "1080x1920",
+      "seconds": 3.5,
+      "frames": 105,
+      "renderSeconds": 4.8,
+      "loadSeconds": 0.3,
+      "secondsPerSecond": 1.37,
+      "mb": 1.24,
+      "crf": 31
+    },
+    {
+      "name": "word-pop",
+      "size": "1080x1920",
+      "seconds": 4,
+      "frames": 120,
+      "renderSeconds": 3.8,
+      "loadSeconds": 0.3,
+      "secondsPerSecond": 0.95,
+      "mb": 0.37,
+      "crf": 31
+    }
+  ]
+}

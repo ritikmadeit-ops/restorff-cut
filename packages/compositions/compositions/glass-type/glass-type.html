@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glass type</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "glass-type",
+  "title": "Glass type",
+  "description": "Big extruded clear-glass letters float on the wall behind the speaker and bend the room seen through them (refraction with a little colour fringing, a bright bevel and a darker extruded side). Use for one word that should feel like an object in the room (EFFECTS.md FX-17). Needs a still of the room (clean plate, or a frame of the clip); put it between the clip and its person cutout so the letters pass behind the speaker.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["glass", "3d", "type", "refraction", "matte", "reels", "named-effect"],
+  "effect": {
+    "fx": ["FX-17"],
+    "stack": ["plate", "self", "cutout"],
+    "inputs": {
+      "background": "props.background = a still of the room behind the letters: a clean plate (best) or a frame of the clip at the effect's start (MCP look / render a frame). Without one the glass bends a soft gradient.",
+      "cutout": "the clip's person cutout on the track above it (editor: Cut out person; MCP: cutout): the letters go behind the speaker"
+    },
+    "note": "The refraction uses the still, so it suits a locked-off shot (the wall behind the letters does not move)."
+  },
+  "params": {
+    "word": { "type": "string", "required": true, "default": "COLD", "maxLength": 10, "label": "Word", "description": "The word in glass. Short and heavy reads best (4-6 letters)." },
+    "background": { "type": "image", "default": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "label": "Room still", "description": "What the glass bends: a clean plate or a frame of the clip, same framing. The 1-pixel default means a soft gradient." },
+    "y": { "type": "number", "default": 0.22, "min": 0, "max": 1, "step": 0.005, "label": "Height", "description": "Vertical centre of the word, fraction of the frame height (0.22 = above a talking head)." },
+    "width": { "type": "number", "default": 0.88, "min": 0.3, "max": 1.2, "step": 0.01, "label": "Width", "description": "Width of the word, fraction of the frame width." },
+    "refraction": { "type": "number", "default": 1, "min": 0, "max": 3, "step": 0.05, "label": "Refraction", "description": "How much the room bends through the letters (1 = like thick glass)." },
+    "depth": { "type": "number", "default": 0.08, "min": 0, "max": 0.25, "step": 0.005, "label": "Extrusion", "description": "Depth of the letters' side as a fraction of the letter height (the reel: ~8 %)." },
+    "tint": { "type": "color", "default": "#DDEFFF", "label": "Glass tint", "description": "Faint colour of the glass." },
+    "drift": { "type": "number", "default": 3, "min": 0, "max": 15, "step": 0.5, "unit": "deg", "label": "Drift", "description": "Gentle rocking of the word, degrees." },
+    "stagger": { "type": "number", "default": 0.09, "min": 0, "max": 0.5, "step": 0.01, "unit": "s", "label": "Letter stagger", "description": "Delay between letters dropping in." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Letters fade and rise over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  canvas.out { position: absolute; left: 0; top: 0; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var GT = {};
+  var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  function boxBlur(src, w, h, r) {
+    // three separable box passes ≈ gaussian; deterministic float maths
+    var a = new Float32Array(src), b = new Float32Array(w * h);
+    for (var pass = 0; pass < 3; pass++) {
+      for (var y = 0; y < h; y++) {
+        var acc = 0, row = y * w;
+        for (var x = -r; x <= r; x++) acc += a[row + Math.min(w - 1, Math.max(0, x))];
+        for (var x2 = 0; x2 < w; x2++) {
+          b[row + x2] = acc / (2 * r + 1);
+          acc += a[row + Math.min(w - 1, x2 + r + 1)] - a[row + Math.max(0, x2 - r)];
+        }
+      }
+      for (var x3 = 0; x3 < w; x3++) {
+        var acc2 = 0;
+        for (var y2 = -r; y2 <= r; y2++) acc2 += b[Math.min(h - 1, Math.max(0, y2)) * w + x3];
+        for (var y3 = 0; y3 < h; y3++) {
+          a[y3 * w + x3] = acc2 / (2 * r + 1);
+          acc2 += b[Math.min(h - 1, y3 + r + 1) * w + x3] - b[Math.max(0, y3 - r) * w + x3];
+        }
+      }
+    }
+    return a;
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var W = RC.width, H = RC.height;
+      var stage = document.getElementById("stage");
+      // 1. the room: what the glass bends
+      var room = document.createElement("canvas");
+      room.width = W; room.height = H;
+      var rg = room.getContext("2d");
+      var ready;
+      if (P.background !== BLANK) {
+        var im = new Image();
+        im.src = P.background;
+        ready = im.decode().then(function () { rg.drawImage(im, 0, 0, W, H); });
+      } else {
+        var gr = rg.createLinearGradient(0, 0, 0, H);
+        gr.addColorStop(0, "#9AA7B8"); gr.addColorStop(0.5, "#D9CDBB"); gr.addColorStop(1, "#5A4E44");
+        rg.fillStyle = gr; rg.fillRect(0, 0, W, H);
+        for (var i = 0; i < 9; i++) { rg.fillStyle = i % 2 ? "rgba(255,255,255,.18)" : "rgba(0,0,0,.08)"; rg.fillRect(0, (i / 9) * H, W, H / 18); }
+        ready = Promise.resolve();
+      }
+      return ready.then(function () {
+        GT.room = rg.getImageData(0, 0, W, H).data;
+        // 2. the word as an alpha mask in letter space
+        var fs = 400 * RC.u;
+        var probe = document.createElement("canvas").getContext("2d");
+        var font = "900 " + fs + "px Archivo";
+        probe.font = font;
+        try { probe.fontStretch = "expanded"; } catch (e) { /* older canvas: normal width */ }
+        var tw = probe.measureText(P.word).width;
+        var target = P.width * W;
+        fs = fs * target / Math.max(1, tw);
+        font = "900 " + fs + "px Archivo";
+        probe.font = font;
+        try { probe.fontStretch = "expanded"; } catch (e) { /* normal width */ }
+        tw = probe.measureText(P.word).width;
+        var depthPx = Math.round(P.depth * fs * 0.75);
+        var pad = Math.round(fs * 0.12) + depthPx;
+        var lw = Math.ceil(tw + 2 * pad), lh = Math.ceil(fs * 0.86 + 2 * pad);
+        var lc = document.createElement("canvas"); lc.width = lw; lc.height = lh;
+        var lg = lc.getContext("2d");
+        lg.font = font;
+        try { lg.fontStretch = "expanded"; } catch (e) { /* normal width */ }
+        lg.fillStyle = "#fff";
+        lg.textBaseline = "alphabetic";
+        lg.fillText(P.word, pad, pad + fs * 0.74);
+        var ld = lg.getImageData(0, 0, lw, lh).data;
+        var A = new Float32Array(lw * lh);
+        for (var q = 0; q < lw * lh; q++) A[q] = ld[q * 4 + 3] / 255;
+        // 3. height (bevel) → normals; extruded side mask
+        var bev = Math.max(2, Math.round(fs * 0.035));
+        var Hm = boxBlur(A, lw, lh, bev);
+        var NX = new Float32Array(lw * lh), NY = new Float32Array(lw * lh), SIDE = new Float32Array(lw * lh);
+        for (var y = 1; y < lh - 1; y++) for (var x = 1; x < lw - 1; x++) {
+          var k = y * lw + x;
+          NX[k] = (Hm[k - 1] - Hm[k + 1]) * bev;
+          NY[k] = (Hm[k - lw] - Hm[k + lw]) * bev;
+        }
+        var ex = 0.45, ey = 0.9;
+        for (var d = 1; d <= depthPx; d++) {
+          var ox = Math.round(d * ex), oy = Math.round(d * ey);
+          for (var y4 = oy; y4 < lh; y4++) for (var x4 = ox; x4 < lw; x4++) {
+            var s = A[(y4 - oy) * lw + (x4 - ox)] * (1 - d / (depthPx + 1) * 0.5);
+            if (s > SIDE[y4 * lw + x4]) SIDE[y4 * lw + x4] = s;
+          }
+        }
+        // letter index per column (for the per-letter drop-in)
+        var col = new Int16Array(lw);
+        var edges = [];
+        for (var c = 0; c <= P.word.length; c++) edges.push(pad + probe.measureText(P.word.slice(0, c)).width);
+        for (var x5 = 0; x5 < lw; x5++) { var li = 0; while (li < P.word.length - 1 && x5 > edges[li + 1]) li++; col[x5] = li; }
+        GT.L = { w: lw, h: lh, A: A, NX: NX, NY: NY, SIDE: SIDE, col: col, fs: fs };
+        // 4. output canvas: the letters' screen box with room to rock and drop
+        var cx = W / 2, cy = P.y * H;
+        var bw = Math.ceil(lw * 1.08), bh = Math.ceil(lh * 1.35);
+        var out = document.createElement("canvas");
+        out.className = "out";
+        out.width = bw; out.height = bh;
+        out.style.left = Math.round(cx - bw / 2) + "px";
+        out.style.top = Math.round(cy - bh / 2) + "px";
+        stage.appendChild(out);
+        GT.out = out;
+        GT.og = out.getContext("2d");
+        GT.img = GT.og.createImageData(bw, bh);
+        GT.ox = Math.round(cx - bw / 2); GT.oy = Math.round(cy - bh / 2);
+        GT.tint = [parseInt(P.tint.slice(1, 3), 16), parseInt(P.tint.slice(3, 5), 16), parseInt(P.tint.slice(5, 7), 16)];
+      });
+    },
+    render: function (time, RC) {
+      var P = RC.params, L = GT.L;
+      var W = RC.width, H = RC.height;
+      var t = time.t, T = time.T;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      var n = P.word.length;
+      var lop = new Float32Array(n), ldy = new Float32Array(n);
+      for (var i = 0; i < n; i++) {
+        var k = RC.progress(t, 0.1 + i * P.stagger, 0.5, "bouncy");
+        lop[i] = RC.clamp(RC.progress(t, 0.1 + i * P.stagger, 0.2, "linear"), 0, 1) * (1 - out);
+        ldy[i] = (1 - k) * -L.fs * 0.5 - out * L.fs * 0.3;
+      }
+      var rot = (Math.sin(T * 0.9) * P.drift * Math.PI) / 180;
+      var cs = Math.cos(rot), sn = Math.sin(rot);
+      var bw = GT.out.width, bh = GT.out.height;
+      var data = GT.img.data;
+      var room = GT.room;
+      var refr = P.refraction * L.fs * 0.06;
+      var tint = GT.tint;
+      // letter-space centre sits at the canvas centre
+      var lcx = L.w / 2, lcy = L.h / 2, bcx = bw / 2, bcy = bh / 2 + Math.sin(T * 1.3) * L.fs * 0.03;
+      for (var y = 0; y < bh; y++) {
+        for (var x = 0; x < bw; x++) {
+          var o = (y * bw + x) * 4;
+          // screen → letter space (inverse rotation)
+          var dx = x - bcx, dy = y - bcy;
+          var lx = dx * cs + dy * sn + lcx;
+          var ly0 = -dx * sn + dy * cs + lcy;
+          var xi = lx | 0;
+          if (xi < 1 || xi >= L.w - 1) { data[o + 3] = 0; continue; }
+          var li = L.col[xi];
+          var op = lop[li];
+          if (op <= 0) { data[o + 3] = 0; continue; }
+          var ly = ly0 - ldy[li];
+          var yi = ly | 0;
+          if (yi < 1 || yi >= L.h - 1) { data[o + 3] = 0; continue; }
+          var fx = lx - xi, fy = ly - yi;
+          var k0 = yi * L.w + xi;
+          // bilinear alpha and side
+          var a = (L.A[k0] * (1 - fx) + L.A[k0 + 1] * fx) * (1 - fy) + (L.A[k0 + L.w] * (1 - fx) + L.A[k0 + L.w + 1] * fx) * fy;
+          var sd = L.SIDE[k0];
+          if (a < 0.004 && sd < 0.004) { data[o + 3] = 0; continue; }
+          var sx = GT.ox + x, sy = GT.oy + y;
+          var r, g, b, alpha;
+          var nx = L.NX[k0], ny = L.NY[k0];
+          var nr = Math.sqrt(nx * nx + ny * ny + 1);
+          var nz = 1 / nr;
+          // refraction with a little dispersion (red bends least, blue most)
+          var px = sx + nx * refr, py = sy + ny * refr;
+          var ri = ((Math.min(H - 1, Math.max(0, py | 0)) * W) + Math.min(W - 1, Math.max(0, (px) | 0))) * 4;
+          var pxb = sx + nx * refr * 1.18, pyb = sy + ny * refr * 1.18;
+          var bi = ((Math.min(H - 1, Math.max(0, pyb | 0)) * W) + Math.min(W - 1, Math.max(0, pxb | 0))) * 4;
+          var pxr = sx + nx * refr * 0.86, pyr = sy + ny * refr * 0.86;
+          var rr = ((Math.min(H - 1, Math.max(0, pyr | 0)) * W) + Math.min(W - 1, Math.max(0, pxr | 0))) * 4;
+          if (a >= 0.004) {
+            // light from the upper left; bevel highlight + rim
+            var lx3 = -0.45, ly3 = -0.6, lz3 = 0.66;
+            var dot = (nx * lx3 + ny * ly3) / nr + nz * lz3;
+            var spec = Math.pow(Math.max(0, dot), 28);
+            var rim = 1 - nz;
+            r = room[rr] * 0.9 + tint[0] * 0.1;
+            g = room[ri + 1] * 0.9 + tint[1] * 0.1;
+            b = room[bi + 2] * 0.9 + tint[2] * 0.1;
+            var lift = 1.04 + rim * 0.5;
+            r = r * lift + spec * 230; g = g * lift + spec * 230; b = b * lift + spec * 235;
+            alpha = a;
+            if (sd > 0 && a < 1) {
+              // blend toward the side colour at the anti-aliased edge
+              var sr = room[ri] * 0.55 + tint[0] * 0.12, sg = room[ri + 1] * 0.55 + tint[1] * 0.12, sb = room[ri + 2] * 0.58 + tint[2] * 0.12;
+              r = r * a + sr * (1 - a); g = g * a + sg * (1 - a); b = b * a + sb * (1 - a);
+              alpha = Math.max(a, sd * 0.92);
+            }
+          } else {
+            // extruded side: darker, less bent
+            r = room[ri] * 0.55 + tint[0] * 0.12; g = room[ri + 1] * 0.55 + tint[1] * 0.12; b = room[ri + 2] * 0.58 + tint[2] * 0.12;
+            alpha = sd * 0.92;
+          }
+          data[o] = r > 255 ? 255 : r; data[o + 1] = g > 255 ? 255 : g; data[o + 2] = b > 255 ? 255 : b;
+          data[o + 3] = Math.round(alpha * op * 255);
+        }
+      }
+      GT.og.putImageData(GT.img, 0, 0);
+    },
+  });
+</script>
+</body>
+</html>

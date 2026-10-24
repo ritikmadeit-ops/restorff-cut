@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/screen-flow-carousel); fictional.",
+  "screens": 4,
+  "captions": "Capture,Compose,Render,Publish",
+  "cues": "1.3,2.4,3.5",
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

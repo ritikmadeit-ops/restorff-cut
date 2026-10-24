@@ -1,0 +1,23 @@
+{
+  "id": "comp:caption-fx",
+  "kind": "caption-style",
+  "apply": { "via": "effects", "ref": "comp:caption-fx" },
+  "name": "Caption FX (highlight-box, karaoke, marker, redact, scramble, blur-in, bounce-in)",
+  "purpose": ["emphasis", "pattern-interrupt"],
+  "beats": ["hook", "claim", "story", "explain", "proof", "cta"],
+  "energy": 3,
+  "duration": { "min": 2, "max": 60, "ideal": 15 },
+  "aspects": [],
+  "placement": "caption-zone",
+  "needs": ["words"],
+  "pairsWith": ["purpose:emphasis"],
+  "avoidWith": [],
+  "minSpacing": 0,
+  "withCaptions": "hide",
+  "cost": { "renderS": 8, "basis": "estimate" },
+  "retention": "The word lighting up as it is said pulls the eye along the sentence; switching style per section (box, then marker on the claim) resets attention without a cut.",
+  "example": "Cold brew that takes eighteen hours. Worth every minute.",
+  "fill": { "keywords": "keyword" },
+  "credit": "Caption styles adapted from Remocn (MIT) registry/remocn/caption-*@7aebcbe; modified (no Remotion code)",
+  "notes": "It IS the captions for its span: hide the timeline's own captions there. Words come from the transcript (timeline seconds minus the clip start). marker needs `keywords` (else the longest word of each group). One clip can run the whole video; split it to change style per section."
+}

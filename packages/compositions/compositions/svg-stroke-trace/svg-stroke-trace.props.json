@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/svg-stroke-trace); fictional.",
+  "path": "M 170 378 L 330 132 L 458 330 L 584 132 L 830 378 L 680 378 L 584 248 L 508 378 L 408 378 L 330 248 L 252 378 Z",
+  "strokeWidth": 16,
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

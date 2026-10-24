@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Type-on title</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "type-on",
+  "title": "Type-on title",
+  "description": "A section title types on letter by letter in the top-left safe area (done in about 0.3 s), with an optional mono chapter number above and a caret that blinks out. Use for chapter cards in a talking-head explainer: '02 · Cut it', 'How we steep' (EFFECTS.md FX-24).",
+  "duration": 2.5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["title", "chapter", "type", "explainer"],
+  "params": {
+    "title": { "type": "text", "required": true, "default": "How we steep it", "maxLength": 60, "label": "Title", "description": "The section title, sentence case. Wraps to at most two lines." },
+    "chapter": { "type": "string", "default": "02", "maxLength": 6, "label": "Chapter", "description": "Mono number above the title. Empty to hide." },
+    "typeTime": { "type": "number", "default": 0.3, "min": 0.1, "max": 3, "step": 0.05, "unit": "s", "label": "Type time", "description": "Seconds to type the whole title (the reel: under 0.35 s)." },
+    "font": { "type": "enum", "options": ["sans", "condensed", "serif"], "default": "sans", "label": "Type", "description": "sans = bold geometric (the reel's section titles), condensed = tall caps opener, serif = editorial." },
+    "color": { "type": "color", "default": "#FFFFFF", "label": "Colour", "description": "Title colour." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Chapter number and caret." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "offsetY": { "type": "number", "default": 0, "min": -300, "max": 1200, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Push down from the top safe line, px on a 1080 grid." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.3 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .blk { position: absolute; }
+  .ch { font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .14em; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
+  .tt { line-height: 1.04; text-shadow: 0 4px 22px rgba(0,0,0,.55); }
+  .tt span.l { opacity: 0; }
+  .caret { display: inline-block; vertical-align: -0.08em; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var TO = { letters: [] };
+  var FONTS = {
+    sans: { family: "Archivo", weight: 800, stretch: "100%", size: 108, transform: "none" },
+    condensed: { family: "Archivo", weight: 900, stretch: "62%", size: 150, transform: "uppercase" },
+    serif: { family: "Instrument Serif", weight: 400, stretch: "100%", size: 120, transform: "none" },
+  };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var f = FONTS[P.font];
+      var stage = document.getElementById("stage");
+      var blk = RC.el("div", { class: "blk", style: { left: RC.safe.left + "px", top: RC.safe.top + P.offsetY * RC.u + "px", maxWidth: RC.width - RC.safe.left - RC.safe.right + "px" } });
+      if (P.chapter) {
+        TO.ch = RC.el("div", { class: "ch", text: P.chapter, style: { color: P.accent, fontSize: 34 * u + "px", marginBottom: 10 * u + "px" } });
+        blk.appendChild(TO.ch);
+      }
+      var tt = RC.el("div", { class: "tt", style: { color: P.color, fontFamily: '"' + f.family + '"', fontWeight: f.weight, fontStretch: f.stretch, fontSize: f.size * u + "px", textTransform: f.transform } });
+      String(P.title).split("").forEach(function (c) {
+        var s = RC.el("span", { class: "l", text: c });
+        tt.appendChild(s);
+        TO.letters.push(s);
+      });
+      TO.caret = RC.el("span", { class: "caret", style: { width: 8 * u + "px", height: f.size * 0.8 * u + "px", background: P.accent, marginLeft: 6 * u + "px" } });
+      tt.appendChild(TO.caret);
+      blk.appendChild(tt);
+      stage.appendChild(blk);
+      TO.blk = blk;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var out = P.exit ? 1 - RC.clamp(time.left / 0.3, 0, 1) : 0;
+      if (TO.ch) RC.set(TO.ch, { opacity: RC.progress(t, 0, 0.15, "linear"), x: (1 - RC.progress(t, 0, 0.25, "snappy")) * -20 * RC.u });
+      var n = TO.letters.length;
+      var shown = Math.floor(RC.clamp((t - 0.08) / P.typeTime, 0, 1) * n + 0.0001);
+      for (var i = 0; i < n; i++) TO.letters[i].style.opacity = i < shown ? "1" : "0";
+      var typing = shown < n;
+      var after = t - 0.08 - P.typeTime;
+      TO.caret.style.opacity = typing || (after < 0.9 && Math.floor(after * 3) % 2 === 0) ? "1" : "0";
+      TO.blk.style.opacity = String(1 - out);
+    },
+  });
+</script>
+</body>
+</html>

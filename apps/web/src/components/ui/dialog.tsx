@@ -37,7 +37,7 @@ const DialogOverlay = React.forwardRef<
 	<DialogPrimitive.Overlay
 		ref={ref}
 		className={cn(
-			"fixed inset-0 z-250 backdrop-blur-sm bg-black/10",
+			"fixed inset-0 z-250 backdrop-blur-sm bg-black/55",
 			className,
 		)}
 		{...props}
@@ -54,7 +54,7 @@ const DialogContent = React.forwardRef<
 		<DialogPrimitive.Content
 			ref={ref}
 			className={cn(
-				"bg-popover fixed top-[50%] left-[50%] z-250 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border shadow-lg duration-200",
+				"bg-popover fixed top-[50%] left-[50%] z-250 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-[18px] border shadow-lg duration-200",
 				className,
 			)}
 			onCloseAutoFocus={(e) => {

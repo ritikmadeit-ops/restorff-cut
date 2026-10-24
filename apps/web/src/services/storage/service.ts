@@ -23,6 +23,12 @@ import {
 } from "@/services/storage/migrations";
 import type { Bookmark, SceneTracks, TScene } from "@/timeline";
 import { roundMediaTime } from "@/wasm";
+import { notifyProjectSaved } from "@/sync/hooks";
+import { fetchRemoteSnapshot, remote } from "@/sync/remote";
+import type { ProjectSnapshot } from "@/sync/snapshot";
+
+/** Project metadata as Restorff extends it (`metadata.restorff`, written by ops@1). */
+type RestorffMetadata = { restorff?: unknown };
 
 function normalizeBookmarks({ raw }: { raw: unknown }): Bookmark[] {
 	if (!Array.isArray(raw)) return [];
@@ -131,7 +137,8 @@ class StorageService {
 		};
 	}
 
-	async saveProject({ project }: { project: TProject }): Promise<void> {
+	/** The JSON this browser stores (and a commit carries) for a project. */
+	serializeProject({ project }: { project: TProject }): SerializedProject {
 		const duration =
 			project.metadata.duration ??
 			getProjectDurationFromScenes({ scenes: project.scenes });
@@ -145,7 +152,11 @@ class StorageService {
 			updatedAt: scene.updatedAt.toISOString(),
 		}));
 
-		const serializedProject: SerializedProject = {
+		// Restorff's additive metadata (ops@1 pending instructions, media manifest:
+		// packages/timeline-ops MODEL.md §8) is kept verbatim; it used to be dropped here.
+		const { restorff } = project.metadata as RestorffMetadata;
+
+		return {
 			metadata: {
 				id: project.metadata.id,
 				name: project.metadata.name,
@@ -153,6 +164,7 @@ class StorageService {
 				duration,
 				createdAt: project.metadata.createdAt.toISOString(),
 				updatedAt: project.metadata.updatedAt.toISOString(),
+				...(restorff !== undefined && { restorff }),
 			},
 			scenes: serializedScenes,
 			currentSceneId: project.currentSceneId,
@@ -160,10 +172,111 @@ class StorageService {
 			version: project.version,
 			timelineViewState: project.timelineViewState,
 		};
+	}
+
+	async saveProject({ project }: { project: TProject }): Promise<void> {
+		const serializedProject = this.serializeProject({ project });
 
 		await this.projectsAdapter.set({
 			key: project.metadata.id,
 			value: serializedProject,
+		});
+
+		// The sync engine (src/sync/engine.ts) pushes a commit when the project
+		// has a server copy.
+		notifyProjectSaved(serializedProject as unknown as ProjectSnapshot);
+	}
+
+	/** Media metadata only (no files, no object URLs): what the sync engine uploads. */
+	async listMediaAssetData({
+		projectId,
+	}: {
+		projectId: string;
+	}): Promise<MediaAssetData[]> {
+		const { mediaMetadataAdapter } = this.getProjectMediaAdapters({ projectId });
+		const ids = await mediaMetadataAdapter.list();
+		const out: MediaAssetData[] = [];
+		for (const id of ids) {
+			const item = await mediaMetadataAdapter.get(id);
+			if (item) out.push(item);
+		}
+		return out;
+	}
+
+	async loadMediaFile({
+		projectId,
+		id,
+	}: {
+		projectId: string;
+		id: string;
+	}): Promise<File | null> {
+		const { mediaAssetsAdapter } = this.getProjectMediaAdapters({ projectId });
+		return mediaAssetsAdapter.get(id);
+	}
+
+	/**
+	 * Downloads the server's media files this browser does not have yet into the
+	 * project's media store (src/sync). Returns how many were imported; never throws.
+	 */
+	async importRemoteMedia({ projectId }: { projectId: string }): Promise<number> {
+		try {
+			const { media } = await remote.listMedia(projectId);
+			if (!media.length) return 0;
+			const local = new Set(
+				(await this.listMediaAssetData({ projectId })).map((m) => m.id),
+			);
+			let imported = 0;
+			for (const item of media) {
+				if (local.has(item.media_id)) continue;
+				const meta = (item.meta ?? {}) as Partial<MediaAssetData>;
+				const blob = await remote.downloadMedia(projectId, item.media_id);
+				const name = typeof meta.name === "string" ? meta.name : item.media_id;
+				const file = new File([blob], name, {
+					type: item.mime,
+					lastModified: typeof meta.lastModified === "number" ? meta.lastModified : Date.now(),
+				});
+				const type: MediaAsset["type"] =
+					meta.type ??
+					(item.mime.startsWith("image/")
+						? "image"
+						: item.mime.startsWith("audio/")
+							? "audio"
+							: "video");
+				await this.saveMediaAsset({
+					projectId,
+					mediaAsset: {
+						id: item.media_id,
+						name,
+						type,
+						file,
+						width: meta.width,
+						height: meta.height,
+						duration: meta.duration,
+						fps: meta.fps,
+						hasAudio: meta.hasAudio,
+					},
+				});
+				imported++;
+			}
+			return imported;
+		} catch (error) {
+			console.warn("[storage] importing server media failed:", error);
+			return 0;
+		}
+	}
+
+	/**
+	 * Writes a project JSON as-is (a pulled commit). Does not notify the sync
+	 * engine: the engine is the caller.
+	 */
+	async saveSerializedProject({
+		project,
+	}: {
+		project: SerializedProject;
+	}): Promise<void> {
+		await this.projectsAdapter.set({
+			key: project.metadata.id,
+			value: project,
 		});
 	}
 
@@ -173,9 +286,17 @@ class StorageService {
 		id: string;
 	}): Promise<{ project: TProject } | null> {
 		await this.ensureMigrations();
-		const serializedProject = await this.projectsAdapter.get(id);
+		let serializedProject = await this.projectsAdapter.get(id);
 
-		if (!serializedProject) return null;
+		if (!serializedProject) {
+			// Not in this browser: a link to /editor/<id> opens the server's copy,
+			// with the media files the server has.
+			const fromServer = await fetchRemoteSnapshot(id);
+			if (!fromServer) return null;
+			serializedProject = fromServer as unknown as SerializedProject;
+			await this.projectsAdapter.set({ key: id, value: serializedProject });
+			await this.importRemoteMedia({ projectId: id });
+		}
 
 		if (
 			typeof serializedProject !== "object" ||
@@ -213,6 +334,10 @@ class StorageService {
 				}),
 				createdAt: new Date(serializedProject.metadata.createdAt),
 				updatedAt: new Date(serializedProject.metadata.updatedAt),
+				...((serializedProject.metadata as RestorffMetadata).restorff !==
+					undefined && {
+					restorff: (serializedProject.metadata as RestorffMetadata).restorff,
+				}),
 			},
 			scenes,
 			currentSceneId: serializedProject.currentSceneId || "",

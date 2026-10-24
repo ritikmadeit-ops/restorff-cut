@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/per-word-rise); fictional.",
+  "text": "EVERY FRAME MATTERS",
+  "split": "char",
+  "cues": "",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

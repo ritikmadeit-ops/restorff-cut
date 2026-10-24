@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pullback window</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "pullback-window",
+  "title": "Pullback window",
+  "description": "The shot pulls back into an editor window on a cream desk: the window's video area is a hole, so the footage below keeps playing inside it, while a 'Working on edit' list ticks its steps, a render bar fills and a big serif counter runs to 100 %. Use for the 'and here is how it was made' reveal (EFFECTS.md FX-11). Our own window chrome; scale the clip below to fit the hole for a true pull-back.",
+  "duration": 4.5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["reveal", "ui", "window", "process", "full frame", "named-effect"],
+  "effect": {
+    "fx": ["FX-11"],
+    "stack": ["plate", "self"],
+    "inputs": {
+      "plate": "the clip itself, keyed with plateKeys so it shrinks into the window's video hole and keeps playing there",
+      "steps": "what the assistant really did (true numbers: NFR-04)"
+    },
+    "plateKeys": [
+      { "t": 0, "scale": 1.02, "y": 0 },
+      { "t": 0.05, "scale": 1.02, "y": 0, "ease": "linear" },
+      { "t": 0.5, "scale": 0.8636, "y": -0.1516, "ease": "ease_out" },
+      { "t": 4.0667, "scale": 0.8636, "y": -0.1516, "ease": "linear" },
+      { "t": 4.4667, "scale": 1.02, "y": 0, "ease": "ease_in" }
+    ],
+    "plateKeysOn": ["plate"],
+    "props": { "pullFrom": "frame-width" },
+    "note": "Only with pullFrom frame-width (the window's curves are then the editor's ease_out / ease_in, in real seconds). Numbers for the defaults on a 9:16 canvas, 4.5 s, 30 fps: scale = hole width / canvas width x 1.02 (2 % bleed hides curve rounding), y = (hole centre - canvas centre) / height; the last two keys are duration - 1/fps - 0.4 and duration - 1/fps."
+  },
+  "params": {
+    "pullFrom": { "type": "enum", "options": ["full-frame", "frame-width"], "default": "full-frame", "label": "Pull back from", "description": "full-frame = the window starts zoomed so its hole covers the whole frame (a still clip below looks zoomed); frame-width = the hole starts as wide as the frame and the clip below is keyed to stay locked in it (the editor recipe, FX-11)." },
+    "title": { "type": "string", "default": "halcyon-ad-014.mp4 · Assistant", "maxLength": 40, "label": "Window title", "description": "File name in the title bar." },
+    "steps": { "type": "list", "of": { "type": "string", "maxLength": 34 }, "minItems": 1, "maxItems": 6, "default": ["Transcribed 1 clip", "Picked the take", "Cut 3 shots", "Captions added", "Rendered 150 frames"], "label": "Steps", "description": "What the assistant did, in order. Numbers must be true." },
+    "from": { "type": "number", "default": 37, "min": 0, "max": 100, "step": 1, "unit": "%", "label": "Counter from", "description": "Where the percentage starts." },
+    "desk": { "type": "color", "default": "#EFE8DA", "label": "Desk", "description": "Background around the window." },
+    "accent": { "type": "color", "default": "#3DD68C", "label": "Done", "description": "Tick and finished-bar colour." },
+    "bar": { "type": "color", "default": "#4C8DFF", "label": "Bar", "description": "Render bar colour while it fills." },
+    "scale": { "type": "number", "default": 1, "min": 0.7, "max": 1.3, "step": 0.01, "unit": "x", "label": "Scale", "description": "Window size multiplier." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "ease": { "type": "easing", "default": "snappy", "label": "Pull-back easing", "description": "How the window settles (the reel cuts in one frame; ours eases over 0.4 s)." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Pushes back in and fades over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  svg { position: absolute; left: 0; top: 0; }
+  .ui { position: absolute; font-family: "Archivo", sans-serif; color: #1a1a1d; }
+  .tb { position: absolute; display: flex; align-items: center; font-family: "JetBrains Mono", monospace; font-weight: 600; color: #3a3a40; white-space: nowrap; }
+  .dot3 { border-radius: 50%; display: inline-block; }
+  .steps { position: absolute; display: flex; flex-direction: column; }
+  .st { display: flex; align-items: center; font-family: "Archivo", sans-serif; font-weight: 600; color: #1a1a1d; }
+  .tick { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; flex: none; color: #fff; font-weight: 800; }
+  .hdr { font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #8C8C95; }
+  .cnt { position: absolute; font-family: "Instrument Serif", serif; color: #1a1a1d; line-height: .8; white-space: nowrap; }
+  .barw { position: absolute; background: rgba(26,26,29,.1); overflow: hidden; }
+  .barf { position: absolute; left: 0; top: 0; bottom: 0; transform-origin: 0 50%; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var NS = "http://www.w3.org/2000/svg";
+  var PW = { steps: [] };
+  // CSS-style cubic-bezier (the editor's ease_in / ease_out keyframe curves): solve x(s) = p, return y(s)
+  function bez(c, p) {
+    if (p <= 0) return 0;
+    if (p >= 1) return 1;
+    var lo = 0, hi = 1, s = p;
+    for (var i = 0; i < 40; i++) {
+      s = (lo + hi) / 2;
+      var x = 3 * (1 - s) * (1 - s) * s * c[0] + 3 * (1 - s) * s * s * c[2] + s * s * s;
+      if (x < p) lo = s; else hi = s;
+    }
+    return 3 * (1 - s) * (1 - s) * s * c[1] + 3 * (1 - s) * s * s * c[3] + s * s * s;
+  }
+  function S(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var W = RC.width;
+      var H = RC.height;
+      var stage = document.getElementById("stage");
+      // window geometry (frame coords at rest)
+      var ww = W * 0.88 * P.scale;
+      var wx = (W - ww) / 2;
+      var wy = RC.safe.top * 0.7;
+      var tbh = 64 * u;
+      var hx = wx + 18 * u;
+      var hy = wy + tbh;
+      var hw = ww - 36 * u;
+      var hh = hw * 1.0;
+      var wh = tbh + hh + 470 * u;
+      PW.g = { wx: wx, wy: wy, ww: ww, wh: wh, hx: hx, hy: hy, hw: hw, hh: hh };
+      var svg = S("svg", { width: W, height: H, viewBox: "0 0 " + W + " " + H });
+      stage.appendChild(svg);
+      var defs = S("defs", {}, svg);
+      var mask = S("mask", { id: "hole", maskUnits: "userSpaceOnUse", x: 0, y: 0, width: W, height: H }, defs);
+      S("rect", { x: 0, y: 0, width: W, height: H, fill: "#fff" }, mask);
+      PW.hole = S("rect", { x: hx, y: hy, width: hw, height: hh, rx: 12 * u, fill: "#000" }, mask);
+      PW.layer = S("g", { mask: "url(#hole)" }, svg);
+      S("rect", { x: 0, y: 0, width: W, height: H, fill: P.desk }, PW.layer);
+      PW.win = S("g", {}, PW.layer);
+      S("rect", { x: wx + 10 * u, y: wy + 24 * u, width: ww, height: wh, rx: 26 * u, fill: "rgba(0,0,0,.12)" }, PW.win);
+      S("rect", { x: wx, y: wy, width: ww, height: wh, rx: 26 * u, fill: "#FBFAF7", stroke: "rgba(26,26,29,.15)", "stroke-width": 2 * u }, PW.win);
+      // HTML UI layered above, moved together with the window
+      var ui = RC.el("div", { class: "ui", style: { left: 0, top: 0, width: W + "px", height: H + "px", transformOrigin: (W / 2) + "px " + (hy + hh / 2) + "px" } });
+      var tb = RC.el("div", { class: "tb", style: { left: wx + 24 * u + "px", top: wy + "px", height: tbh + "px", gap: 10 * u + "px", fontSize: 22 * u + "px" } });
+      ["#E5484D", "#E8A33D", "#3DD68C"].forEach(function (c) { tb.appendChild(RC.el("span", { class: "dot3", style: { width: 16 * u + "px", height: 16 * u + "px", background: c } })); });
+      tb.appendChild(RC.el("span", { text: P.title, style: { marginLeft: 16 * u + "px" } }));
+      ui.appendChild(tb);
+      var sy = hy + hh + 34 * u;
+      var steps = RC.el("div", { class: "steps", style: { left: wx + 34 * u + "px", top: sy + "px", gap: 14 * u + "px", width: ww * 0.58 + "px" } });
+      steps.appendChild(RC.el("div", { class: "hdr", text: "Working on edit", style: { fontSize: 20 * u + "px", marginBottom: 4 * u + "px" } }));
+      P.steps.forEach(function (s) {
+        var tick = RC.el("span", { class: "tick", text: "✓", style: { width: 34 * u + "px", height: 34 * u + "px", fontSize: 20 * u + "px", background: "rgba(26,26,29,.12)" } });
+        var row = RC.el("div", { class: "st", style: { gap: 14 * u + "px", fontSize: 28 * u + "px" } }, [tick, RC.el("span", { text: s })]);
+        steps.appendChild(row);
+        PW.steps.push({ row: row, tick: tick });
+      });
+      ui.appendChild(steps);
+      PW.cnt = RC.el("div", { class: "cnt", text: P.from + "%", style: { right: W - (wx + ww) + 34 * u + "px", top: sy + 20 * u + "px", fontSize: 170 * u + "px" } });
+      ui.appendChild(PW.cnt);
+      var bw = ww - 68 * u;
+      var barw = RC.el("div", { class: "barw", style: { left: wx + 34 * u + "px", top: wy + wh - 54 * u + "px", width: bw + "px", height: 16 * u + "px", borderRadius: 999 + "px" } });
+      PW.barf = RC.el("div", { class: "barf", style: { width: "100%", background: P.bar, borderRadius: 999 + "px" } });
+      barw.appendChild(PW.barf);
+      ui.appendChild(barw);
+      stage.appendChild(ui);
+      PW.ui = ui;
+      PW.cx = W / 2;
+      PW.cy = hy + hh / 2;
+      // scale at which the hole covers the whole frame (the start of the pull-back)
+      PW.zoom = Math.max(W / hw, H / hh) * 1.04;
+      // frame-width start: the hole exactly as wide as the frame (the keyed clip then starts at scale 1)
+      PW.zoomW = W / hw;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var fw = P.pullFrom === "frame-width";
+      var out, pb;
+      if (fw) {
+        // the clip's keys use the editor's ease_out / ease_in in real seconds: the window must follow the same curves
+        var last = Math.max(0, RC.duration - 1 / RC.fps);
+        pb = bez([0, 0, 0.58, 1], (time.T - 0.05) / 0.45);
+        out = P.exit ? bez([0.42, 0, 1, 1], (time.T - (last - 0.4)) / 0.4) : 0;
+      } else {
+        out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+        pb = RC.progress(t, 0.05, 0.45, P.ease);
+      }
+      var zoom0 = fw ? PW.zoomW : PW.zoom;
+      var z = RC.mix(zoom0, 1, pb) * (1 + out * (zoom0 - 1));
+      // while zoomed in, the hole's centre sits on the frame's centre so it covers the whole frame
+      var away = Math.max(1 - pb, out);
+      var dy = (RC.height / 2 - PW.cy) * away;
+      var tf = "translate(0 " + dy + ") translate(" + PW.cx + " " + PW.cy + ") scale(" + z + ") translate(" + -PW.cx + " " + -PW.cy + ")";
+      PW.win.setAttribute("transform", tf);
+      PW.hole.setAttribute("transform", tf);
+      PW.ui.style.transform = "translateY(" + dy + "px) scale(" + z + ")";
+      // frame-width: the desk stays (the keyed clip is smaller than the frame; fading would show the canvas)
+      PW.layer.setAttribute("opacity", String(fw ? 1 : 1 - out));
+      PW.ui.style.opacity = String(RC.clamp((pb - 0.4) / 0.6, 0, 1) * (1 - out));
+      var n = PW.steps.length;
+      var span = 2.4;
+      for (var i = 0; i < n; i++) {
+        var at = 0.6 + (i / n) * span;
+        var done = t >= at + span / n * 0.8;
+        var vis = RC.progress(t, at, 0.25, "snappy");
+        RC.set(PW.steps[i].row, { opacity: 0.25 + 0.75 * vis, x: (1 - vis) * 20 * RC.u });
+        PW.steps[i].tick.style.background = done ? P.accent : "rgba(26,26,29,.12)";
+      }
+      var prog = RC.progress(t, 0.6, span + 0.2, "linear");
+      var pct = Math.round(P.from + (100 - P.from) * RC.ease("gentle", prog));
+      PW.cnt.textContent = (prog >= 1 ? 100 : pct) + "%";
+      PW.barf.style.transform = "scaleX(" + prog + ")";
+      PW.barf.style.background = prog >= 1 ? P.accent : P.bar;
+    },
+  });
+</script>
+</body>
+</html>

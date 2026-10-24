@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paper form</title>
+<script src="../../src/runtime.js"></script>
+<!-- Promoted from the neon-grid recreation's scene 7 (docs/restorff/recreations/neon-grid-type/compositions/paper-form.html,
+     our own code), generalised: 1-3 rows of 1-3 typed boxes, a red pen mark per row, sheet or card layout, no captions. -->
+<script type="application/json" id="params">
+{
+  "name": "paper-form",
+  "title": "Paper form",
+  "description": "A look switch to paper: a white form slides up (full frame, or as a card above the speaker), mono boxes with arrows type in row by row, a red hand-drawn strike crosses out a rejected row and a red tick marks the kept one in its tick-box; the sheet slides away at the end. Use to compare two ways of doing something ('hot water, 4 min, bitter' vs 'cold water, 18 h, smooth') or to log steps on a form (EFFECTS.md FX-51).",
+  "duration": 6,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["paper", "form", "compare", "look-switch", "explainer", "collage"],
+  "params": {
+    "form": { "type": "string", "default": "FORM 18-H", "maxLength": 14, "label": "Form title", "description": "The form's name, big at the top. Empty to hide." },
+    "subtitle": { "type": "string", "default": "STEEP LOG · HALCYON COLD BREW", "maxLength": 40, "label": "Subtitle", "description": "Mono line under the title. Empty to hide." },
+    "number": { "type": "string", "default": "No. 018", "maxLength": 10, "label": "Number box", "description": "Boxed mono number at the top right. Empty to hide." },
+    "rows": {
+      "type": "list", "minItems": 1, "maxItems": 3, "label": "Rows",
+      "description": "Each row: a small label, 1-3 boxes that type in with arrows between, a red mark (strike = rejected, tick = kept, none) and an optional tick-box line.",
+      "of": { "type": "object", "fields": {
+        "label": { "type": "string", "default": "", "maxLength": 28, "description": "Small mono label above the boxes, e.g. METHOD A · HOT." },
+        "boxes": { "type": "list", "of": { "type": "string", "maxLength": 11 }, "minItems": 1, "maxItems": 3, "description": "What types into each box, left to right." },
+        "mark": { "type": "enum", "options": ["none", "strike", "tick"], "default": "none", "description": "strike = a red hand-drawn line through the row and an X in its tick-box; tick = a red tick in its tick-box." },
+        "check": { "type": "string", "default": "", "maxLength": 26, "description": "The tick-box line under the rows, e.g. A — HOT, 4 MIN. Empty = no tick-box." }
+      } },
+      "default": [
+        { "label": "METHOD A · HOT", "boxes": ["HOT WATER", "4 MIN", "BITTER"], "mark": "strike", "check": "A — HOT, 4 MIN" },
+        { "label": "METHOD B · COLD", "boxes": ["COLD WATER", "18 H", "SMOOTH"], "mark": "tick", "check": "B — COLD, 18 H" }
+      ]
+    },
+    "times": { "type": "list", "of": { "type": "number", "min": 0, "max": 60 }, "minItems": 0, "maxItems": 3, "default": [], "label": "Row times", "description": "Seconds from the clip start when each row starts typing (its first spoken word). Empty = one row every rowGap." },
+    "rowGap": { "type": "number", "default": 1.6, "min": 0.3, "max": 10, "step": 0.05, "unit": "s", "label": "Row gap", "description": "Seconds between rows when they have no time of their own." },
+    "typeGap": { "type": "number", "default": 0.45, "min": 0.1, "max": 3, "step": 0.05, "unit": "s", "label": "Box gap", "description": "Seconds between the boxes of a row." },
+    "layout": { "type": "enum", "options": ["sheet", "card"], "default": "sheet", "label": "Layout", "description": "sheet = the paper covers the whole frame (a look switch); card = a paper card in the top half, above the speaker." },
+    "paper": { "type": "color", "default": "#EFEAE0", "label": "Paper", "description": "Sheet colour." },
+    "ink": { "type": "color", "default": "#17171A", "label": "Ink", "description": "Type and box lines." },
+    "red": { "type": "color", "default": "#D2352B", "label": "Red pen", "description": "Strike, X and tick." },
+    "seed": { "type": "number", "default": 18, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Paper grain and pen wobble." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 1.5, "step": 0.01, "unit": "x", "label": "Scale", "description": "Card size (layout card)." },
+    "offsetY": { "type": "number", "default": 0, "min": -300, "max": 900, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Push the card down, px on a 1080 grid (layout card)." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed: typing, pen marks, slides. Row times stay on the voice." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "The paper slides away over the last 0.32 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .sheet { position: absolute; left: 0; top: 0; overflow: hidden; }
+  .big { position: absolute; white-space: nowrap; font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 125%; text-transform: uppercase; letter-spacing: 0; line-height: 0.92; }
+  .mono { position: absolute; white-space: pre; font-family: "JetBrains Mono", monospace; font-weight: 700; line-height: 1.3; }
+  .box { position: absolute; display: flex; align-items: center; justify-content: center; box-sizing: border-box; font-family: "JetBrains Mono", monospace; font-weight: 800; letter-spacing: .06em; white-space: pre; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var PF = { rows: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params, U = RC.u, W = RC.width, H = RC.height, st = document.getElementById("stage");
+      var card = P.layout === "card";
+      var u = card ? U * P.scale * 0.82 : U;
+      var SW = card ? Math.min(W - 2 * RC.safe.left, 1080 * u) : W;
+      var x0 = 70 * u, y0 = card ? 60 * u : 250 * u, inner = SW - 2 * x0;
+      var sheet = RC.el("div", { class: "sheet", style: { width: SW + "px", background: P.paper, boxShadow: "0 -" + 30 * U + "px " + 80 * U + "px rgba(0,0,0,.6)", borderRadius: card ? 18 * u + "px" : "0" } });
+      st.appendChild(sheet);
+      PF.sheet = sheet;
+      var y = y0;
+      // header
+      if (P.form) {
+        var title = RC.el("div", { class: "big", text: P.form, style: { color: P.ink, fontSize: 96 * u + "px", left: x0 + "px", top: y + "px" } });
+        sheet.appendChild(title);
+        RC.fitText(title, inner - (P.number ? 220 * u : 0), 96 * u, 50 * u);
+      }
+      if (P.number) {
+        var no = RC.el("div", { class: "mono", text: P.number, style: { color: P.ink, fontWeight: "800", fontSize: 28 * u + "px", padding: 8 * u + "px " + 16 * u + "px", border: 3 * u + "px solid " + P.ink, top: y + 12 * u + "px" } });
+        sheet.appendChild(no);
+        no.style.left = SW - x0 - no.offsetWidth + "px";
+      }
+      if (P.form || P.number) y += 130 * u;
+      if (P.subtitle) {
+        var sub = RC.el("div", { class: "mono", text: P.subtitle, style: { color: RC.alpha(P.ink, 0.7), fontSize: 28 * u + "px", letterSpacing: ".1em", left: x0 + 2 * u + "px", top: y + "px" } });
+        sheet.appendChild(sub);
+        RC.fitText(sub, inner, 28 * u, 16 * u);
+        y += 60 * u;
+      }
+      if (P.form || P.number || P.subtitle) {
+        sheet.appendChild(RC.el("div", { style: { position: "absolute", left: x0 + "px", width: inner + "px", top: y + "px", height: 6 * u + "px", background: P.ink } }));
+        sheet.appendChild(RC.el("div", { style: { position: "absolute", left: x0 + "px", width: inner + "px", top: y + 14 * u + "px", height: 2 * u + "px", background: P.ink } }));
+        y += 150 * u;
+      } else y += 60 * u;
+      // rows of typed boxes
+      var cues = RC.cues(P.times);
+      var gap = 62 * u;
+      P.rows.forEach(function (row, r) {
+        var lab = RC.el("div", { class: "mono", text: row.label || "", style: { color: RC.alpha(P.ink, 0.6), fontSize: 26 * u + "px", letterSpacing: ".14em", left: x0 + 2 * u + "px", top: y - 54 * u + "px" } });
+        sheet.appendChild(lab);
+        var k = row.boxes.length;
+        var bw = Math.min(272 * u, (inner - (k - 1) * gap) / k);
+        // when the row starts: its cue (real seconds → animation seconds) or one row every rowGap
+        var start = cues[r] != null ? cues[r] * RC.rate : 0.45 + r * P.rowGap;
+        var boxes = row.boxes.map(function (text, b) {
+          var bx = x0 + b * (bw + gap);
+          var box = RC.el("div", { class: "box", style: { left: bx + "px", top: y + "px", width: bw + "px", height: 128 * u + "px", fontSize: 36 * u + "px", color: P.ink, border: 4 * u + "px solid " + P.ink, borderRadius: 6 * u + "px", background: RC.alpha(P.paper, 0.6) } });
+          sheet.appendChild(box);
+          var arrow = null;
+          if (b > 0) {
+            arrow = RC.el("div", { class: "mono", text: "→", style: { color: P.ink, fontWeight: "800", fontSize: 52 * u + "px" } });
+            sheet.appendChild(arrow);
+            arrow.style.left = bx - gap / 2 - arrow.offsetWidth / 2 + "px";
+            arrow.style.top = y + 64 * u - arrow.offsetHeight / 2 + "px";
+          }
+          // shrink long words to the box once (measured with the full text)
+          var m = RC.el("span", { text: text });
+          box.appendChild(m);
+          var fs = 36 * u;
+          while (m.offsetWidth > bw - 20 * u && fs > 18 * u) { fs -= 1; box.style.fontSize = fs + "px"; }
+          box.removeChild(m);
+          return { box: box, arrow: arrow, text: text, at: start + b * P.typeGap };
+        });
+        var end = start + (k - 1) * P.typeGap + 0.3;
+        PF.rows.push({ boxes: boxes, y: y + 64 * u, mark: row.mark, check: row.check, markAt: end + 0.25, x1: x0 - 24 * u, x2: SW - x0 + 24 * u });
+        y += 270 * u;
+      });
+      // tick-box lines, under the last row's boxes
+      y = y - 270 * u + 200 * u;
+      PF.rows.forEach(function (R) {
+        if (!R.check) return;
+        var line = RC.el("div", { class: "mono", text: "[   ]  " + R.check, style: { color: P.ink, fontSize: 34 * u + "px", left: x0 + 2 * u + "px", top: y + "px" } });
+        sheet.appendChild(line);
+        var fs = RC.fitText(line, inner, 34 * u, 18 * u);
+        R.line = line;
+        // the middle of "[   ]": 2.5 monospace cells of 0.6 em
+        R.bx = x0 + 2 * u + 1.5 * fs;
+        R.by = y + line.offsetHeight / 2;
+        R.br = (20 / 34) * fs;
+        y += 62 * u;
+      });
+      var SH = card ? y + 40 * u : H;
+      sheet.style.height = SH + "px";
+      PF.SW = SW; PF.SH = SH; PF.u = u; PF.card = card;
+      PF.left = card ? (W - SW) / 2 : 0;
+      PF.top = card ? RC.safe.top + P.offsetY * U : 0;
+      sheet.style.left = PF.left + "px";
+      sheet.style.top = PF.top + "px";
+      // paper grain + faint rules, drawn once
+      var gc = RC.el("canvas", { width: Math.round(SW), height: Math.round(SH), style: { position: "absolute", left: "0", top: "0" } });
+      sheet.insertBefore(gc, sheet.firstChild);
+      var c = gc.getContext("2d"), rnd = RC.random(P.seed);
+      var dots = Math.round((9000 * SW * SH) / (W * H));
+      for (var i = 0; i < dots; i++) {
+        c.fillStyle = "rgba(60,50,40," + (0.025 + rnd() * 0.06).toFixed(3) + ")";
+        c.fillRect(rnd() * SW, rnd() * SH, 1 + rnd() * 2.2 * u, 1 + rnd() * 2.2 * u);
+      }
+      c.strokeStyle = "rgba(70,90,120,.07)"; c.lineWidth = 2 * u;
+      for (var ly = y0 + 250 * u; ly < SH; ly += 64 * u) { c.beginPath(); c.moveTo(0, ly); c.lineTo(SW, ly); c.stroke(); }
+      var vg = c.createRadialGradient(SW / 2, SH / 2, SH * 0.3, SW / 2, SH / 2, Math.max(SW, SH) * 0.8);
+      vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(60,40,20,.18)");
+      c.fillStyle = vg; c.fillRect(0, 0, SW, SH);
+      // the red pen: redrawn every frame from progress values
+      PF.pen = RC.el("canvas", { width: Math.round(SW), height: Math.round(SH), style: { position: "absolute", left: "0", top: "0" } });
+      sheet.appendChild(PF.pen);
+      PF.ctx = PF.pen.getContext("2d");
+      var r2 = RC.random(P.seed + 7);
+      PF.wob = [];
+      for (var k2 = 0; k2 <= 26; k2++) PF.wob.push((r2() - 0.5) * 14 * u);
+    },
+    render: function (time, RC) {
+      var P = RC.params, t = time.t, H = RC.height, u = PF.u, ctx = PF.ctx;
+      // the paper slides up, pushes in slowly while it holds, and slides away at the end
+      var inP = RC.progress(t, 0, 0.3, "snappy");
+      var outP = P.exit ? RC.progress(0.32 - time.left, 0, 0.3, "ease-in") : 0;
+      // travel clears the frame including the push-in growth and the shadow (both seen poking in on the first / last frame)
+      var grow = (PF.card ? 0.02 : 0.045) * RC.progress(t, 0.3, Math.max(1, RC.duration * time.rate - 0.6), "linear");
+      var away = 140 * RC.u + PF.SH * grow;
+      var travel = (PF.card ? PF.top + PF.SH : H) + away;
+      RC.set(PF.sheet, { y: (1 - inP) * ((PF.card ? H - PF.top : H) + away) - outP * travel, scale: 1 + grow });
+      PF.rows.forEach(function (R) {
+        R.boxes.forEach(function (b) {
+          var n = Math.floor(RC.clamp((t - b.at) / 0.3, 0, 1) * b.text.length);
+          var s = b.text.slice(0, n);
+          if (b.box.textContent !== s) b.box.textContent = s;
+          var vis = RC.progress(t, b.at - 0.12, 0.12, "smooth");
+          b.box.style.opacity = String(0.25 + 0.75 * vis);
+          if (b.arrow) b.arrow.style.opacity = String(0.2 + 0.8 * vis);
+        });
+        if (R.line) R.line.style.opacity = String(RC.progress(t, R.boxes[0].at, 0.2, "smooth"));
+      });
+      ctx.clearRect(0, 0, PF.SW, PF.SH);
+      ctx.strokeStyle = P.red; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      PF.rows.forEach(function (R) {
+        if (R.mark === "strike") {
+          var s = RC.progress(t, R.markAt, 0.38, "smooth");
+          if (s > 0) {
+            var N = PF.wob.length - 1;
+            [0, 1].forEach(function (pass) {
+              ctx.lineWidth = (pass ? 7 : 13) * u; ctx.globalAlpha = pass ? 0.55 : 0.92;
+              ctx.beginPath();
+              for (var i = 0; i <= N * s; i++) {
+                var x = RC.mix(R.x1, R.x2, i / N), y = R.y + PF.wob[i] + (i / N - 0.5) * 26 * u + pass * 9 * u;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+              }
+              ctx.stroke();
+            });
+            ctx.globalAlpha = 1;
+          }
+          if (R.line) {
+            var xa = RC.progress(t, R.markAt + 0.3, 0.2, "smooth"), r = R.br;
+            if (xa > 0) {
+              ctx.lineWidth = 8 * u;
+              ctx.beginPath();
+              ctx.moveTo(R.bx - r, R.by - r);
+              ctx.lineTo(R.bx - r + 2 * r * RC.clamp(xa * 2, 0, 1), R.by - r + 2 * r * RC.clamp(xa * 2, 0, 1));
+              if (xa > 0.5) { var q = (xa - 0.5) * 2; ctx.moveTo(R.bx + r, R.by - r); ctx.lineTo(R.bx + r - 2 * r * q, R.by - r + 2 * r * q); }
+              ctx.stroke();
+            }
+          }
+        } else if (R.mark === "tick" && R.line) {
+          var tk = RC.progress(t, R.markAt, 0.25, "smooth"), rr = R.br;
+          if (tk > 0) {
+            ctx.lineWidth = 10 * u;
+            ctx.beginPath();
+            ctx.moveTo(R.bx - rr, R.by);
+            var a = RC.clamp(tk / 0.35, 0, 1), b2 = RC.clamp((tk - 0.35) / 0.65, 0, 1);
+            ctx.lineTo(R.bx - rr + 14 * u * a, R.by + 16 * u * a);
+            if (b2 > 0) ctx.lineTo(R.bx - rr + 14 * u + 46 * u * b2, R.by + 16 * u - 56 * u * b2);
+            ctx.stroke();
+          }
+        }
+      });
+    },
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew). Word timings would come from the word-timed transcript of the A-roll; these are hand-written. Try --set style=box for the neon-box variant.",
+  "maxWords": 3,
+  "style": "color"
+}

@@ -1,0 +1,13 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/lt-neon-border); fictional.",
+  "name": "Dr. Maya Chen",
+  "role": "Host · Neuroscientist",
+  "accent": "#cc9149",
+  "movement": "step",
+  "speedVar": 1.6,
+  "cornerRadius": 26,
+  "thickness": 5,
+  "arcLength": 22,
+  "glow": 1,
+  "speed": 1
+}

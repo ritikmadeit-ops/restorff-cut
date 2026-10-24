@@ -15,11 +15,13 @@ import { ImageNode } from "../nodes/image-node";
 import { RootNode } from "../nodes/root-node";
 import { StickerNode } from "../nodes/sticker-node";
 import { renderTextToContext, TextNode } from "../nodes/text-node";
+import { TransitionNode } from "../nodes/transition-node";
 import { VideoNode } from "../nodes/video-node";
 import type { ResolvedVisualSourceNodeState } from "../nodes/visual-node";
 import type {
 	FrameDescriptor,
 	FrameItemDescriptor,
+	LayerItemDescriptor,
 	LayerMaskDescriptor,
 	QuadTransformDescriptor,
 	TextureCanvasDrawFn,
@@ -138,10 +140,9 @@ async function collectNode({
 		const textureId = `${path}:blur-background`;
 		const { width, height } = renderer;
 		const { backdropSource, passes } = node.resolved;
-		// Backdrop pixels come from a decoded video/image frame whose identity
-		// already changes when it changes. Hashing the source reference is
-		// enough to let us skip redraws on frozen frames.
-		const contentHash = `blur:${identityKey(backdropSource.source)}:${backdropSource.width}x${backdropSource.height}:${width}x${height}`;
+		// Backdrop pixels come from a decoded video/image frame. A video frame's canvas is pooled and redrawn with other
+		// frames (RestorffCut ui-fix-render, QA #6), so the hash carries the frame's version as well as the reference.
+		const contentHash = `blur:${identityKey(backdropSource.source)}@${backdropSource.version ?? ""}:${backdropSource.width}x${backdropSource.height}:${width}x${height}`;
 		textures.set(textureId, {
 			kind: "rendered",
 			id: textureId,
@@ -194,6 +195,11 @@ async function collectNode({
 		return;
 	}
 
+	if (node instanceof TransitionNode) {
+		await collectTransitionNode({ node, renderer, path, items, textures });
+		return;
+	}
+
 	if (node instanceof TextNode) {
 		collectTextNode({
 			node,
@@ -203,6 +209,52 @@ async function collectNode({
 			textures,
 		});
 	}
+}
+
+async function collectTransitionNode({
+	node,
+	renderer,
+	path,
+	items,
+	textures,
+}: {
+	node: TransitionNode;
+	renderer: CanvasRenderer;
+	path: string;
+	items: FrameItemDescriptor[];
+	textures: Map<string, TextureUploadDescriptor>;
+}) {
+	if (!node.resolved) {
+		return;
+	}
+	const fromItems: FrameItemDescriptor[] = [];
+	const toItems: FrameItemDescriptor[] = [];
+	if (node.params.from) {
+		await collectVisualSourceNode({
+			node: node.params.from,
+			renderer,
+			path: `${path}:from`,
+			items: fromItems,
+			textures,
+		});
+	}
+	await collectVisualSourceNode({
+		node: node.params.to,
+		renderer,
+		path: `${path}:to`,
+		items: toItems,
+		textures,
+	});
+	const layersOnly = (list: FrameItemDescriptor[]) =>
+		list.filter((item): item is LayerItemDescriptor => item.type === "layer");
+	items.push({
+		type: "transition",
+		shader: node.params.shader,
+		progress: Math.min(1, Math.max(0, node.resolved.progress)),
+		uniforms: node.params.uniforms,
+		from: layersOnly(fromItems),
+		to: layersOnly(toItems),
+	});
 }
 
 async function collectVisualSourceNode({
@@ -240,12 +292,17 @@ async function collectVisualSourceNode({
 			: (node.resolved as ResolvedVisualSourceNodeState).sourceHeight;
 
 	const textureId = `${path}:source`;
+	const version =
+		node instanceof GraphicNode
+			? undefined
+			: (node.resolved as ResolvedVisualSourceNodeState).sourceVersion;
 	textures.set(textureId, {
 		kind: "external",
 		id: textureId,
 		source,
 		width: sourceWidth,
 		height: sourceHeight,
+		...(version !== undefined && { version }),
 	});
 
 	const transform = computeVisualTransform({

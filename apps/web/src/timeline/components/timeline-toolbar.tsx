@@ -50,6 +50,9 @@ import { OcRippleIcon } from "@/components/icons";
 import { GraphEditorPopover } from "./graph-editor/popover";
 import { PopoverTrigger } from "@/components/ui/popover";
 import { useGraphEditorController } from "./graph-editor/use-controller";
+// Restorff (cutout agent): the one "person & size" button — cut out person, matte presets, auto-reframe sizes.
+import { PersonToolsButton } from "@/cutout/components/person-tools-button";
+import { StoryboardViewToggle } from "@/storyboard/view-toggle";
 
 export function TimelineToolbar({
 	zoomLevel,
@@ -70,10 +73,13 @@ export function TimelineToolbar({
 
 	return (
 		<ScrollArea className="scrollbar-hidden">
-			<div className="flex h-10 items-center justify-between border-b px-2 py-1">
+			<div className="border-hairline flex h-10 items-center justify-between border-b px-4 py-1">
 				<ToolbarLeftSection />
 
-				<SceneSelector />
+				<div className="flex items-center gap-3">
+					<SceneSelector />
+					<StoryboardViewToggle />
+				</div>
 
 				<ToolbarRightSection
 					zoomLevel={zoomLevel}
@@ -246,6 +252,9 @@ function ToolbarLeftSection() {
 						}
 					/>
 				</GraphEditorPopover>
+
+				<div className="bg-border mx-1 h-6 w-px" />
+				<PersonToolsButton />
 			</TooltipProvider>
 		</div>
 	);
@@ -261,7 +270,8 @@ function SceneSelector() {
 				<SplitButtonLeft>{currentScene?.name || "No Scene"}</SplitButtonLeft>
 				<SplitButtonSeparator />
 				<ScenesView>
-					<SplitButtonRight onClick={() => {}}>
+					<SplitButtonRight onClick={() => {}} aria-label="Scenes">
+
 						<HugeiconsIcon icon={Layers01Icon} className="size-4" />
 					</SplitButtonRight>
 				</ScenesView>
@@ -312,12 +322,14 @@ function ToolbarRightSection({
 				<Button
 					variant="text"
 					size="icon"
+					aria-label="Zoom out"
 					onClick={() => onZoom({ direction: "out" })}
 				>
 					<HugeiconsIcon icon={SearchMinusIcon} />
 				</Button>
 				<Slider
 					className="w-28"
+					aria-label="Timeline zoom"
 					value={[zoomToSlider({ zoomLevel, minZoom })]}
 					onValueChange={(values) =>
 						onZoomChange(sliderToZoom({ sliderPosition: values[0], minZoom }))
@@ -329,6 +341,7 @@ function ToolbarRightSection({
 				<Button
 					variant="text"
 					size="icon"
+					aria-label="Zoom in"
 					onClick={() => onZoom({ direction: "in" })}
 				>
 					<HugeiconsIcon icon={SearchAddIcon} />
@@ -368,6 +381,8 @@ function ToolbarButton({
 		<Button
 			variant={isActive ? "secondary" : "text"}
 			size="icon"
+			aria-label={tooltip /* ui-fix-panels (QA #27): icon-only buttons need a name */}
+			aria-pressed={isActive === undefined ? undefined : isActive}
 			disabled={disabled}
 			onClick={onClick ? (event) => onClick({ event }) : undefined}
 			className={cn(

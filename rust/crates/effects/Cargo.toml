@@ -12,3 +12,9 @@ bytemuck = { version = "1.25.0", features = ["derive"] }
 gpu = { version = "0.1.0", path = "../gpu" }
 thiserror = "2.0.18"
 wgpu = "29.0.1"
+
+[dev-dependencies]
+# Host-only: validate every WGSL effect shader and translate it to GLSL ES 3.00 (the
+# WebGL2 path the browser build uses), and drive a headless GPU for render tests.
+naga = { version = "29.0.1", features = ["wgsl-in", "glsl-out"] }
+pollster = "0.2.5"

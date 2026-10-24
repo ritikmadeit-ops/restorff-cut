@@ -1,0 +1,7 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew): the product card beat ('This tool is called…' → this brew), title changes on the second spoken phrase.",
+  "titles": [{ "at": 0, "text": "This brew" }, { "at": 0.5, "text": "Halcyon Cold Brew" }],
+  "widget": "card",
+  "labels": ["halcyon-co / cold-brew", "Halcyon Cold Brew", "Slow-steeped. Single origin. Never bitter.", "SINGLE ORIGIN", "18-HOUR STEEP", "HALCYON-CO", "4.9 rating  ·  18 h  ·  1 : 8"],
+  "times": [0.5, 1.62, 1.92]
+}

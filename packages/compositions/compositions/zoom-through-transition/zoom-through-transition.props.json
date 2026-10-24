@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/zoom-through-transition); fictional.",
+  "fromLabel": "Before",
+  "toLabel": "Zoom Through Transition",
+  "depth": "standard",
+  "accent": "blue",
+  "speed": 1
+}

@@ -1,0 +1,12 @@
+{
+  "$comment": "Fictional Halcyon Cold Brew cut-outs (our own drawings in assets/). FX-52's look: outline #C8352B, outlineWidth 10, tear 0. Put paper-texture (background) or map-route on a track below.",
+  "pieces": [
+    { "image": "assets/beans.svg", "x": 0.3, "y": 0.3, "width": 0.4, "rotate": -6, "at": 0.1, "from": "left", "depth": 0.3 },
+    { "image": "assets/bottle.svg", "x": 0.68, "y": 0.4, "width": 0.24, "rotate": 5, "at": 0.35, "from": "right", "depth": 0.7 },
+    { "image": "assets/glass.svg", "x": 0.32, "y": 0.62, "width": 0.3, "rotate": 4, "at": 0.6, "from": "pop", "depth": 0.5 },
+    { "image": "assets/cart.svg", "x": 0.6, "y": 0.78, "width": 0.56, "rotate": -3, "at": 0.85, "from": "bottom", "depth": 0.9 }
+  ],
+  "outline": "#FFFFFF",
+  "outlineWidth": 12,
+  "tear": 0.2
+}

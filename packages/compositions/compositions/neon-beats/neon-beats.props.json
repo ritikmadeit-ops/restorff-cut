@@ -1,0 +1,48 @@
+{
+ "$comment": "Example (fictional Halcyon Cold Brew, from packages/compositions/examples/neon-grid/halcyon-cold-brew-18h.json): the scene at 20.05 s, its voice words moved to the clip (t0 = 0). On a timeline, send the voice's real words and t0 = the clip's start (composition write fills t0 from t).",
+ "t0": 0,
+ "beats": [
+  {
+   "text": "SO"
+  },
+  {
+   "text": "WE"
+  },
+  {
+   "text": "WROTE"
+  },
+  {
+   "text": "IT"
+  },
+  {
+   "text": "DOWN."
+  }
+ ],
+ "words": [
+  {
+   "w": "So",
+   "s": 0.23,
+   "e": 0.4
+  },
+  {
+   "w": "we",
+   "s": 0.42,
+   "e": 0.54
+  },
+  {
+   "w": "wrote",
+   "s": 0.56,
+   "e": 0.75
+  },
+  {
+   "w": "it",
+   "s": 0.77,
+   "e": 0.85
+  },
+  {
+   "w": "down.",
+   "s": 0.87,
+   "e": 1.25
+  }
+ ]
+}

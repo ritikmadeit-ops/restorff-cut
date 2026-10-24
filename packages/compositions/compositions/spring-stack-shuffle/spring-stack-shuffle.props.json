@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/spring-stack-shuffle); fictional.",
+  "cards": 5,
+  "cues": "0.9, 1.5, 1.75, 2.6",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/staggered-fade-up); fictional.",
+  "direction": "up",
+  "distance": "standard",
+  "tone": "ink",
+  "words": "Staggered fade up",
+  "speed": 1
+}

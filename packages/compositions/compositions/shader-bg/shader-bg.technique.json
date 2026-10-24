@@ -1,0 +1,22 @@
+{
+  "id": "comp:shader-bg",
+  "kind": "effect",
+  "apply": { "via": "effects", "ref": "comp:shader-bg" },
+  "name": "Shader background (mesh / grain / warp / swirl)",
+  "purpose": ["product-showcase", "cta", "mood"],
+  "beats": ["product", "cta", "reveal", "number", "hook"],
+  "energy": 2,
+  "duration": { "min": 1.5, "max": 8, "ideal": 3 },
+  "aspects": [],
+  "placement": "full-frame",
+  "needs": [],
+  "pairsWith": ["purpose:product-showcase", "beat:cta", "comp:big-word-punch", "comp:counter"],
+  "avoidWith": [],
+  "minSpacing": 6,
+  "withCaptions": "keep",
+  "cost": { "renderS": 30, "basis": "measured" },
+  "retention": "A moving, on-palette backdrop makes a product card or end card feel produced, not a flat slide, without pulling the eye off the words on it.",
+  "example": "Halcyon Cold Brew. Steeped 18 hours. Order yours today.",
+  "credit": "Shaders adapted from Paper Shaders (Apache-2.0) packages/shaders/src@71be015; looks from Remocn (MIT) registry/remocn/shader-*@7aebcbe; modified",
+  "notes": "Opaque: it replaces the picture for its span (a cutaway), so put text or a product cut-out above it on a higher track. Pass the brand palette in `colors`. Render cost MEASURED (scout, 2026-10-24, SwiftShader): grain-orb 12-15 s per output second at 1080x1920; mesh/warp/swirl 1.5-2 s per output second at 540x960 (roughly 4x that at full size). Keep clips short (2-4 s) or prefer mesh-*."
+}

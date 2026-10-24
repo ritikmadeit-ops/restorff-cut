@@ -1,0 +1,687 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/spring-stack-shuffle@d63ff90; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-id="spring-stack-shuffle"
+  data-composition-duration="4"
+  data-composition-variables='[
+    { "id": "cards", "type": "number", "role": "content", "label": "Cards", "description": "Number of cards in the stack, 3 to 5.", "default": 4, "min": 3, "max": 5, "step": 1 },
+    { "id": "cues", "type": "string", "role": "timing", "label": "Shuffle cues", "description": "Comma-separated seconds from mount start; each cue throws the back card to the front. Cues inside a running throw redirect it mid-flight, velocity preserved. Empty keeps the default rhythm.", "default": "0.9, 1.7, 1.95" },
+    { "id": "accent", "type": "enum", "role": "style", "label": "Accent", "description": "Active-card ring color from the contract token map.", "default": "green", "options": [{ "value": "green", "label": "Green" }, { "value": "blue", "label": "Blue" }, { "value": "violet", "label": "Violet" }] },
+    { "id": "exit", "type": "enum", "role": "timing", "label": "Exit", "description": "Optional departure. Default none: the settled stack holds until the frame cuts.", "default": "none", "options": [{ "value": "none", "label": "None" }, { "value": "fade", "label": "Fade" }, { "value": "up", "label": "Up" }] }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "spring-stack-shuffle",
+  "title": "Spring Stack Shuffle",
+  "description": "A stack of 3 to 5 slotted cards reshuffles on cues: the back card throws over the top and lands at the front with real mass, the rest compress and resettle; cues that land mid-flight redirect the moving cards with velocity preserved. Imported from a HyperFrames component (data; provenance below).",
+  "duration": 4,
+  "size": [
+    1190,
+    886
+  ],
+  "fps": 30,
+  "tags": [
+    "data",
+    "motion-primitive",
+    "product-demo",
+    "physics",
+    "stack",
+    "interruptible-spring",
+    "imported",
+    "hyperframes"
+  ],
+  "opaque": true,
+  "kit": "hf-compat",
+  "params": {
+    "cards": {
+      "type": "number",
+      "default": 4,
+      "label": "Cards",
+      "description": "Number of cards in the stack, 3 to 5.",
+      "min": 3,
+      "max": 5,
+      "step": 1
+    },
+    "cues": {
+      "type": "string",
+      "default": "0.9, 1.7, 1.95",
+      "label": "Shuffle cues",
+      "description": "Comma-separated seconds from mount start; each cue throws the back card to the front. Cues inside a running throw redirect it mid-flight, velocity preserved. Empty keeps the default rhythm.",
+      "display": false
+    },
+    "accent": {
+      "type": "enum",
+      "options": [
+        "green",
+        "blue",
+        "violet"
+      ],
+      "default": "green",
+      "label": "Accent",
+      "description": "Active-card ring color from the contract token map."
+    },
+    "exit": {
+      "type": "enum",
+      "options": [
+        "none",
+        "fade",
+        "up"
+      ],
+      "default": "none",
+      "label": "Exit",
+      "description": "Optional departure. Default none: the settled stack holds until the frame cuts."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1190x886 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "cards": "cards",
+      "cues": "cues",
+      "accent": "accent",
+      "exit": "exit"
+    },
+    "width": 1190,
+    "height": 886,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/spring-stack-shuffle",
+    "path": "registry/components/spring-stack-shuffle",
+    "commit": "d63ff907aae9440e999610595c09adb2da189b7f",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="spring-stack-shuffle" data-start="0" data-duration="4" data-width="1190" data-height="886" style="position:absolute;left:0;top:0;width:1190px;height:886px">
+
+      <div id="root" data-composition-id="spring-stack-shuffle" data-duration="4" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            container-type: size;
+            isolation: isolate;
+            background: var(--bg, #0b0c0e);
+            color: var(--fg, #f8fafc);
+            font-family: var(--font-body, Inter, system-ui, sans-serif);
+            pointer-events: none;
+          }
+
+          .sss-clip {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+          }
+
+          .sss-stage {
+            position: absolute;
+            inset: 0;
+            
+          }
+
+          .sss-card {
+            position: absolute;
+            left: 50%;
+            top: 58%;
+            width: 46cqw;
+            height: 42cqh;
+            margin-left: -23cqw;
+            margin-top: -21cqh;
+            border: 0.16cqmin solid var(--border, #343a46);
+            border-radius: var(--radius, 2.2cqmin);
+            background: var(--surface, #14171c);
+            box-shadow: 0 2.2cqh 6cqh color-mix(in srgb, var(--bg, #000000) 55%, transparent);
+            overflow: hidden;
+            
+          }
+
+          /* Active-card ring: opacity is timeline-driven so the front card
+             reads as the live one across every shuffle. */
+          .sss-ring {
+            position: absolute;
+            inset: 0;
+            border: 0.4cqmin solid var(--sss-accent, #71f5a7);
+            border-radius: inherit;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 3;
+          }
+
+          /* Depth veil: timeline-driven dim; deeper cards sit darker. */
+          .sss-veil {
+            position: absolute;
+            inset: 0;
+            background: var(--bg, #0b0c0e);
+            border-radius: inherit;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2;
+          }
+
+          .sss-slot {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            border-radius: inherit;
+          }
+
+          .sss-slot > img,
+          .sss-slot > video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          .sss-default {
+            position: absolute;
+            inset: 0;
+            padding: var(--space-3, 3.2cqmin);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2, 2cqmin);
+          }
+
+          .sss-chip {
+            align-self: flex-start;
+            padding: 0.9cqmin 1.8cqmin;
+            border: 0.14cqmin solid var(--border, #343a46);
+            border-radius: 999cqmin;
+            color: var(--muted, #94a3b8);
+            font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+            font-size: min(1.7cqw, 3cqh);
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            line-height: 1;
+          }
+
+          .sss-bar {
+            width: 46%;
+            height: 8%;
+            border-radius: 999cqmin;
+            background: color-mix(in srgb, var(--fg, #f8fafc) 22%, var(--surface, #14171c));
+          }
+
+          .sss-line {
+            width: 84%;
+            height: 5%;
+            border-radius: 999cqmin;
+            background: color-mix(in srgb, var(--muted, #94a3b8) 34%, var(--surface, #14171c));
+          }
+
+          .sss-line + .sss-line {
+            width: 70%;
+          }
+        </style>
+
+        <div
+          id="spring-stack-shuffle-clip"
+          class="sss-clip clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="0"
+        >
+          <div class="sss-stage">
+            <section class="sss-card" aria-label="Card 1">
+              <div class="sss-slot" data-slot="card-1">
+                
+                <div class="sss-default" aria-hidden="true">
+                  <div class="sss-chip">01</div>
+                  <div class="sss-bar"></div>
+                  <div class="sss-line"></div>
+                  <div class="sss-line"></div>
+                </div>
+              </div>
+              <div class="sss-veil"></div>
+              <div class="sss-ring"></div>
+            </section>
+            <section class="sss-card" aria-label="Card 2">
+              <div class="sss-slot" data-slot="card-2">
+                
+                <div class="sss-default" aria-hidden="true">
+                  <div class="sss-chip">02</div>
+                  <div class="sss-bar"></div>
+                  <div class="sss-line"></div>
+                  <div class="sss-line"></div>
+                </div>
+              </div>
+              <div class="sss-veil"></div>
+              <div class="sss-ring"></div>
+            </section>
+            <section class="sss-card" aria-label="Card 3">
+              <div class="sss-slot" data-slot="card-3">
+                
+                <div class="sss-default" aria-hidden="true">
+                  <div class="sss-chip">03</div>
+                  <div class="sss-bar"></div>
+                  <div class="sss-line"></div>
+                  <div class="sss-line"></div>
+                </div>
+              </div>
+              <div class="sss-veil"></div>
+              <div class="sss-ring"></div>
+            </section>
+            <section class="sss-card" aria-label="Card 4">
+              <div class="sss-slot" data-slot="card-4">
+                
+                <div class="sss-default" aria-hidden="true">
+                  <div class="sss-chip">04</div>
+                  <div class="sss-bar"></div>
+                  <div class="sss-line"></div>
+                  <div class="sss-line"></div>
+                </div>
+              </div>
+              <div class="sss-veil"></div>
+              <div class="sss-ring"></div>
+            </section>
+            <section class="sss-card" aria-label="Card 5">
+              <div class="sss-slot" data-slot="card-5">
+                
+                <div class="sss-default" aria-hidden="true">
+                  <div class="sss-chip">05</div>
+                  <div class="sss-bar"></div>
+                  <div class="sss-line"></div>
+                  <div class="sss-line"></div>
+                </div>
+              </div>
+              <div class="sss-veil"></div>
+              <div class="sss-ring"></div>
+            </section>
+          </div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            // Literal id: mount flattening strips data-composition-id from
+            // the live root before this timeline registers.
+            var compositionId = "spring-stack-shuffle";
+            var stage = root.querySelector(".sss-stage");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            var accentColors = {
+              green: "var(--brand, #71f5a7)",
+              blue: "var(--accent, #61a8ff)",
+              violet: "var(--accent-2, #c5a3ff)",
+            };
+            var accent = Object.prototype.hasOwnProperty.call(accentColors, vars.accent)
+              ? vars.accent
+              : "green";
+            root.style.setProperty("--sss-accent", accentColors[accent]);
+            var exit = vars.exit === "fade" || vars.exit === "up" ? vars.exit : "none";
+
+            var cardCountRaw = Number(vars.cards);
+            var cardCount = Number.isFinite(cardCountRaw)
+              ? Math.max(3, Math.min(5, Math.round(cardCountRaw)))
+              : 4;
+            var cardEls = Array.prototype.slice.call(root.querySelectorAll(".sss-card"));
+            cardEls.slice(cardCount).forEach(function (el) {
+              el.remove();
+            });
+            cardEls = cardEls.slice(0, cardCount);
+
+            // Stack geometry in px measured once from the mounted root:
+            // cq-unit transform tweens are not seek-safe, px numbers are.
+            var rect = root.getBoundingClientRect();
+            var W = Math.max(1, rect.width);
+            var H = Math.max(1, rect.height);
+            var STEP_Y = -0.055 * H; // deeper cards peek above the front card
+            var STEP_S = 0.05;
+            var APEX_Y = STEP_Y * (cardCount - 1) - 0.09 * H; // arc above the stack
+            var KICK_X = 0.12 * W; // lateral kick during the throw
+            var BUMP_Y = 0.012 * H; // stack compress as the flyer lands
+
+            function poseFor(depth) {
+              return {
+                y: depth * STEP_Y,
+                s: 1 - depth * STEP_S,
+                veil: Math.min(0.5, depth * 0.15),
+              };
+            }
+
+            // RETIME RANGE: fixed IN and OUT; HOLD is the only elastic span.
+            var THROW = 0.85;
+            var RISE = THROW * 0.4;
+            var LAND = THROW * 0.6;
+            var SHIFT = 0.55;
+            var OUT = exit === "none" ? 0 : 0.45;
+            var duration = Math.max(0.001, parseFloat(root.dataset.duration || "4"));
+            var OUT_START = duration - OUT;
+            var CUE_MIN = 0.85;
+            var CUE_MAX = Math.max(CUE_MIN, OUT_START - THROW - 0.05);
+
+            var cues = String(
+              vars.cues == null || String(vars.cues).trim() === "" ? "0.9, 1.7, 1.95" : vars.cues,
+            )
+              .split(",")
+              .map(function (token) {
+                return Number(token);
+              })
+              .filter(function (value) {
+                return Number.isFinite(value);
+              })
+              .map(function (value) {
+                return Math.min(CUE_MAX, Math.max(CUE_MIN, value));
+              })
+              .sort(function (a, b) {
+                return a - b;
+              });
+
+            /* Author-time motion compiler. A track is one (element, property)
+               pair holding non-overlapping segments; every segment is a pure
+               curve with explicit endpoints. cutAt() is the L1 primitive: it
+               evaluates value and velocity at the cut analytically, truncates
+               the covering segment to a renormalized copy of its own curve,
+               and drops everything later. redirect() continues from the cut
+               with a Hermite ease whose start slope IS the cut velocity. */
+            function easeFn(ease) {
+              return typeof ease === "function" ? ease : gsap.parseEase(ease);
+            }
+
+            function makeTrack(el, prop, initial) {
+              return { el: el, prop: prop, initial: initial, segs: [] };
+            }
+
+            function endValue(track) {
+              return track.segs.length > 0 ? track.segs[track.segs.length - 1].to : track.initial;
+            }
+
+            function cutAt(track, time) {
+              var segs = track.segs;
+              while (segs.length > 0 && segs[segs.length - 1].t0 >= time) segs.pop();
+              if (segs.length === 0) return { value: track.initial, velocity: 0 };
+              var last = segs[segs.length - 1];
+              if (last.t1 <= time) return { value: last.to, velocity: 0 };
+              var curve = easeFn(last.ease);
+              var span = last.t1 - last.t0;
+              var f = (time - last.t0) / span;
+              var lo = Math.max(0, f - 0.001);
+              var hi = Math.min(1, f + 0.001);
+              var slope = (curve(hi) - curve(lo)) / (hi - lo);
+              var progress = curve(f);
+              var value = last.from + (last.to - last.from) * progress;
+              var velocity = ((last.to - last.from) * slope) / span;
+              last.t1 = time;
+              last.to = value;
+              if (progress > 1e-6) {
+                last.ease = (function (fullCurve, cutFraction, cutProgress) {
+                  return function (u) {
+                    return fullCurve(u * cutFraction) / cutProgress;
+                  };
+                })(curve, f, progress);
+              }
+              return { value: value, velocity: velocity };
+            }
+
+            // Cubic Hermite: h(0)=0, h(1)=1, h'(0)=m, h'(1)=0. A hot start
+            // slope overshoots past the target and eases back, which is the
+            // spring read; the clamp keeps it in the quiet register (L2).
+            function hermite(m0) {
+              var m = Math.max(-4, Math.min(4, m0));
+              return function (u) {
+                return u * u * u * (m - 2) + u * u * (3 - 2 * m) + m * u;
+              };
+            }
+
+            var smooth = hermite(0); // smoothstep: zero slope both ends
+
+            // Landing ease: zero-slope start (ballistic hang at the apex),
+            // small overshoot past the target, zero-slope settle. C1 all the
+            // way through, pure function of progress.
+            function landEase(overshoot) {
+              return function (u) {
+                if (u < 0.62) {
+                  var a = u / 0.62;
+                  return (1 + overshoot) * a * a * (3 - 2 * a);
+                }
+                var b = (u - 0.62) / 0.38;
+                return 1 + overshoot - overshoot * b * b * (3 - 2 * b);
+              };
+            }
+
+            function addSeg(track, t0, dur, to, ease) {
+              track.segs.push({ t0: t0, t1: t0 + dur, from: endValue(track), to: to, ease: ease });
+            }
+
+            function redirect(track, time, dur, to) {
+              var cut = cutAt(track, time);
+              var delta = to - cut.value;
+              var ease = Math.abs(delta) < 1e-4 ? smooth : hermite((cut.velocity * dur) / delta);
+              track.segs.push({ t0: time, t1: time + dur, from: cut.value, to: to, ease: ease });
+            }
+
+            var powerOut = gsap.parseEase("power3.out");
+            var cards = cardEls.map(function (el, index) {
+              var pose = poseFor(index);
+              return {
+                el: el,
+                depth: index,
+                landing: null,
+                x: makeTrack(el, "x", 0),
+                y: makeTrack(el, "y", pose.y + 0.05 * H),
+                s: makeTrack(el, "s", pose.s * 0.985),
+                veil: makeTrack(el.querySelector(".sss-veil"), "veil", pose.veil),
+                ring: makeTrack(el.querySelector(".sss-ring"), "ring", 0),
+              };
+            });
+            var zEvents = [];
+
+            // IN: staggered entrances, back card first, front card last.
+            cards.forEach(function (card, index) {
+              var pose = poseFor(index);
+              var tIn = (cardCount - 1 - index) * 0.07;
+              addSeg(card.y, tIn, 0.5, pose.y, powerOut);
+              addSeg(card.s, tIn, 0.5, pose.s, powerOut);
+              if (index === 0) addSeg(card.ring, 0.45, 0.3, 0.9, smooth);
+            });
+
+            // SHUFFLES: one per cue. The back card throws over the top; the
+            // rest step one slot deeper. Any card still in flight when a cue
+            // fires is cut and redirected, velocity preserved (L1).
+            cues.forEach(function (cue) {
+              var back = cards.reduce(function (a, b) {
+                return b.depth > a.depth ? b : a;
+              });
+              cards.forEach(function (card) {
+                if (card.landing && card.landing.t > cue) card.landing.canceled = true;
+                card.landing = null;
+                card.depth = card === back ? 0 : card.depth + 1;
+                zEvents.push({
+                  t: cue,
+                  el: card.el,
+                  z: card === back ? 60 : 40 - card.depth,
+                  canceled: false,
+                });
+              });
+
+              cards.forEach(function (card) {
+                var pose = poseFor(card.depth);
+                if (card === back) {
+                  // Throw arc: velocity-matched rise to a ballistic apex,
+                  // then a landing with one small sanctioned overshoot.
+                  redirect(card.x, cue, RISE, KICK_X);
+                  addSeg(card.x, cue + RISE, LAND, 0, smooth);
+                  redirect(card.y, cue, RISE, APEX_Y);
+                  addSeg(card.y, cue + RISE, LAND, pose.y, landEase(0.06));
+                  redirect(card.s, cue, RISE, 1.05);
+                  addSeg(card.s, cue + RISE, LAND, pose.s, landEase(0.04));
+                  redirect(card.veil, cue, THROW, pose.veil);
+                  redirect(card.ring, cue, THROW, 0.9);
+                  var landing = { t: cue + THROW, el: card.el, z: 40, canceled: false };
+                  zEvents.push(landing);
+                  card.landing = landing;
+                } else {
+                  redirect(card.x, cue, SHIFT, 0);
+                  redirect(card.y, cue, SHIFT, pose.y);
+                  redirect(card.s, cue, SHIFT, pose.s);
+                  redirect(card.veil, cue, SHIFT, pose.veil);
+                  redirect(card.ring, cue, SHIFT, 0);
+                }
+              });
+
+              // Compress-resettle: the stack takes the flyer's weight.
+              cards.forEach(function (card) {
+                if (card === back) return;
+                var rest = endValue(card.y);
+                addSeg(card.y, cue + THROW - 0.05, 0.16, rest + BUMP_Y, smooth);
+                addSeg(card.y, cue + THROW + 0.11, 0.22, rest, smooth);
+              });
+            });
+
+            // EMIT: initial states, then every compiled segment as an
+            // explicit fromTo. Segments never overlap per track, both
+            // endpoints are authored, eases are pure functions: seek-safe.
+            var propFor = {
+              x: function (value) {
+                return { x: value };
+              },
+              y: function (value) {
+                return { y: value };
+              },
+              s: function (value) {
+                return { scale: value };
+              },
+              veil: function (value) {
+                return { opacity: value };
+              },
+              ring: function (value) {
+                return { opacity: value };
+              },
+            };
+
+            gsap.set(stage, { opacity: 1, y: 0 });
+            cards.forEach(function (card, index) {
+              gsap.set(card.el, { opacity: 0, zIndex: 40 - index });
+            });
+
+            var tl = gsap.timeline({ paused: true });
+
+            cards.forEach(function (card, index) {
+              var tIn = (cardCount - 1 - index) * 0.07;
+              tl.fromTo(
+                card.el,
+                { opacity: 0 },
+                { opacity: 1, duration: 0.4, ease: "power2.out" },
+                tIn,
+              );
+              ["x", "y", "s", "veil", "ring"].forEach(function (prop) {
+                var track = card[prop];
+                var toProps = propFor[prop];
+                gsap.set(track.el, toProps(track.initial));
+                track.segs.forEach(function (seg) {
+                  var dur = seg.t1 - seg.t0;
+                  if (dur < 1 / 120) {
+                    tl.set(track.el, toProps(seg.to), seg.t1);
+                    return;
+                  }
+                  var to = toProps(seg.to);
+                  to.duration = dur;
+                  to.ease = easeFn(seg.ease);
+                  tl.fromTo(track.el, toProps(seg.from), to, seg.t0);
+                });
+              });
+            });
+
+            zEvents.forEach(function (event) {
+              if (event.canceled) return;
+              tl.set(event.el, { zIndex: event.z }, event.t);
+            });
+
+            // HOLD: completely still after the last landing bump.
+
+            // OUT: optional departure; exit none holds until the frame cuts.
+            if (exit === "fade") {
+              tl.to(stage, { opacity: 0, duration: OUT, ease: "power2.in" }, OUT_START);
+            } else if (exit === "up") {
+              tl.to(
+                stage,
+                { opacity: 0, y: -0.07 * H, duration: OUT, ease: "power2.in" },
+                OUT_START,
+              );
+            }
+
+            tl.seek(0);
+            window.__timelines = window.__timelines || {};
+            window.__timelines[compositionId] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

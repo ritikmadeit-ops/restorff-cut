@@ -1,0 +1,46 @@
+{
+  "composition": "cover-story",
+  "source": "compositions/cover-story/cover-story.html",
+  "renderer": "@restorffcut/compositions 0.1.0",
+  "chrome": "HeadlessChrome/153.0.8010.12",
+  "out": "samples/cover-story.webm",
+  "format": "webm",
+  "frames": 120,
+  "fps": 30,
+  "duration": 4,
+  "width": 1080,
+  "height": 1920,
+  "ms": {
+    "total": 4239,
+    "load": 239,
+    "capture": 3999
+  },
+  "secondsPerSecond": 1.06,
+  "workers": 4,
+  "bytes": 1253770,
+  "inputHash": "68d544f00effb96b2e28991cf722d6e9287358a2552c00e8462f3524e353bd4f",
+  "framesHash": "7569784cf36f3ef742b477c425c686792853f1bcad2d51893a8060417c7837e1",
+  "params": {
+    "wordmark": "HALCYON",
+    "issue": "ISSUE 014 · OCTOBER 2026",
+    "credit": "Edited by Claude",
+    "kicker": "THE SLOW COFFEE ISSUE",
+    "coverlines": [
+      "The 12-hour cup",
+      "Inside the small-batch roastery",
+      "Why we skip the sugar"
+    ],
+    "color": "#EDEBE6",
+    "accent": "#F6FF00",
+    "frameInset": 32,
+    "stagger": 0.08,
+    "scale": 1,
+    "speed": 1,
+    "ease": "smooth",
+    "exit": true
+  },
+  "sidecar": "samples/cover-story.webm.json",
+  "crf": 31,
+  "warnings": [],
+  "renderedAt": "2026-10-19T22:59:37.525Z"
+}

@@ -1,0 +1,116 @@
+{
+ "$comment": "Example (fictional Halcyon Cold Brew, from packages/compositions/examples/neon-grid/halcyon-cold-brew-18h.json): the scene at 29.9 s, its voice words moved to the clip (t0 = 0). On a timeline, send the voice's real words and t0 = the clip's start (composition write fills t0 from t).",
+ "t0": 0,
+ "dial": {
+  "count": 18,
+  "major": 3,
+  "unit": "H"
+ },
+ "pulseWord": "choice",
+ "kicker": "HALCYON COLD BREW",
+ "lines": [
+  {
+   "text": "STEEPED,"
+  },
+  {
+   "text": "NOT RUSHED."
+  }
+ ],
+ "keyword": "RUSHED.",
+ "keys": [
+  "hour",
+  "choice"
+ ],
+ "words": [
+  {
+   "w": "Every",
+   "s": 0.42,
+   "e": 0.694
+  },
+  {
+   "w": "hour",
+   "s": 0.694,
+   "e": 0.974
+  },
+  {
+   "w": "on",
+   "s": 0.974,
+   "e": 1.114
+  },
+  {
+   "w": "that",
+   "s": 1.114,
+   "e": 1.284
+  },
+  {
+   "w": "curve",
+   "s": 1.284,
+   "e": 1.509
+  },
+  {
+   "w": "is",
+   "s": 1.509,
+   "e": 1.639
+  },
+  {
+   "w": "a",
+   "s": 1.639,
+   "e": 1.693
+  },
+  {
+   "w": "choice",
+   "s": 1.693,
+   "e": 2.008
+  },
+  {
+   "w": "we",
+   "s": 2.008,
+   "e": 2.138
+  },
+  {
+   "w": "made",
+   "s": 2.138,
+   "e": 2.353
+  },
+  {
+   "w": "on",
+   "s": 2.353,
+   "e": 2.503
+  },
+  {
+   "w": "purpose.",
+   "s": 2.503,
+   "e": 2.97
+  },
+  {
+   "w": "Halcyon",
+   "s": 3.75,
+   "e": 4.2
+  },
+  {
+   "w": "Cold",
+   "s": 4.22,
+   "e": 4.5
+  },
+  {
+   "w": "Brew.",
+   "s": 4.52,
+   "e": 5
+  },
+  {
+   "w": "Steeped,",
+   "s": 5.62,
+   "e": 6.2
+  },
+  {
+   "w": "not",
+   "s": 6.39,
+   "e": 6.52
+  },
+  {
+   "w": "rushed.",
+   "s": 6.54,
+   "e": 7.1
+  }
+ ]
+}

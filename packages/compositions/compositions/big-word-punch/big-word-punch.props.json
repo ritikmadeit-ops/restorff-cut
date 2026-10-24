@@ -1,0 +1,6 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew). Render: bun packages/compositions/src/cli.ts render packages/compositions/compositions/big-word-punch/big-word-punch.html --props packages/compositions/compositions/big-word-punch/big-word-punch.props.json --out packages/compositions/out/big-word-punch.webm",
+  "word": "FREE",
+  "kicker": "Halcyon Cold Brew",
+  "sub": "Shipping on your first case"
+}

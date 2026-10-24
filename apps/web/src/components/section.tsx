@@ -150,7 +150,7 @@ export function SectionHeader({
 
 	return (
 		<div
-			className={cn("flex h-11 w-full items-center gap-2 px-3.5", className)}
+			className={cn("flex h-11 w-full items-center gap-2 px-5", className)}
 		>
 			{innerContent}
 			{trailingArea}
@@ -173,8 +173,8 @@ export function SectionTitle({
 	const isOpen = ctx?.isOpen ?? true;
 
 	const titleClass = cn(
-		"text-sm font-medium",
-		isCollapsible && isOpen ? "text-foreground" : "text-muted-foreground",
+		"rc-label",
+		isCollapsible && isOpen ? "text-[#C9C7C2]" : "text-fog",
 		className,
 	);
 
@@ -238,7 +238,7 @@ export function SectionContent({
 	const isCollapsible = ctx?.collapsible ?? false;
 	const isOpen = ctx?.isOpen ?? true;
 
-	const content = <div className={cn("p-4 pt-0", className)}>{children}</div>;
+	const content = <div className={cn("px-5 pb-4 pt-0", className)}>{children}</div>;
 
 	if (isCollapsible) {
 		return (

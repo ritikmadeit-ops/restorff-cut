@@ -19,10 +19,14 @@ import type {
 } from "@/preview/overlays";
 import { PreviewContextMenu } from "./context-menu";
 import { PreviewToolbar } from "./toolbar";
+import { CommandBar } from "@/command-bar/command-bar";
 import {
 	PreviewViewportProvider,
 	usePreviewViewportState,
 } from "./preview-viewport";
+import { useStoryboardStore } from "@/storyboard/store";
+import { StoryboardView } from "@/storyboard/storyboard-view";
+import { CompareOverlay } from "@/compare/compare-overlay";
 
 function usePreviewSize() {
 	const canvasSize = useEditor(
@@ -74,20 +78,36 @@ export function PreviewPanel({
 		containerRef.current = node;
 		setContainer(node);
 	}, []);
+	const view = useStoryboardStore((s) => s.view);
 
 	return (
 		<div
 			ref={handleContainerRef}
-			className="panel bg-background relative flex size-full min-h-0 min-w-0 flex-col rounded-sm border"
+			className="panel bg-background relative flex size-full min-h-0 min-w-0 flex-col"
 		>
-			<PreviewCanvas
-				container={container}
-				onToggleFullscreen={toggleFullscreen}
-				overlayControls={overlayControls}
-				overlayInstances={overlayInstances}
-				onOverlayVisibilityChange={onOverlayVisibilityChange}
-			/>
+			{/* The preview stays mounted under the storyboard so the compositor keeps its canvas. */}
+			<div
+				className={
+					view === "storyboard"
+						? "invisible flex size-full min-h-0 min-w-0 flex-col"
+						: "contents"
+				}
+			>
+				<PreviewCanvas
+					container={container}
+					onToggleFullscreen={toggleFullscreen}
+					overlayControls={overlayControls}
+					overlayInstances={overlayInstances}
+					onOverlayVisibilityChange={onOverlayVisibilityChange}
+				/>
+			</div>
+			{view === "storyboard" && (
+				<div className="bg-background absolute inset-0 z-30">
+					<StoryboardView />
+				</div>
+			)}
 			<RenderTreeController />
+			<CommandBar />
 		</div>
 	);
 }
@@ -155,6 +175,7 @@ function PreviewCanvas({
 		viewportWidth: viewportSize.width,
 	});
 	const { canPan, panByScreenDelta, scaleZoom } = viewport;
+	const compare = useStoryboardStore((s) => s.compare);
 
 	const renderer = useMemo(() => {
 		return new CanvasRenderer({
@@ -301,7 +322,7 @@ function PreviewCanvas({
 	return (
 		<PreviewViewportProvider value={viewport}>
 			<div className="flex size-full min-h-0 min-w-0 flex-col">
-				<div className="flex min-h-0 min-w-0 flex-1 p-2 pb-0">
+				<div className="flex min-h-0 min-w-0 flex-1 px-[22px] pt-[22px] pb-0">
 					<ContextMenu>
 						<ContextMenuTrigger asChild>
 							<div
@@ -310,7 +331,7 @@ function PreviewCanvas({
 							>
 							<div
 								ref={canvasMountRef}
-								className="absolute block border"
+								className="absolute block overflow-hidden rounded-[16px] shadow-[0_0_0_1px_#2e2e35]"
 								style={{
 									left: viewport.sceneLeft,
 									top: viewport.sceneTop,
@@ -331,6 +352,16 @@ function PreviewCanvas({
 									instances={overlayInstances}
 									plane="over-interaction"
 								/>
+								{compare && (
+									<CompareOverlay
+										rect={{
+											left: viewport.sceneLeft,
+											top: viewport.sceneTop,
+											width: viewport.sceneWidth,
+											height: viewport.sceneHeight,
+										}}
+									/>
+								)}
 							</div>
 						</ContextMenuTrigger>
 						<PreviewContextMenu

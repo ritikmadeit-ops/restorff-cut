@@ -10,7 +10,6 @@ import {
 	MagicWand05Icon,
 	TextIcon,
 	Settings01Icon,
-	SlidersHorizontalIcon,
 	ColorsIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
@@ -23,7 +22,9 @@ export const TAB_KEYS = [
 	"effects",
 	"transitions",
 	"captions",
-	"adjustment",
+	"styles", // styles agent: saved styles + explainer from references (apps/web/src/styles-lab)
+	// ui-fix-panels (QA #23): "adjustment" removed — its view was a "coming soon" placeholder (grade layers live in the
+	// inspector's Grade row and Effects → Shaders)
 	"settings",
 ] as const;
 
@@ -64,10 +65,7 @@ export const tabs = {
 		icon: createHugeiconsIcon({ icon: ClosedCaptionIcon }),
 		label: "Captions",
 	},
-	adjustment: {
-		icon: createHugeiconsIcon({ icon: SlidersHorizontalIcon }),
-		label: "Adjustment",
-	},
+	styles: { icon: createHugeiconsIcon({ icon: ColorsIcon }), label: "Styles" }, // styles agent
 	settings: {
 		icon: createHugeiconsIcon({ icon: Settings01Icon }),
 		label: "Settings",

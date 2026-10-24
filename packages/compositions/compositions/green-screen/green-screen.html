@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Green screen</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "green-screen",
+  "title": "Green screen",
+  "description": "Replaces the speaker's room with a new scene: a purple-gradient focus-app world (a counting focus timer, a task list, a serif line with one key word), a plain gradient or any image. With matte frames it also wraps the scene's light around the speaker's edge and matches their colour, so they don't look cut out. Use to put the speaker 'inside' a product or mood (EFFECTS.md FX-12). Layer back (opaque) under the person cutout; layer front (light wrap) above it.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["green-screen", "background", "key", "matte", "scene", "reels", "named-effect"],
+  "effect": {
+    "fx": ["FX-12"],
+    "stack": ["plate", "self:back", "cutout", "self:front"],
+    "inputs": {
+      "cutout": "the clip's person cutout on the track above it (editor: Cut out person; MCP: cutout): the only part of the clip that stays visible",
+      "matte": "props.matte = the cutout as PNG frames (alpha) at props.matteFps, from the effect's start (MCP cutout can write them; or ffmpeg -c:v libvpx-vp9 -i cutout.webm -vf fps=30,scale=540:-2 f_%04d.png) — only for the light wrap / colour match of layer front",
+      "image": "props.image for scene image: any background (a still of a place, a product shot)"
+    },
+    "note": "No real green screen needed: the person matte does the keying. Layer back is opaque and covers the original room."
+  },
+  "params": {
+    "scene": { "type": "enum", "options": ["focus", "gradient", "image"], "default": "focus", "label": "Scene", "description": "focus = the focus-app world; gradient = only the purple gradient; image = props.image, cover-fitted." },
+    "image": { "type": "image", "default": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "label": "Scene image", "description": "Background for scene image (cover-fitted, slow push)." },
+    "headline": { "type": "string", "default": "today you only need", "maxLength": 32, "label": "Serif line", "description": "Serif line at the top of the focus scene. Empty to hide." },
+    "key": { "type": "string", "default": "patience", "maxLength": 16, "label": "Key word", "description": "The word set big in italic accent after the serif line." },
+    "sub": { "type": "string", "default": "Everything else waits.", "maxLength": 40, "label": "Sub line", "description": "Small line under it, after a star. Empty to hide." },
+    "timer": { "type": "number", "default": 2997, "min": 0, "max": 35999, "step": 1, "unit": "s", "label": "Timer start", "description": "Focus timer start in seconds (2997 = 49:57); it counts down in real time." },
+    "timerLabel": { "type": "string", "default": "Steep batch 14", "maxLength": 28, "label": "Timer task", "description": "Task name on the timer card." },
+    "tasks": { "type": "list", "of": { "type": "string", "maxLength": 26 }, "minItems": 0, "maxItems": 4, "default": ["Grind 40 kg", "Fill the jars", "Label case 12", "Reply to the café"], "label": "Tasks", "description": "Task list card; the first one gets ticked." },
+    "top": { "type": "color", "default": "#1F1440", "label": "Gradient top", "description": "Top colour of the gradient." },
+    "bottom": { "type": "color", "default": "#B36BD9", "label": "Gradient bottom", "description": "Bottom colour of the gradient (also the light that wraps the speaker)." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Key word and tick colour." },
+    "layer": { "type": "enum", "options": ["all", "back", "front"], "default": "all", "label": "Layer", "description": "back = the opaque scene (under the person cutout), front = light wrap + colour match from the matte (above the cutout), all = both." },
+    "matte": { "type": "list", "of": { "type": "image" }, "minItems": 0, "maxItems": 1800, "default": [], "label": "Person matte", "description": "Frames of the speaker cut-out (PNG with alpha, or black/white masks with matteChannel luma), one per 1/matteFps s from the effect's start. Only used by layer front." },
+    "matteFps": { "type": "number", "default": 30, "min": 1, "max": 60, "step": 1, "unit": "fps", "label": "Matte rate", "description": "Frames per second of the matte frames. Match the clip (30) when the speaker moves fast, or the wrap trails the edge."},
+    "matteChannel": { "type": "enum", "options": ["alpha", "luma"], "default": "alpha", "label": "Matte channel", "description": "alpha = cut-out PNGs; luma = white-on-black masks." },
+    "lightWrap": { "type": "number", "default": 0.45, "min": 0, "max": 1, "step": 0.05, "label": "Light wrap", "description": "How strongly the scene's light spills over the speaker's edge (EFFECTS.md: 0.2–0.6)." },
+    "colorMatch": { "type": "number", "default": 0.07, "min": 0, "max": 0.6, "step": 0.01, "label": "Colour match", "description": "Tint of the scene colour over the whole speaker." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Speed of the text and card entrances and the first task's tick (the timer and the matte stay real-time)." },
+    "exit": { "type": "boolean", "default": false, "label": "Animate out", "description": "Fade the scene over the last 0.3 s (off: cut back to the room)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .scene { position: absolute; inset: 0; overflow: hidden; }
+  .blob { position: absolute; border-radius: 50%; }
+  .card { position: absolute; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); color: #fff; box-shadow: 0 20px 60px rgba(20,8,50,.35); }
+  .mono { font-family: "JetBrains Mono", monospace; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; opacity: .75; }
+  .clock { font-family: "JetBrains Mono", monospace; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+  .task { display: flex; align-items: center; font-family: "Archivo", sans-serif; font-weight: 600; }
+  .box { border: 2px solid rgba(255,255,255,.7); display: inline-flex; align-items: center; justify-content: center; flex: none; color: #111; font-weight: 900; }
+  .serif { position: absolute; left: 0; width: 100%; text-align: center; font-family: "Instrument Serif", serif; color: #fff; text-shadow: 0 4px 30px rgba(20,8,50,.45); line-height: 1.02; }
+  .sub { position: absolute; left: 0; width: 100%; text-align: center; font-family: "Archivo", sans-serif; font-weight: 600; color: rgba(255,255,255,.85); }
+  .btn { position: absolute; font-family: "Archivo", sans-serif; font-weight: 700; color: #1F1440; background: #fff; border-radius: 999px; text-align: center; }
+  .input { position: absolute; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.3); border-radius: 999px; color: rgba(255,255,255,.7); font-family: "Archivo", sans-serif; display: flex; align-items: center; }
+  .wrap { position: absolute; inset: 0; }
+  .wrap img { position: absolute; left: 0; top: 0; display: none; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="lw" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feColorMatrix id="lwLuma" in="SourceGraphic" type="luminanceToAlpha" result="luma"/>
+    <feMorphology id="lwErode" in="SourceAlpha" operator="erode" radius="10" result="er"/>
+    <feComposite id="lwEdgeIn" in="SourceAlpha" in2="er" operator="out" result="edge"/>
+    <feGaussianBlur id="lwBlur" in="edge" stdDeviation="9" result="eb"/>
+    <feComposite id="lwClip" in="eb" in2="SourceAlpha" operator="in" result="ebin"/>
+    <feFlood id="lwColor" flood-color="#B36BD9" flood-opacity="1" result="col"/>
+    <feComposite in="col" in2="ebin" operator="in" result="wrapc"/>
+    <feComponentTransfer in="wrapc" result="wrapA"><feFuncA id="lwAmt" type="linear" slope="0.55"/></feComponentTransfer>
+    <feFlood id="cmColor" flood-color="#B36BD9" flood-opacity="0.14" result="tintc"/>
+    <feComposite id="cmClip" in="tintc" in2="SourceAlpha" operator="in" result="tint"/>
+    <feMerge><feMergeNode in="tint"/><feMergeNode in="wrapA"/></feMerge>
+  </filter>
+</defs></svg>
+<script>
+  var GS = { mattes: [] };
+  var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  function mmss(s) { s = Math.max(0, Math.floor(s)); var m = Math.floor(s / 60); var r = s % 60; return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r; }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var W = RC.width, H = RC.height, u = RC.u;
+      var stage = document.getElementById("stage");
+      var scene = RC.el("div", { class: "scene", style: { background: "linear-gradient(180deg, " + P.top + " 0%, " + RC.mixColor(P.top, P.bottom, 0.55) + " 55%, " + P.bottom + " 100%)" } });
+      stage.appendChild(scene);
+      GS.scene = scene;
+      GS.blobs = [];
+      [[0.15, 0.25, 0.55, "#FF8FD8", 0.35], [0.85, 0.5, 0.6, "#7B5CFF", 0.4], [0.5, 0.92, 0.8, "#FFC6A8", 0.3]].forEach(function (b) {
+        var d = b[2] * W;
+        var bl = RC.el("div", { class: "blob", style: { left: b[0] * W - d / 2 + "px", top: b[1] * H - d / 2 + "px", width: d + "px", height: d + "px", background: "radial-gradient(circle, " + RC.alpha(b[3], b[4]) + " 0%, " + RC.alpha(b[3], 0) + " 70%)" } });
+        scene.appendChild(bl);
+        GS.blobs.push(bl);
+      });
+      if (P.scene === "image" && P.image !== BLANK) {
+        GS.img = RC.el("img", { src: P.image, style: { position: "absolute", left: 0, top: 0, width: W + "px", height: H + "px", objectFit: "cover" } });
+        scene.appendChild(GS.img);
+      }
+      if (P.scene === "focus") {
+        var y0 = RC.safe.top * 0.7;
+        if (P.headline) {
+          var line = RC.el("div", { class: "serif", style: { top: y0 + "px", fontSize: 70 * u + "px" } }, [
+            RC.el("span", { text: P.headline + " " }),
+            RC.el("span", { text: P.key, style: { fontStyle: "italic", color: P.accent, fontSize: 104 * u + "px" } }),
+          ]);
+          scene.appendChild(line);
+          GS.line = line;
+        }
+        if (P.sub) { GS.sub = RC.el("div", { class: "sub", text: "✱  " + P.sub, style: { top: y0 + 150 * u + "px", fontSize: 32 * u + "px" } }); scene.appendChild(GS.sub); }
+        // timer card (left), task list (right), input bar (bottom, mostly behind the speaker)
+        var tc = RC.el("div", { class: "card", style: { left: 48 * u + "px", top: H * 0.3 + "px", width: 330 * u + "px", padding: 26 * u + "px", borderRadius: 30 * u + "px" } }, [
+          RC.el("div", { class: "mono", text: "Focus", style: { fontSize: 18 * u + "px" } }),
+          RC.el("div", { class: "clock", text: mmss(P.timer), style: { fontSize: 104 * u + "px", margin: 10 * u + "px 0" } }),
+          RC.el("div", { text: P.timerLabel, style: { fontFamily: "Archivo", fontWeight: 600, fontSize: 24 * u + "px", opacity: ".9" } }),
+          RC.el("div", { class: "btn", text: "End sprint", style: { position: "relative", marginTop: 18 * u + "px", fontSize: 22 * u + "px", padding: 10 * u + "px 0" } }),
+        ]);
+        scene.appendChild(tc);
+        GS.clock = tc.children[1];
+        GS.tc = tc;
+        if (P.tasks.length) {
+          var tl = RC.el("div", { class: "card", style: { left: W - 400 * u + "px", top: H * 0.5 + "px", width: 352 * u + "px", padding: 26 * u + "px", borderRadius: 30 * u + "px", display: "flex", flexDirection: "column", gap: 16 * u + "px" } });
+          tl.appendChild(RC.el("div", { class: "mono", text: "Today", style: { fontSize: 18 * u + "px" } }));
+          GS.boxes = [];
+          P.tasks.forEach(function (t) {
+            var bx = RC.el("span", { class: "box", style: { width: 34 * u + "px", height: 34 * u + "px", borderRadius: 10 * u + "px", marginRight: 14 * u + "px", fontSize: 22 * u + "px" } });
+            tl.appendChild(RC.el("div", { class: "task", style: { fontSize: 26 * u + "px" } }, [bx, RC.el("span", { text: t })]));
+            GS.boxes.push(bx);
+          });
+          scene.appendChild(tl);
+          GS.tl = tl;
+        }
+        scene.appendChild(RC.el("div", { class: "input", text: "Ask anything…", style: { left: 60 * u + "px", width: W - 120 * u + "px", top: H - RC.safe.bottom * 0.75 + "px", height: 90 * u + "px", padding: "0 " + 36 * u + "px", fontSize: 28 * u + "px" } }));
+      }
+      // front: light wrap + colour match from the matte frames
+      var wrap = RC.el("div", { class: "wrap", style: { filter: "url(#lw)" } });
+      (P.matte || []).forEach(function (src) {
+        var im = RC.el("img", { src: src, style: { width: W + "px", height: H + "px" } });
+        wrap.appendChild(im);
+        GS.mattes.push(im);
+      });
+      stage.appendChild(wrap);
+      GS.wrap = wrap;
+      var luma = P.matteChannel === "luma";
+      ["lwErode", "lwEdgeIn", "lwClip", "cmClip"].forEach(function (id) {
+        var n = document.getElementById(id);
+        ["in", "in2"].forEach(function (a) { if (n.getAttribute(a) === "SourceAlpha" && luma) n.setAttribute(a, "luma"); });
+      });
+      document.getElementById("lwErode").setAttribute("radius", String(Math.max(1, 12 * u)));
+      document.getElementById("lwColor").setAttribute("flood-color", P.bottom);
+      document.getElementById("cmColor").setAttribute("flood-color", P.bottom);
+      document.getElementById("cmColor").setAttribute("flood-opacity", String(P.colorMatch));
+      document.getElementById("lwAmt").setAttribute("slope", String(P.lightWrap));
+      document.getElementById("lwBlur").setAttribute("stdDeviation", String(Math.max(0.5, 6 * u)));
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      // T: real time (the matte frames, the running clock, the drifting blobs); t: the entrances and the tick
+      var T = time.T, t = time.t, u = RC.u;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.3, 0, 1)) : 0;
+      var showBack = P.layer !== "front", showFront = P.layer !== "back";
+      GS.scene.style.opacity = showBack ? String(1 - out) : "0";
+      GS.blobs.forEach(function (b, i) { RC.set(b, { x: Math.sin(T * 0.7 + i * 2) * 30 * u, y: Math.cos(T * 0.5 + i) * 24 * u }); });
+      if (GS.img) RC.set(GS.img, { scale: 1 + 0.03 * T / Math.max(1, RC.duration) });
+      if (GS.clock) GS.clock.textContent = mmss(P.timer - T);
+      if (GS.line) RC.set(GS.line, { y: (1 - RC.progress(t, 0.1, 0.5, "snappy")) * 24 * u, opacity: RC.progress(t, 0.1, 0.4, "linear") });
+      if (GS.sub) GS.sub.style.opacity = String(RC.progress(t, 0.35, 0.4, "linear"));
+      if (GS.tc) RC.set(GS.tc, { x: (1 - RC.progress(t, 0.2, 0.5, "snappy")) * -60 * u, opacity: RC.progress(t, 0.2, 0.3, "linear") });
+      if (GS.tl) RC.set(GS.tl, { x: (1 - RC.progress(t, 0.35, 0.5, "snappy")) * 60 * u, opacity: RC.progress(t, 0.35, 0.3, "linear") });
+      if (GS.boxes && GS.boxes.length) {
+        var done = t > 1.6;
+        GS.boxes[0].textContent = done ? "✓" : "";
+        GS.boxes[0].style.background = done ? P.accent : "transparent";
+        GS.boxes[0].style.borderColor = done ? P.accent : "rgba(255,255,255,.7)";
+      }
+      GS.wrap.style.opacity = showFront ? String(1 - out) : "0";
+      if (GS.mattes.length) {
+        var i = Math.max(0, Math.min(GS.mattes.length - 1, Math.floor(T * P.matteFps + 1e-6)));
+        for (var k = 0; k < GS.mattes.length; k++) GS.mattes[k].style.display = k === i ? "block" : "none";
+      }
+    },
+  });
+</script>
+</body>
+</html>

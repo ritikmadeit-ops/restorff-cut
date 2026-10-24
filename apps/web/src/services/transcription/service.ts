@@ -23,11 +23,14 @@ class TranscriptionService {
 		language = "auto",
 		modelId = DEFAULT_TRANSCRIPTION_MODEL,
 		onProgress,
+		words = false,
 	}: {
 		audioData: Float32Array;
 		language?: TranscriptionLanguage;
 		modelId?: TranscriptionModelId;
 		onProgress?: ProgressCallback;
+		/** Ask for word-level timings (falls back to approximate ones if the model can't). */
+		words?: boolean;
 	}): Promise<TranscriptionResult> {
 		await this.ensureWorker({ modelId, onProgress });
 
@@ -55,6 +58,8 @@ class TranscriptionService {
 							text: response.text,
 							segments: response.segments,
 							language,
+							words: response.words,
+							wordTimings: response.wordTimings,
 						});
 						break;
 
@@ -76,6 +81,7 @@ class TranscriptionService {
 				type: "transcribe",
 				audio: audioData,
 				language,
+				words,
 			} satisfies WorkerMessage);
 		});
 	}

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Frame break</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "frame-break",
+  "title": "Frame break",
+  "description": "The picture shrinks into an inner reel frame on a dark surround (our own neutral social chrome: side icons, handle row, caption, progress bar) and the speaker's head and hands break out past its border. Use for a 'this is a reel about reels' moment or to make a gesture pop (EFFECTS.md FX-04). Needs the clip scaled with the frame (plate keys) and its person cutout between the two layers.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["frame", "break-out", "social", "matte", "reels", "named-effect"],
+  "effect": {
+    "fx": ["FX-04"],
+    "stack": ["plate", "self:back", "cutout", "self:front"],
+    "inputs": {
+      "cutout": "the clip's person cutout on the track above it (editor: Cut out person; MCP: cutout); it gets the same transform keys as the clip",
+      "face": "optional: move props.window so the face sits inside it and the head top crosses its top edge"
+    },
+    "plateKeys": [
+      { "t": 0, "scale": 1, "y": 0 },
+      { "t": 0.3, "scale": 0.82, "y": 0, "ease": "ease_in_out" },
+      { "t": 3.6667, "scale": 0.82, "y": 0, "ease": "linear" },
+      { "t": 3.9667, "scale": 1, "y": 0, "ease": "ease_in_out" }
+    ],
+    "plateKeysOn": ["plate", "cutout"],
+    "note": "plateKeys are for the defaults (at 0, shrink 0.3 s, plateScale 0.82, plateY 0, 4 s, 30 fps): key 2 = at + shrink, key 3 = duration - 1/fps - shrink, key 4 = duration - 1/fps; scale = plateScale, y = plateY (fraction of the height). The frame's hole uses the same ease_in_out curve, so the clip always covers it. The band under the window is in the front layer: it cuts the torso at the frame's bottom edge."
+  },
+  "params": {
+    "window": {
+      "type": "object", "label": "Inner frame",
+      "description": "The inner reel frame, fractions of the output: centre x, centre y, width, height. Keep it inside the scaled clip (plateScale) and put its top edge just under the top of the head so the head breaks out.",
+      "fields": {
+        "x": { "type": "number", "default": 0.5, "min": 0, "max": 1 },
+        "y": { "type": "number", "default": 0.6, "min": 0, "max": 1 },
+        "w": { "type": "number", "default": 0.6, "min": 0.1, "max": 1 },
+        "h": { "type": "number", "default": 0.42, "min": 0.1, "max": 1 }
+      },
+      "default": { "x": 0.5, "y": 0.6, "w": 0.6, "h": 0.42 }
+    },
+    "plateScale": { "type": "number", "default": 0.82, "min": 0.3, "max": 1, "step": 0.01, "label": "Clip scale", "description": "Scale the clip (and its cutout) shrinks to; written into the plate keys. Must keep the clip covering the frame." },
+    "plateY": { "type": "number", "default": 0, "min": -0.5, "max": 0.5, "step": 0.005, "label": "Clip shift", "description": "Vertical shift of the shrunk clip, fraction of the height (plate keys y)." },
+    "layer": { "type": "enum", "options": ["all", "back", "front"], "default": "all", "label": "Layer", "description": "back = the surround above the window's bottom edge (under the cutout), front = the band below it + the chrome (above the cutout), all = both (no break-out)." },
+    "at": { "type": "number", "default": 0, "min": 0, "max": 10, "step": 0.05, "unit": "s", "label": "Shrink at", "description": "When the shrink starts (seconds, real time: the clip's keys use the same numbers)." },
+    "shrink": { "type": "number", "default": 0.3, "min": 0.05, "max": 2, "step": 0.05, "unit": "s", "label": "Shrink time", "description": "Seconds for the picture to shrink into the frame (the reel: 0.3 s)." },
+    "handle": { "type": "string", "default": "halcyon.coldbrew", "maxLength": 28, "label": "Handle", "description": "Account name in the handle row (our own neutral UI, no platform logos)." },
+    "caption": { "type": "string", "default": "12 hours in the jar, zero sugar in the bottle", "maxLength": 60, "label": "Caption", "description": "One line under the handle. Empty to hide." },
+    "counts": { "type": "list", "of": { "type": "string", "maxLength": 8 }, "minItems": 0, "maxItems": 4, "default": ["48.2K", "1,204", "Share", "Save"], "label": "Icon counts", "description": "Labels under the side icons (heart, comment, send, save). Real numbers only." },
+    "surround": { "type": "color", "default": "#0C0C0E", "label": "Surround", "description": "Colour around the frame." },
+    "chrome": { "type": "boolean", "default": true, "label": "Chrome", "description": "Show the icons, handle row and progress bar." },
+    "radius": { "type": "number", "default": 0.04, "min": 0, "max": 0.2, "step": 0.005, "label": "Corner radius", "description": "Frame corner radius as a fraction of the frame width (the reel: 4 %)." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Progress bar fill." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "The frame grows back to full picture over the last shrink time." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Speed of the handle row and icons fading in. The shrink itself follows at / shrink (real time, the clip's keys use the same numbers)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+  .chrome { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  .icons { position: absolute; display: flex; flex-direction: column; align-items: center; }
+  .ic { display: flex; flex-direction: column; align-items: center; color: #fff; font-family: "Archivo", sans-serif; font-weight: 700; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+  .ic svg { position: static; filter: drop-shadow(0 1px 4px rgba(0,0,0,.5)); }
+  .row { position: absolute; display: flex; align-items: center; color: #fff; font-family: "Archivo", sans-serif; font-weight: 700; text-shadow: 0 1px 6px rgba(0,0,0,.6); white-space: nowrap; }
+  .av { border-radius: 50%; background: #EDE3CF; color: #2F4A3A; display: flex; align-items: center; justify-content: center; font-family: "Instrument Serif", serif; font-weight: 400; text-shadow: none; flex: none; }
+  .fol { border: 2px solid rgba(255,255,255,.85); border-radius: 10px; font-weight: 700; }
+  .cap { position: absolute; color: #fff; font-family: "Archivo", sans-serif; font-weight: 500; text-shadow: 0 1px 6px rgba(0,0,0,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar { position: absolute; background: rgba(255,255,255,.3); }
+  .barf { position: absolute; left: 0; top: 0; bottom: 0; transform-origin: 0 50%; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var FB = {};
+  var NS = "http://www.w3.org/2000/svg";
+  function S(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  // the editor's ease_in_out (cubic-bezier .42,0,.58,1): the clip's keys use it, so the hole must too
+  function bez(c, p) {
+    if (p <= 0) return 0;
+    if (p >= 1) return 1;
+    var lo = 0, hi = 1, s = p;
+    for (var i = 0; i < 40; i++) {
+      s = (lo + hi) / 2;
+      var x = 3 * (1 - s) * (1 - s) * s * c[0] + 3 * (1 - s) * s * s * c[2] + s * s * s;
+      if (x < p) lo = s; else hi = s;
+    }
+    return 3 * (1 - s) * (1 - s) * s * c[1] + 3 * (1 - s) * s * s * c[3] + s * s * s;
+  }
+  var IO = [0.42, 0, 0.58, 1];
+  var ICONS = [
+    '<path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.6.7-1.4 2.2-2.6 4.3-2.6 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z" fill="none" stroke="#fff" stroke-width="2.1" stroke-linejoin="round"/>',
+    '<path d="M20.5 11.5a8.5 8 0 0 1-12.4 7.1L3.5 20l1.4-4.1A8.5 8 0 1 1 20.5 11.5z" fill="none" stroke="#fff" stroke-width="2.1" stroke-linejoin="round"/>',
+    '<path d="M21 3 10 14M21 3l-7 18-4-7-7-4 18-7z" fill="none" stroke="#fff" stroke-width="2.1" stroke-linejoin="round"/>',
+    '<path d="M6 3h12v18l-6-4.5L6 21z" fill="none" stroke="#fff" stroke-width="2.1" stroke-linejoin="round"/>',
+  ];
+  function roundRect(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    return "M" + (x + r) + " " + y + " H" + (x + w - r) + " A" + r + " " + r + " 0 0 1 " + (x + w) + " " + (y + r) +
+      " V" + (y + h - r) + " A" + r + " " + r + " 0 0 1 " + (x + w - r) + " " + (y + h) + " H" + (x + r) +
+      " A" + r + " " + r + " 0 0 1 " + x + " " + (y + h - r) + " V" + (y + r) + " A" + r + " " + r + " 0 0 1 " + (x + r) + " " + y + " Z";
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var W = RC.width, H = RC.height, u = RC.u;
+      var stage = document.getElementById("stage");
+      var win = { x: (P.window.x - P.window.w / 2) * W, y: (P.window.y - P.window.h / 2) * H, w: P.window.w * W, h: P.window.h * H };
+      FB.win = win;
+      FB.r = P.radius * W;
+      var svg = S("svg", { width: W, height: H }, null);
+      stage.appendChild(svg);
+      var defs = S("defs", {}, svg);
+      var cpBack = S("clipPath", { id: "cpb", clipPathUnits: "userSpaceOnUse" }, defs);
+      FB.cbRect = S("rect", { x: -10, y: -10, width: W + 20, height: H }, cpBack);
+      var cpFront = S("clipPath", { id: "cpf", clipPathUnits: "userSpaceOnUse" }, defs);
+      FB.cfRect = S("rect", { x: -10, y: 0, width: W + 20, height: H + 10 }, cpFront);
+      FB.back = S("path", { fill: P.surround, "fill-rule": "evenodd", "clip-path": "url(#cpb)" }, svg);
+      FB.front = S("path", { fill: P.surround, "fill-rule": "evenodd", "clip-path": "url(#cpf)" }, svg);
+      FB.border = S("path", { fill: "none", stroke: "rgba(237,235,230,.55)", "stroke-width": Math.max(1, 2 * u) }, svg);
+      // chrome inside the frame (always in front: a reel's UI sits on top of its video)
+      var ch = RC.el("div", { class: "chrome" });
+      if (P.chrome) {
+        var icons = RC.el("div", { class: "icons", style: { gap: 26 * u + "px", left: win.x + win.w - 92 * u + "px", width: 80 * u + "px", top: win.y + win.h * 0.38 + "px" } });
+        ICONS.forEach(function (d, i) {
+          var ic = RC.el("div", { class: "ic", style: { fontSize: 20 * u + "px", gap: 4 * u + "px" } });
+          ic.innerHTML = '<svg viewBox="0 0 24 24" width="' + 54 * u + '" height="' + 54 * u + '">' + d + "</svg>";
+          if (P.counts[i]) ic.appendChild(RC.el("span", { text: P.counts[i] }));
+          icons.appendChild(ic);
+        });
+        ch.appendChild(icons);
+        var rowY = win.y + win.h - 150 * u;
+        var row = RC.el("div", { class: "row", style: { left: win.x + 30 * u + "px", top: rowY + "px", gap: 14 * u + "px", fontSize: 28 * u + "px" } }, [
+          RC.el("span", { class: "av", text: "H", style: { width: 56 * u + "px", height: 56 * u + "px", fontSize: 40 * u + "px" } }),
+          RC.el("span", { text: P.handle }),
+          RC.el("span", { class: "fol", text: "Follow", style: { fontSize: 22 * u + "px", padding: 4 * u + "px " + 14 * u + "px" } }),
+        ]);
+        ch.appendChild(row);
+        if (P.caption) ch.appendChild(RC.el("div", { class: "cap", text: P.caption, style: { left: win.x + 30 * u + "px", top: rowY + 72 * u + "px", width: win.w - 140 * u + "px", fontSize: 24 * u + "px" } }));
+        var bar = RC.el("div", { class: "bar", style: { left: win.x + FB.r * 0.6 + "px", top: win.y + win.h - 10 * u + "px", width: win.w - FB.r * 1.2 + "px", height: 4 * u + "px" } });
+        FB.barf = RC.el("div", { class: "barf", style: { width: "100%", background: P.accent } });
+        bar.appendChild(FB.barf);
+        ch.appendChild(bar);
+      }
+      stage.appendChild(ch);
+      FB.chrome = ch;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var W = RC.width, H = RC.height, T = time.T;
+      var last = Math.max(0, RC.duration - 1 / RC.fps);
+      var pin = bez(IO, (T - P.at) / P.shrink);
+      var pout = P.exit ? bez(IO, (T - (last - P.shrink)) / P.shrink) : 0;
+      var p = Math.min(pin, 1 - pout);
+      var w = FB.win;
+      var x = RC.mix(0, w.x, p), y = RC.mix(0, w.y, p), ww = RC.mix(W, w.w, p), hh = RC.mix(H, w.h, p), r = RC.mix(0, FB.r, p);
+      // p = 0: no frame at all (the whole picture is the hole)
+      var d = p > 0.0005 ? "M-4 -4 H" + (W + 4) + " V" + (H + 4) + " H-4 Z " + roundRect(x, y, ww, hh, r) : "";
+      FB.back.setAttribute("d", d);
+      FB.front.setAttribute("d", d);
+      FB.border.setAttribute("d", p > 0.0005 ? roundRect(x, y, ww, hh, r) : "");
+      FB.border.setAttribute("opacity", String(RC.clamp(p * 3, 0, 1)));
+      // seam between the layers: an integer row just above the window's bottom corners
+      var seam = Math.round(y + hh - r - 1);
+      FB.cbRect.setAttribute("height", String(seam + 10));
+      FB.cfRect.setAttribute("y", String(seam));
+      FB.cfRect.setAttribute("height", String(H + 10 - seam));
+      var showBack = P.layer !== "front", showFront = P.layer !== "back";
+      FB.back.style.display = showBack ? "" : "none";
+      FB.front.style.display = showFront ? "" : "none";
+      FB.border.style.display = showFront ? "" : "none";
+      var cp = RC.clamp(RC.since(T, P.at + P.shrink * 0.6) / 0.25, 0, 1) * (1 - RC.clamp(pout * 3, 0, 1));
+      FB.chrome.style.opacity = showFront ? String(cp) : "0";
+      if (FB.barf) FB.barf.style.transform = "scaleX(" + RC.clamp(T / RC.duration, 0, 1).toFixed(4) + ")";
+    },
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phone mockup</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "phone-mockup",
+  "title": "Phone mockup",
+  "description": "A phone floats in beside the speaker, turned slightly, showing an assistant chat: the user's request, the assistant's answer card and an action button that gets tapped (a touch dot), then a done state. Use when the script says 'I just ask it…' or shows an app doing the work (EFFECTS.md FX-06).",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["device", "ui", "app", "phone", "reels"],
+  "params": {
+    "appName": { "type": "string", "default": "Halcyon Assistant", "maxLength": 28, "label": "App name", "description": "Title in the phone's header bar: our own app, never a real product's chrome." },
+    "request": { "type": "text", "required": true, "default": "Reorder 2 cases of Oat Vanilla for Friday", "maxLength": 80, "label": "Request", "description": "What the user asked, shown as the outgoing chat bubble." },
+    "answer": { "type": "text", "required": true, "default": "Reorder ready: 2 cases · Oat Vanilla · delivered Fri", "maxLength": 90, "label": "Answer", "description": "The assistant's answer on the card above the button." },
+    "action": { "type": "string", "display": false, "default": "Approve", "maxLength": 16, "label": "Button", "description": "The button that gets tapped." },
+    "done": { "type": "string", "display": false, "default": "Approved", "maxLength": 20, "label": "Done label", "description": "What the button says after the tap (a tick is added)." },
+    "tapAt": { "type": "number", "default": 2.2, "min": 0.6, "max": 30, "step": 0.05, "unit": "s", "label": "Tap at", "description": "Seconds into the overlay when the finger taps: put it on the spoken word (EFFECTS.md: ±2 frames)." },
+    "side": { "type": "enum", "options": ["left", "right"], "default": "right", "label": "Side", "description": "Which side of the face the phone floats on." },
+    "tilt": { "type": "number", "default": 12, "min": -30, "max": 30, "step": 1, "unit": "deg", "label": "Tilt", "description": "Turn of the phone toward the speaker (rotateY)." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "The button colour and the tap ring: the one isolate." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier (1 = the phone is 40 % of the frame height)." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge up (negative) or down, px on a 1080 grid." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Entrance speed (the tap stays on its second)." },
+    "ease": { "type": "easing", "default": "bouncy", "label": "Entrance easing", "description": "How the phone lands." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Slides back out over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; perspective: 2400px; }
+  .rig { position: absolute; }
+  .phone { position: absolute; inset: 0; border-radius: 13%/6.4%; background: linear-gradient(145deg, #2b2b31, #0d0d10 60%, #1c1c21); box-shadow: 0 40px 90px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,255,255,.08); }
+  .screen { position: absolute; overflow: hidden; background: #f4f1ea; display: flex; flex-direction: column; }
+  .notch { position: absolute; left: 50%; background: #0d0d10; border-radius: 999px; }
+  .bar { display: flex; align-items: center; justify-content: space-between; font-family: "JetBrains Mono", monospace; color: #0c0c0e; font-weight: 600; letter-spacing: .04em; }
+  .hdr { display: flex; align-items: center; gap: .5em; font-family: "Archivo", sans-serif; font-weight: 800; color: #0c0c0e; border-bottom: 1px solid rgba(12,12,14,.1); }
+  .dot { border-radius: 50%; flex: none; }
+  .bubble { align-self: flex-end; background: #0c0c0e; color: #edebe6; font-family: "Archivo", sans-serif; font-weight: 500; line-height: 1.25; }
+  .card { background: #fff; border: 1px solid rgba(12,12,14,.1); color: #0c0c0e; font-family: "Archivo", sans-serif; line-height: 1.28; box-shadow: 0 6px 18px rgba(12,12,14,.08); }
+  .lbl { font-family: "JetBrains Mono", monospace; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #8c8c95; }
+  .btn { display: flex; align-items: center; justify-content: center; font-family: "Archivo", sans-serif; font-weight: 800; color: #0c0c0e; }
+  .touch { position: absolute; border-radius: 50%; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var PM = {};
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var H = RC.height * 0.4 * P.scale;
+      var W = H * 0.49;
+      var stage = document.getElementById("stage");
+      var rig = RC.el("div", { class: "rig", style: { width: W + "px", height: H + "px" } });
+      var cx = P.side === "right" ? RC.width * 0.71 : RC.width * 0.29;
+      var cy = RC.height * 0.42 + P.offsetY * RC.u;
+      rig.style.left = cx - W / 2 + "px";
+      rig.style.top = cy - H / 2 + "px";
+      var phone = RC.el("div", { class: "phone" });
+      var b = W * 0.045;
+      var screen = RC.el("div", { class: "screen", style: { left: b + "px", top: b + "px", right: b + "px", bottom: b + "px", borderRadius: (W * 0.1) + "px" } });
+      var fs = W / 395; // type is designed for a 395 px wide phone
+      var pad = 22 * fs;
+      var bar = RC.el("div", { class: "bar", style: { fontSize: 15 * fs + "px", padding: (12 * fs) + "px " + (28 * fs) + "px " + (4 * fs) + "px" } }, [RC.el("span", { text: "9:41" }), RC.el("span", { text: "5G · 100%" })]);
+      var hdr = RC.el("div", { class: "hdr", style: { fontSize: 21 * fs + "px", padding: (14 * fs) + "px " + pad + "px" } });
+      hdr.appendChild(RC.el("span", { class: "dot", style: { width: 14 * fs + "px", height: 14 * fs + "px", background: "#C8553D" } }));
+      hdr.appendChild(RC.el("span", { text: P.appName }));
+      var body = RC.el("div", { style: { display: "flex", flexDirection: "column", gap: 14 * fs + "px", padding: (20 * fs) + "px " + pad + "px", flex: "1" } });
+      var bubble = RC.el("div", { class: "bubble", text: P.request, style: { fontSize: 20 * fs + "px", padding: (12 * fs) + "px " + (16 * fs) + "px", borderRadius: (20 * fs) + "px " + (20 * fs) + "px " + (6 * fs) + "px " + (20 * fs) + "px", maxWidth: "86%" } });
+      var card = RC.el("div", { class: "card", style: { fontSize: 20 * fs + "px", padding: 16 * fs + "px", borderRadius: 18 * fs + "px", display: "flex", flexDirection: "column", gap: 12 * fs + "px" } });
+      card.appendChild(RC.el("div", { class: "lbl", text: "Assistant", style: { fontSize: 12 * fs + "px" } }));
+      card.appendChild(RC.el("div", { text: P.answer, style: { fontWeight: "600" } }));
+      var btn = RC.el("div", { class: "btn", style: { height: 54 * fs + "px", borderRadius: 999 + "px", fontSize: 20 * fs + "px", background: P.accent } });
+      var btnLabel = RC.el("span", { text: P.action });
+      var btnDone = RC.el("span", { text: "✓ " + P.done, style: { position: "absolute", opacity: "0" } });
+      btn.style.position = "relative";
+      btn.appendChild(btnLabel);
+      btn.appendChild(btnDone);
+      card.appendChild(btn);
+      body.appendChild(bubble);
+      body.appendChild(card);
+      screen.appendChild(bar);
+      screen.appendChild(hdr);
+      screen.appendChild(body);
+      var composer = RC.el("div", { style: { margin: "0 " + pad + "px " + pad + "px", height: 52 * fs + "px", borderRadius: "999px", border: "1px solid rgba(12,12,14,.14)", background: "#fff", display: "flex", alignItems: "center", padding: "0 " + 18 * fs + "px", fontFamily: "Archivo, sans-serif", fontSize: 18 * fs + "px", color: "#8c8c95" } }, [RC.el("span", { text: "Message " + P.appName.split(" ")[0] + "…" })]);
+      screen.appendChild(composer);
+      var notch = RC.el("div", { class: "notch", style: { top: b + 10 * fs + "px", width: W * 0.28 + "px", height: 26 * fs + "px", marginLeft: -W * 0.14 + "px" } });
+      phone.appendChild(screen);
+      phone.appendChild(notch);
+      rig.appendChild(phone);
+      var touch = RC.el("div", { class: "touch", style: { width: 64 * fs + "px", height: 64 * fs + "px", background: "rgba(12,12,14,.28)", border: (3 * fs) + "px solid " + P.accent } });
+      rig.appendChild(touch);
+      stage.appendChild(rig);
+      // where the button sits inside the rig (layout is final after fonts)
+      var r = btn.getBoundingClientRect();
+      var rr = rig.getBoundingClientRect();
+      touch.style.left = r.left - rr.left + r.width * 0.62 - 32 * fs + "px";
+      touch.style.top = r.top - rr.top + r.height / 2 - 32 * fs + "px";
+      PM = { rig: rig, bubble: bubble, card: card, btn: btn, btnLabel: btnLabel, btnDone: btnDone, touch: touch, W: W, H: H, dir: P.side === "right" ? 1 : -1 };
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var T = time.T;
+      var inP = RC.progress(t, 0, 0.6, P.ease);
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      var bob = Math.sin(T * Math.PI) * RC.height * 0.006; // 0.5 Hz float
+      var slide = (1 - inP) * PM.dir * RC.width * 0.6 + out * PM.dir * RC.width * 0.6;
+      RC.set(PM.rig, { x: slide, y: bob, ry: -PM.dir * P.tilt + (1 - inP) * PM.dir * -18, rotate: PM.dir * (1 - inP) * 6 + PM.dir * 2, opacity: RC.progress(t, 0, 0.15, "linear") * (1 - out) });
+      var bp = RC.progress(t, 0.35, 0.35, "snappy");
+      RC.set(PM.bubble, { y: (1 - bp) * 30, opacity: bp, scale: 0.9 + 0.1 * bp });
+      var cp = RC.progress(t, 0.7, 0.4, "snappy");
+      RC.set(PM.card, { y: (1 - cp) * 40, opacity: cp });
+      // the tap: real time (on the spoken word), independent of speed — unless a shortened clip ends before it
+      // (then the default 2.2 s was meant for the natural length and is fitted with the rest: RC.cue)
+      var dt = T - RC.cue(P.tapAt);
+      var ring = RC.clamp((dt + 0.25) / 0.25, 0, 1);
+      var tapGone = RC.clamp((dt - 0.15) / 0.3, 0, 1);
+      RC.set(PM.touch, { opacity: dt < -0.25 ? 0 : ring * (1 - tapGone), scale: dt < 0 ? 1.4 - 0.4 * ring : 1 + tapGone * 0.6 });
+      var press = dt >= 0 && dt < 0.14 ? 0.94 : 1;
+      RC.set(PM.btn, { scale: press });
+      var done = dt >= 0.12 ? 1 : 0;
+      PM.btnLabel.style.opacity = String(1 - done);
+      PM.btnDone.style.opacity = String(done);
+      PM.btn.style.background = done ? "#0C0C0E" : P.accent;
+      PM.btn.style.color = done ? P.accent : "#0C0C0E";
+    },
+  });
+</script>
+</body>
+</html>

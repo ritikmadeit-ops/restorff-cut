@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/ascii-trail-reveal); fictional.",
+  "label": "Signal restored",
+  "accent": "violet",
+  "trailWidth": "wide",
+  "speed": 1
+}

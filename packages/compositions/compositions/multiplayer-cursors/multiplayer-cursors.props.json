@@ -1,0 +1,6 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/multiplayer-cursors); fictional.",
+  "cursorCount": 6,
+  "labels": "Iris,Noah,Sam,Jo,Lee,Zed",
+  "speed": 1
+}

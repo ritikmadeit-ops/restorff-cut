@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/perspective-marquee); fictional.",
+  "tilt": "standard",
+  "travel": "standard",
+  "tone": "ink",
+  "words": "COMPONENTS, PRIMITIVES, TRANSITIONS, AGENTS",
+  "speed": 1
+}

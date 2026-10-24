@@ -1,4 +1,4 @@
-import type { FrameRate } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
 import type { ElementRef, RetimeConfig } from "@/timeline/types";
 import type { MediaTime } from "@/wasm";
 

@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/star-rating-fill); fictional.",
+  "rating": 4.8,
+  "starCount": 5,
+  "showValue": "yes",
+  "speed": 1
+}

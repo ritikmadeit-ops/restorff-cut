@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/before-after-wipe); fictional.",
+  "labelA": "BEFORE",
+  "labelB": "AFTER",
+  "restSplit": 55,
+  "wipeAt": 0.8,
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

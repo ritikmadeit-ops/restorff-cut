@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/micro-transitions); fictional.",
+  "badge": "3",
+  "tooltip": "Copied",
+  "tone": "red",
+  "travel": "standard",
+  "speed": 1
+}

@@ -12,12 +12,14 @@ import {
 	QUALITY_HIGH,
 	QUALITY_VERY_HIGH,
 } from "mediabunny";
-import type { FrameRate } from "opencut-wasm";
-import { mediaTimeToSeconds } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
+import { mediaTimeToSeconds } from "restorffcut-wasm";
 import { TICKS_PER_SECOND } from "@/wasm";
 import { frameRateToFloat } from "@/fps/utils";
 import type { RootNode } from "./nodes/root-node";
-import type { ExportFormat, ExportQuality } from "@/export";
+import type { ExportFormat, ExportLoudnessReport, ExportQuality } from "@/export";
+import type { LoudnessTargetSpec } from "@/audio/loudness";
+import { masterForExport, measureEncodedAudio } from "@/audio/master";
 import { CanvasRenderer } from "./canvas-renderer";
 
 type ExportParams = {
@@ -28,6 +30,16 @@ type ExportParams = {
 	quality: ExportQuality;
 	shouldIncludeAudio?: boolean;
 	audioBuffer?: AudioBuffer;
+	/** Restorff: encode at this size (the scene still renders at width × height). */
+	outputWidth?: number;
+	outputHeight?: number;
+	fit?: "contain" | "cover";
+	/** Colour behind letterbox bars. */
+	letterboxColor?: string;
+	videoBitrate?: number;
+	audioBitrate?: number;
+	/** Master the audio to this target, measured on the encoded audio; null = untouched. */
+	loudness?: LoudnessTargetSpec | null;
 };
 
 const qualityMap = {
@@ -37,6 +49,8 @@ const qualityMap = {
 	very_high: QUALITY_VERY_HIGH,
 };
 
+type AudioBitrate = ConstructorParameters<typeof AudioBufferSource>[0]["bitrate"];
+
 export type SceneExporterEvents = {
 	progress: [progress: number];
 	complete: [buffer: ArrayBuffer];
@@ -44,14 +58,34 @@ export type SceneExporterEvents = {
 	cancelled: [];
 };
 
+function createEncodeCanvas(width: number, height: number): HTMLCanvasElement | OffscreenCanvas {
+	if (typeof document !== "undefined") {
+		const canvas = document.createElement("canvas");
+		canvas.width = width;
+		canvas.height = height;
+		return canvas;
+	}
+	return new OffscreenCanvas(width, height);
+}
+
 export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 	private renderer: CanvasRenderer;
 	private format: ExportFormat;
 	private quality: ExportQuality;
 	private shouldIncludeAudio: boolean;
 	private audioBuffer?: AudioBuffer;
+	private outputWidth: number;
+	private outputHeight: number;
+	private fit: "contain" | "cover";
+	private letterboxColor: string;
+	private videoBitrate?: number;
+	private audioBitrate?: number;
+	private loudness: LoudnessTargetSpec | null;
 
 	private isCancelled = false;
+
+	/** Set after `export()` when audio was mastered. */
+	loudnessReport: ExportLoudnessReport | null = null;
 
 	constructor({
 		width,
@@ -61,6 +95,13 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 		quality,
 		shouldIncludeAudio,
 		audioBuffer,
+		outputWidth,
+		outputHeight,
+		fit,
+		letterboxColor,
+		videoBitrate,
+		audioBitrate,
+		loudness,
 	}: ExportParams) {
 		super();
 		this.renderer = new CanvasRenderer({
@@ -73,10 +114,47 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 		this.quality = quality;
 		this.shouldIncludeAudio = shouldIncludeAudio ?? false;
 		this.audioBuffer = audioBuffer;
+		// Encoders want even dimensions.
+		this.outputWidth = Math.max(2, Math.round((outputWidth ?? width) / 2) * 2);
+		this.outputHeight = Math.max(2, Math.round((outputHeight ?? height) / 2) * 2);
+		this.fit = fit ?? "contain";
+		this.letterboxColor = letterboxColor ?? "#000000";
+		this.videoBitrate = videoBitrate;
+		this.audioBitrate = audioBitrate;
+		this.loudness = loudness ?? null;
 	}
 
 	cancel(): void {
 		this.isCancelled = true;
+	}
+
+	private needsResample(): boolean {
+		return (
+			this.outputWidth !== this.renderer.width ||
+			this.outputHeight !== this.renderer.height
+		);
+	}
+
+	/** Draws the compositor's frame into the encode canvas, fitted (letterbox or crop). */
+	private drawIntoEncodeCanvas(target: HTMLCanvasElement | OffscreenCanvas): void {
+		const context = target.getContext("2d") as
+			| CanvasRenderingContext2D
+			| OffscreenCanvasRenderingContext2D
+			| null;
+		if (!context) throw new Error("Failed to get a 2d context for the encode canvas");
+		const source = this.renderer.getOutputCanvas();
+		const { width: sw, height: sh } = this.renderer;
+		const scale =
+			this.fit === "cover"
+				? Math.max(this.outputWidth / sw, this.outputHeight / sh)
+				: Math.min(this.outputWidth / sw, this.outputHeight / sh);
+		const dw = sw * scale;
+		const dh = sh * scale;
+		context.fillStyle = this.letterboxColor;
+		context.fillRect(0, 0, this.outputWidth, this.outputHeight);
+		context.imageSmoothingEnabled = true;
+		context.imageSmoothingQuality = "high";
+		context.drawImage(source, (this.outputWidth - dw) / 2, (this.outputHeight - dh) / 2, dw, dh);
 	}
 
 	async export({
@@ -99,38 +177,78 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 			target: new BufferTarget(),
 		});
 
-		const videoSource = new CanvasSource(this.renderer.getOutputCanvas(), {
-			codec: this.format === "webm" ? "vp9" : "avc",
-			bitrate: qualityMap[this.quality],
-		});
+		const encodeCanvas = this.needsResample()
+			? createEncodeCanvas(this.outputWidth, this.outputHeight)
+			: null;
+		const videoSource = new CanvasSource(
+			encodeCanvas ?? this.renderer.getOutputCanvas(),
+			{
+				codec: this.format === "webm" ? "vp9" : "avc",
+				bitrate: this.videoBitrate ?? qualityMap[this.quality],
+			},
+		);
 
 		output.addVideoTrack(videoSource, { frameRate: fpsFloat });
 
 		let audioSource: AudioBufferSource | null = null;
-		if (this.shouldIncludeAudio && this.audioBuffer) {
+		let audioBuffer = this.audioBuffer;
+		if (this.shouldIncludeAudio && audioBuffer) {
 			let audioCodec: "aac" | "opus" = this.format === "webm" ? "opus" : "aac";
 
 			if (audioCodec === "aac" && typeof AudioEncoder !== "undefined") {
 				const { supported } = await AudioEncoder.isConfigSupported({
 					codec: "mp4a.40.2",
-					sampleRate: this.audioBuffer.sampleRate,
-					numberOfChannels: this.audioBuffer.numberOfChannels,
+					sampleRate: audioBuffer.sampleRate,
+					numberOfChannels: audioBuffer.numberOfChannels,
 					bitrate: 192000,
 				});
 				if (!supported) audioCodec = "opus";
 			}
 
+			const audioBitrate: AudioBitrate = this.audioBitrate ?? qualityMap[this.quality];
+			if (this.loudness) {
+				const mastered = await masterForExport({
+					audioBuffer,
+					target: this.loudness,
+					encode: {
+						container: this.format === "webm" ? "webm" : "mp4",
+						codec: audioCodec,
+						bitrate: audioBitrate,
+					},
+				});
+				audioBuffer = mastered.buffer;
+				const { report } = mastered;
+				this.loudnessReport = {
+					target: report.target,
+					input: {
+						integratedLufs: report.input.integratedLufs,
+						truePeakDb: report.input.truePeakDb,
+						loudnessRangeLu: report.input.loudnessRangeLu,
+					},
+					output: report.encoded
+						? {
+								integratedLufs: report.encoded.integratedLufs,
+								truePeakDb: report.encoded.truePeakDb,
+								loudnessRangeLu: report.encoded.loudnessRangeLu,
+							}
+						: null,
+					gainDb: report.gainDb,
+					limitedSamples: report.limitedSamples,
+					pass: report.pass,
+				};
+			}
+
 			audioSource = new AudioBufferSource({
 				codec: audioCodec,
-				bitrate: qualityMap[this.quality],
+				bitrate: audioBitrate,
 			});
 			output.addAudioTrack(audioSource);
 		}
 
 		await output.start();
 
-		if (audioSource && this.audioBuffer) {
-			await audioSource.add(this.audioBuffer);
+		if (audioSource && audioBuffer) {
+			await audioSource.add(audioBuffer);
 			audioSource.close();
 		}
 
@@ -144,6 +262,7 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 			const timeTicks = i * ticksPerFrame;
 			const timeSeconds = mediaTimeToSeconds({ time: timeTicks });
 			await this.renderer.render({ node: rootNode, time: timeTicks });
+			if (encodeCanvas) this.drawIntoEncodeCanvas(encodeCanvas);
 			await videoSource.add(timeSeconds, 1 / fpsFloat);
 
 			this.emit("progress", i / frameCount);
@@ -163,6 +282,25 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 		if (!buffer) {
 			this.emit("error", new Error("Failed to export video"));
 			return null;
+		}
+
+		// Re-measure the finished file: the gate judges the encoded master, not the mix.
+		if (this.loudnessReport) {
+			try {
+				const final = await measureEncodedAudio(buffer);
+				if (final) {
+					this.loudnessReport.output = {
+						integratedLufs: final.integratedLufs,
+						truePeakDb: final.truePeakDb,
+						loudnessRangeLu: final.loudnessRangeLu,
+					};
+					this.loudnessReport.pass =
+						Math.abs(final.integratedLufs - this.loudnessReport.target.integratedLufs) <= 1 &&
+						final.truePeakDb <= this.loudnessReport.target.truePeakDb + 0.05;
+				}
+			} catch (error) {
+				console.warn("Could not re-measure the exported audio", error);
+			}
 		}
 
 		this.emit("complete", buffer);

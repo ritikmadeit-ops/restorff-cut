@@ -1,9 +1,9 @@
 [package]
-name = "opencut-wasm"
-version = "0.2.10"
+name = "restorffcut-wasm"
+version = "0.5.0"
 edition = "2024"
-description = "Shared video editor logic compiled to WebAssembly"
-repository = "https://github.com/opencut/opencut"
+description = "RestorffCut per-frame engine (compositor, effects, masks, media time) compiled to WebAssembly"
+# repository: TBD (the owner creates the repo).
 license = "MIT"
 
 [lib]

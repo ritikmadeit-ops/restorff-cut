@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/morph-swap); fictional.",
+  "swapAt": 0.9,
+  "register": "reshape",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

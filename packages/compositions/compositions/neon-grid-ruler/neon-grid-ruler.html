@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon grid ruler</title>
+<!-- neon-grid kit, piece 2 of 8 (composition-v3). The camera glides, climbs and banks along the 3D grid past
+     wireframe solids; a kicker pill pops; one or two big lines ignite; a ruler draws, strikes the values the voice
+     rejects and keeps the one it chose. Every word, number and time comes from the params. -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "neon-grid-ruler",
+  "title": "Neon grid ruler",
+  "description": "Full-screen camera glide along a dark 3D grid with wireframe solids and accent axes: a kicker pill, one or two big igniting lines (the number and its unit), then a ruler that strikes the rejected values and keeps the chosen one. Use for 'not X, not Y: Z' beats. Times follow the voice-over's words.",
+  "duration": 6.1,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "kit": "neon-grid",
+  "opaque": true,
+  "tags": ["neon-grid", "ruler", "number", "camera", "grid", "3d", "ignite", "comparison"],
+  "params": {
+    "t0": { "type": "number", "default": 0, "min": 0, "max": 600, "step": 0.01, "label": "Starts at", "description": "Where this clip starts on the timeline (s). Every other time here is TIMELINE seconds. composition write fills it from t.", "display": false },
+    "words": { "type": "list", "default": [], "label": "Voice words", "description": "The voice-over's words with timeline times [{w, s, e}]: they time every item whose time is -1 and draw the captions.", "of": { "type": "object", "fields": { "w": { "type": "string" }, "s": { "type": "number" }, "e": { "type": "number", "default": 0 } } } },
+    "captions": { "type": "boolean", "default": true, "label": "Captions", "description": "Show the voice word by word under the ruler (needs words)." },
+    "keys": { "type": "list", "default": [], "of": { "type": "string" }, "label": "Key words", "description": "Caption words painted in the accent." },
+    "kicker": { "type": "string", "default": "", "maxLength": 32, "label": "Kicker", "description": "Mono pill above the big lines (brand · topic). Blank: none." },
+    "kickerAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Kicker at", "description": "Timeline s; -1 = on the kicker's first word in the voice, else at the start." },
+    "lines": { "type": "list", "minItems": 1, "maxItems": 2, "required": true, "label": "Big lines", "description": "The number and its unit (or any one or two words): each reveals and ignites when said.",
+      "of": { "type": "object", "fields": {
+        "text": { "type": "string", "maxLength": 14 },
+        "at": { "type": "number", "default": -1, "min": -1, "max": 600, "description": "timeline s; -1 = when its first word is said (digits match number words)" },
+        "word": { "type": "string", "default": "", "description": "the voice word it lands on, when not its own first word" } } },
+      "default": [ { "text": "TWELVE" } ] },
+    "ruler": { "type": "object", "label": "Ruler", "description": "The scale under the lines: from..to in steps, a tall tick and a label every `major`; marks keep (accent dot + label with the unit) or strike (an X drawn when the value is said).",
+      "fields": {
+        "from": { "type": "number", "default": 0 },
+        "to": { "type": "number", "default": 24 },
+        "step": { "type": "number", "default": 1, "min": 0.01 },
+        "major": { "type": "number", "default": 6, "min": 0.01 },
+        "unit": { "type": "string", "default": "", "maxLength": 6, "description": "shown after the kept value's label, e.g. H" },
+        "at": { "type": "number", "default": -1, "min": -1, "max": 600, "description": "timeline s the ruler draws in; -1 = just after the last big line" },
+        "marks": { "type": "list", "default": [], "maxItems": 6, "of": { "type": "object", "fields": {
+          "value": { "type": "number" },
+          "kind": { "type": "enum", "options": ["keep", "strike"], "default": "strike" },
+          "at": { "type": "number", "default": -1, "min": -1, "max": 600, "description": "timeline s; -1 = strike: when the value is said; keep: as the ruler lands" },
+          "word": { "type": "string", "default": "", "description": "the voice word for this mark, when not the value itself" } } } } },
+      "default": { "from": 0, "to": 24, "step": 1, "major": 6, "unit": "", "at": -1, "marks": [] } },
+    "solids": { "type": "boolean", "default": true, "label": "Solids", "description": "Wireframe cube, octahedron and pyramid along the glide." },
+    "accent": { "type": "color", "default": "#FF5A1F", "label": "Accent", "description": "The one isolate: ignite, axes, horizon, kept mark, strikes." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "label": "Camera speed", "description": "How fast the camera glides (the words stay on the voice)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #07070A; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+var S = {};
+RC.composition({
+  build: function (RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, st = document.getElementById("stage");
+    var T = new KIT.Timing(P, RC.duration);
+    S.T = T;
+    S.cv = KIT.canvas(st); S.ctx = S.cv.getContext("2d");
+    S.cam = new KIT.Camera(W, H, 64);
+    S.s2 = RC.el("div", { style: { position: "absolute", left: "0", top: "0", width: W + "px", height: H + "px" } });
+    st.appendChild(S.s2);
+    var maxW = W - RC.safe.left - RC.safe.right + 40 * u;
+    S.kick = P.kicker ? KIT.pill(S.s2, P.kicker, 30 * u, P.accent, { fontWeight: "700", letterSpacing: ".18em" }) : null;
+    S.lines = P.lines.map(function (ln) { return KIT.big(S.s2, ln.text, 190 * u); });
+    var px = Math.min.apply(null, S.lines.map(function (d) { return RC.fitText(d, maxW, 200 * u, 90 * u); }));
+    var y = 560 * u;
+    if (S.kick) KIT.centre(S.kick, 470 * u);
+    S.lines.forEach(function (d) { d.style.fontSize = px + "px"; KIT.centre(d, y); y += d.offsetHeight + 6 * u; });
+    // the ruler (drawn on the canvas) and its labels (DOM)
+    var R = P.ruler;
+    S.span = Math.max(1e-6, R.to - R.from);
+    S.rulerY = 1130 * u; S.rx0 = 110 * u; S.rx1 = W - 110 * u;
+    S.X = function (v) { return RC.mix(S.rx0, S.rx1, (v - R.from) / S.span); };
+    var keep = {}, unit = R.unit ? " " + R.unit : "";
+    R.marks.forEach(function (m) { if (m.kind === "keep") keep[m.value] = 1; });
+    S.labels = [];
+    var n = Math.min(240, Math.round(S.span / R.major));
+    for (var i = 0; i <= n; i++) {
+      var v = R.from + i * R.major;
+      var lab = KIT.mono(S.s2, String(+v.toFixed(2)) + (keep[v] ? unit : ""), 30 * u, { fontWeight: "700", color: keep[v] ? P.accent : "rgba(242,238,230,.7)" });
+      lab.style.left = S.X(v) - lab.offsetWidth / 2 + "px"; lab.style.top = S.rulerY + 46 * u + "px";
+      lab._v = v; lab._i = i;
+      S.labels.push(lab);
+    }
+    keep = Object.keys(keep).map(Number);
+    keep.forEach(function (v) {
+      if (S.labels.some(function (l) { return Math.abs(l._v - v) < 1e-6; })) return;
+      var lab = KIT.mono(S.s2, String(+v.toFixed(2)) + unit, 30 * u, { fontWeight: "700", color: P.accent });
+      lab.style.left = S.X(v) - lab.offsetWidth / 2 + "px"; lab.style.top = S.rulerY + 46 * u + "px";
+      lab._v = v; lab._i = 0;
+      S.labels.push(lab);
+    });
+    // times, in the order they are said
+    S.kickAt = S.kick ? T.at({ at: P.kickerAt, text: P.kicker }, T.t0 + 0.26) : null;
+    S.lineAt = P.lines.map(function (ln, i) { return T.at(ln, T.frac(0.29 + 0.05 * i)); });
+    S.rulerAt = R.at >= 0 ? R.at : S.lineAt[S.lineAt.length - 1] + 0.2;
+    S.marks = R.marks.map(function (m) {
+      var fallback = m.kind === "keep" ? S.rulerAt + 0.15 : null;
+      var at = m.kind === "keep" && !(m.at >= 0) && !m.word ? fallback : T.at({ at: m.at, word: m.word || String(m.value) }, S.rulerAt + 0.6 + 0.5 * R.marks.indexOf(m));
+      return { value: m.value, kind: m.kind, at: at };
+    });
+    if (S.kick) KIT.cue(T, S.kickAt, "pop", "kicker");
+    S.lineAt.forEach(function (t, i) { KIT.cue(T, t, "ignite", "line " + (i + 1) + " ignites"); });
+    KIT.cue(T, S.rulerAt, "draw", "ruler draws");
+    S.marks.forEach(function (m) { KIT.cue(T, m.at, m.kind === "keep" ? "pop" : "strike", (m.kind === "keep" ? "keeps " : "strikes ") + m.value); });
+    S.cap = KIT.captionsFor(st, P, T);
+  },
+  render: function (time, RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, ctx = S.ctx, A = P.accent, T = S.T;
+    var g = T.t0 + time.T;
+    // camera: glide, climb, bank and turn over the whole clip (clip-local; speed applies)
+    var c = 3.2 + 6.1 * (time.t / Math.max(0.5, RC.duration));
+    var glide = RC.progress(c, 2.9, 6.4, "smooth");
+    var lift = RC.progress(c, 2.9, 1.4, "smooth");
+    S.cam.set(RC.mix(0, -2.4, glide), RC.mix(1.4, 2.7, lift), 0.55 * c + 7.5 * glide, RC.mix(0, 16, glide), RC.mix(-10, -23, lift), -5 * Math.sin(Math.PI * glide));
+    KIT.backdrop(ctx, W, H);
+    KIT.drawGrid(ctx, S.cam, { color: KIT.BONE, alpha: 0.24, lw: 1.7, reach: 30, accent: A, axes: RC.progress(time.T, 0.1, 0.5, "smooth"), ax: -1, az: 13, glow: 1, u: u });
+    if (P.solids) {
+      var sol = RC.progress(time.T, 0.3, 0.7, "smooth");
+      KIT.drawSolid(ctx, S.cam, "cube", [-3.6, 1.7, 13.5], 0.9, c * 40, 22, KIT.BONE, 0.85 * sol, 2.4 * u, 10 * u);
+      KIT.drawSolid(ctx, S.cam, "octa", [2.6, 2.3, 17], 0.95, -c * 34, c * 18, A, 0.9 * sol, 2.6 * u, 16 * u);
+      KIT.drawSolid(ctx, S.cam, "pyra", [1.9, 0.8, 23], 0.8, c * 26, 0, KIT.BONE, 0.7 * sol, 2.2 * u, 8 * u);
+    }
+    // a light streak across the horizon as the clip opens
+    var sk = RC.progress(time.T, -0.15, 0.5, "smooth");
+    if (sk > 0 && sk < 1) {
+      var sy = 840 * u, sx = RC.mix(-0.4 * W, 1.4 * W, sk);
+      var lg = ctx.createLinearGradient(sx - 420 * u, 0, sx + 60 * u, 0);
+      lg.addColorStop(0, RC.alpha(A, 0)); lg.addColorStop(0.85, RC.alpha(A, 0.9)); lg.addColorStop(1, RC.alpha("#FFFFFF", 1));
+      ctx.save(); ctx.shadowColor = A; ctx.shadowBlur = 30 * u; ctx.fillStyle = lg;
+      ctx.fillRect(sx - 420 * u, sy - 3 * u, 480 * u, 6 * u); ctx.restore();
+    }
+    // the ruler
+    var R = P.ruler, rIn = RC.progress(g, S.rulerAt, 0.6, "smooth");
+    if (rIn > 0) {
+      var x0 = S.rx0, x1 = S.rx1, y = S.rulerY, xe = RC.mix(x0, x1, rIn);
+      ctx.save();
+      ctx.strokeStyle = "rgba(242,238,230,.75)"; ctx.lineWidth = 3 * u;
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(xe, y);
+      var steps = Math.min(240, Math.round(S.span / R.step));
+      for (var i = 0; i <= steps; i++) {
+        var v = R.from + i * R.step, hx = S.X(v);
+        if (hx > xe + 0.5) break;
+        var tall = Math.abs((v - R.from) / R.major - Math.round((v - R.from) / R.major)) < 1e-6 ? 30 : 14;
+        ctx.moveTo(hx, y - tall * u); ctx.lineTo(hx, y + tall * u);
+      }
+      ctx.stroke();
+      var endT = T.end;
+      S.marks.forEach(function (m) {
+        var mx = S.X(m.value);
+        if (m.kind === "keep") {
+          var k = RC.progress(g, m.at, 0.3, "bouncy");
+          var pulse = 1 + 0.25 * Math.max(0, Math.sin((g - (endT - 0.6)) * 9)) * (g > endT - 0.6 && g < endT - 0.2 ? 1 : 0);
+          ctx.fillStyle = A; ctx.shadowColor = A; ctx.shadowBlur = 26 * u;
+          ctx.beginPath(); ctx.arc(mx, y, 15 * u * k * pulse, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+        } else {
+          var r = 30 * u, a1 = RC.progress(g, m.at, 0.14, "smooth"), a2 = RC.progress(g, m.at + 0.12, 0.14, "smooth");
+          ctx.strokeStyle = A; ctx.lineWidth = 7 * u; ctx.lineCap = "round"; ctx.shadowColor = A; ctx.shadowBlur = 14 * u;
+          ctx.beginPath();
+          if (a1 > 0) { ctx.moveTo(mx - r, y - r); ctx.lineTo(mx - r + 2 * r * a1, y - r + 2 * r * a1); }
+          if (a2 > 0) { ctx.moveTo(mx + r, y - r); ctx.lineTo(mx + r - 2 * r * a2, y - r + 2 * r * a2); }
+          ctx.stroke();
+        }
+      });
+      ctx.restore();
+    }
+    KIT.vignette(ctx, W, H, 0.6);
+    // DOM: kicker, big lines, ruler labels
+    if (S.kick) KIT.pop(S.kick, g, S.kickAt);
+    S.lines.forEach(function (d, i) {
+      KIT.reveal(d, RC.progress(g, S.lineAt[i], 0.3, "smooth"));
+      KIT.ignite(d, g, S.lineAt[i], A, u);
+    });
+    S.labels.forEach(function (l) {
+      var a = RC.progress(g, S.rulerAt + 0.05 + l._i * 0.02, 0.3, "smooth");
+      var struck = S.marks.some(function (m) { return m.kind === "strike" && Math.abs(m.value - l._v) < 1e-6 && g > m.at; });
+      l.style.opacity = String(a * (struck ? 0.35 : 1));
+    });
+    S.cap.render(g);
+  },
+});
+</script>
+</body>
+</html>

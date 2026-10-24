@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/cursor-glyph-trail); fictional.",
+  "glyphs": "",
+  "density": "med",
+  "path": "sweep",
+  "fade": 0.5,
+  "accent": "green",
+  "exit": "none",
+  "speed": 1
+}

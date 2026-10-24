@@ -2,6 +2,7 @@ import { webEnv } from "@/env/web";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit } from "@/auth/rate-limit";
+import { FREESOUND_NOT_CONFIGURED, freesoundConfigured } from "../config";
 
 const searchParamsSchema = z.object({
 	q: z.string().max(500, "Query too long").optional(),
@@ -12,7 +13,11 @@ const searchParamsSchema = z.object({
 		.enum(["downloads", "rating", "created", "score"])
 		.default("downloads"),
 	min_rating: z.coerce.number().min(0).max(5).default(3),
-	commercial_only: z.coerce.boolean().default(true),
+	// z.coerce.boolean() would read the string "false" as true
+	commercial_only: z
+		.enum(["true", "false"])
+		.default("true")
+		.transform((value) => value === "true"),
 });
 
 const freesoundResultSchema = z.object({
@@ -149,9 +154,19 @@ function transformFreesoundResult(
 
 export async function GET(request: NextRequest) {
 	try {
-		const { limited } = await checkRateLimit({ request });
-		if (limited) {
-			return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+		// Freesound is optional (the built-in pack needs no key): say so before touching the rate limiter,
+		// whose Upstash config is also a placeholder on a fresh checkout.
+		if (!freesoundConfigured()) {
+			return NextResponse.json(FREESOUND_NOT_CONFIGURED, { status: 503 });
+		}
+
+		try {
+			const { limited } = await checkRateLimit({ request });
+			if (limited) {
+				return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+			}
+		} catch (error) {
+			console.warn("Rate limiter unavailable (Upstash not configured?); continuing:", error);
 		}
 
 		const { searchParams } = new URL(request.url);
@@ -163,6 +178,7 @@ export async function GET(request: NextRequest) {
 			page_size: searchParams.get("page_size") || undefined,
 			sort: searchParams.get("sort") || undefined,
 			min_rating: searchParams.get("min_rating") || undefined,
+			commercial_only: searchParams.get("commercial_only") || undefined,
 		});
 
 		if (!validationResult.success) {

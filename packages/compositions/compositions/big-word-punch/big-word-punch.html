@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Big-word punch</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "big-word-punch",
+  "title": "Big-word punch",
+  "description": "One huge word slams in (scale + blur), a neon underline draws under it, an optional kicker above and a sub line below. Use for the single word the viewer must remember: FREE, ZERO, 12 HOURS.",
+  "duration": 3,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["text", "emphasis", "reels"],
+  "params": {
+    "word": { "type": "string", "required": true, "default": "FREE", "maxLength": 14, "label": "Word", "description": "The one word (or number) the viewer must remember. Short: it is fitted to the width." },
+    "kicker": { "type": "string", "default": "FIRST CASE", "maxLength": 40, "label": "Kicker", "description": "Small mono line above the word that frames it. Empty to hide." },
+    "sub": { "type": "string", "default": "Shipping on your first case", "maxLength": 60, "label": "Sub line", "description": "Sentence under the word that explains it. Empty to hide." },
+    "color": { "type": "color", "default": "#EDEBE6", "label": "Word colour", "description": "Colour of the big word. Bone by default." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Underline colour: the one isolate in the frame." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier for everything." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed. 0.8 = slower, 1.25 = faster." },
+    "ease": { "type": "easing", "default": "snappy", "label": "Punch easing", "description": "How the word lands. snappy = hard stop, bouncy/springy = overshoot." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "center", "label": "Anchor", "description": "Vertical placement inside the safe area." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up." },
+    "shake": { "type": "boolean", "default": true, "label": "Impact shake", "description": "A short decaying shake when the word lands." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fade and shrink out over the last 0.35 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .group { position: absolute; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .kicker {
+    font-family: "JetBrains Mono", monospace; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--bone); text-shadow: 0 2px 12px rgba(0,0,0,.55);
+  }
+  .wordwrap { position: relative; display: flex; flex-direction: column; align-items: stretch; }
+  .word {
+    font-family: "Archivo", sans-serif; font-weight: 900; font-stretch: 125%; text-transform: uppercase;
+    line-height: .9; letter-spacing: -.01em; text-align: center; white-space: nowrap;
+    text-shadow: 0 10px 40px rgba(0,0,0,.35);
+  }
+  .bar { transform-origin: 0 50%; box-shadow: 0 6px 24px rgba(0,0,0,.35); }
+  .sub {
+    font-family: "Archivo", sans-serif; font-weight: 600; font-stretch: 100%; color: var(--bone);
+    text-align: center; text-shadow: 0 2px 14px rgba(0,0,0,.6);
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var els = {};
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      els.group = RC.el("div", { class: "group" });
+      if (P.kicker) {
+        els.kicker = RC.el("div", { class: "kicker", text: P.kicker, style: { fontSize: 38 * u + "px", marginBottom: 24 * u + "px" } });
+        els.group.appendChild(els.kicker);
+      }
+      els.wrap = RC.el("div", { class: "wordwrap" });
+      els.word = RC.el("div", { class: "word", text: P.word, style: { color: P.color } });
+      els.bar = RC.el("div", { class: "bar", style: { height: 26 * u + "px", marginTop: 14 * u + "px", background: P.accent } });
+      els.wrap.appendChild(els.word);
+      els.wrap.appendChild(els.bar);
+      els.group.appendChild(els.wrap);
+      if (P.sub) {
+        els.sub = RC.el("div", { class: "sub", text: P.sub, style: { fontSize: 52 * u + "px", marginTop: 38 * u + "px", maxWidth: RC.width - 2 * RC.safe.right + "px" } });
+        els.group.appendChild(els.sub);
+      }
+      stage.appendChild(els.group);
+      var maxW = Math.min(RC.width - 2 * RC.safe.left, (RC.width - 2 * RC.safe.right) * P.scale);
+      RC.fitText(els.word, maxW, 380 * u, 40 * RC.u);
+      var gh = els.group.offsetHeight;
+      var top = P.anchor === "top" ? RC.safe.top
+        : P.anchor === "bottom" ? RC.height - RC.safe.bottom - gh
+        : (RC.height - gh) / 2;
+      els.group.style.top = top + P.offsetY * RC.u + "px";
+      els.u = u;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var u = els.u;
+      var t = time.t;
+      if (els.kicker) {
+        var k = RC.progress(t, 0, 0.35, "snappy");
+        RC.set(els.kicker, { y: (1 - k) * 24 * u, opacity: k });
+      }
+      // the word starts on frame 0 so the overlay can be placed on the spoken word's onset (EFFECTS.md FX-22: ±1 frame)
+      var w = RC.progress(t, 0, 0.5, P.ease);
+      var shakeX = 0;
+      var shakeR = 0;
+      if (P.shake) {
+        var s = t - 0.22;
+        if (s > 0 && s < 0.4) {
+          var d = Math.exp(-s * 12);
+          shakeX = Math.sin(s * 95) * 12 * u * d;
+          shakeR = Math.sin(s * 70 + 1) * 1.4 * d;
+        }
+      }
+      RC.set(els.word, {
+        scale: RC.mix(2.4, 1, w),
+        opacity: RC.progress(t, 0, 0.06, "linear"),
+        blur: (1 - RC.progress(t, 0, 0.15, "gentle")) * 18 * u,
+        x: shakeX,
+        rotate: shakeR,
+      });
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.35, 0, 1)) : 0;
+      var b = RC.progress(t, 0.38, 0.4, "snappy");
+      if (out > 0) {
+        els.bar.style.transformOrigin = "100% 50%";
+        els.bar.style.transform = "scaleX(" + (1 - RC.clamp(out * 1.6, 0, 1)) + ")";
+      } else {
+        els.bar.style.transformOrigin = "0 50%";
+        els.bar.style.transform = "scaleX(" + b + ")";
+      }
+      if (els.sub) {
+        var sp = RC.progress(t, 0.68, 0.45, "smooth");
+        RC.set(els.sub, { y: (1 - sp) * 28 * u, opacity: sp });
+      }
+      RC.set(els.group, { scale: 1 - 0.08 * out, opacity: 1 - out });
+    },
+  });
+</script>
+</body>
+</html>

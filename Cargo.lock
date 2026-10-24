@@ -963,7 +963,9 @@ dependencies = [
  "effects",
  "gpu",
  "masks",
+ "pollster",
  "serde",
+ "serde_json",
  "thiserror 2.0.18",
 ]
 
@@ -1455,6 +1457,8 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "gpu",
+ "naga 29.0.1",
+ "pollster",
  "thiserror 2.0.18",
  "wgpu",
 ]
@@ -3812,33 +3816,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "opencut-desktop"
-version = "0.1.0"
-dependencies = [
- "gpui",
-]
-
-[[package]]
-name = "opencut-wasm"
-version = "0.2.10"
-dependencies = [
- "bridge",
- "compositor",
- "console_error_panic_hook",
- "effects",
- "gpu",
- "js-sys",
- "masks",
- "num-traits",
- "serde",
- "serde-wasm-bindgen",
- "time",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
-]
-
-[[package]]
 name = "openssl-probe"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4581,6 +4558,33 @@ name = "renderdoc-sys"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
+
+[[package]]
+name = "restorffcut-desktop"
+version = "0.1.0"
+dependencies = [
+ "gpui",
+]
+
+[[package]]
+name = "restorffcut-wasm"
+version = "0.5.0"
+dependencies = [
+ "bridge",
+ "compositor",
+ "console_error_panic_hook",
+ "effects",
+ "gpu",
+ "js-sys",
+ "masks",
+ "num-traits",
+ "serde",
+ "serde-wasm-bindgen",
+ "time",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
 
 [[package]]
 name = "resvg"

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon grid beats</title>
+<!-- neon-grid kit, piece 5 of 8 (composition-v3). A solid accent frame with a moving light: a return arrow draws,
+     then one huge dark word per beat, each replacing the last with a two-frame vertical smear. Every word and time
+     comes from the params. -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "neon-beats",
+  "title": "Neon grid beats",
+  "description": "Full-frame accent colour with a moving light: an optional return arrow draws, then one huge dark word per beat (each replaces the last with a short vertical smear). Use for a punchy 'so we wrote it down' sentence between grid scenes. Times follow the voice-over's words.",
+  "duration": 1.65,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "kit": "neon-grid",
+  "opaque": true,
+  "tags": ["neon-grid", "beats", "big-word", "punch", "kinetic", "word"],
+  "params": {
+    "t0": { "type": "number", "default": 0, "min": 0, "max": 600, "step": 0.01, "label": "Starts at", "description": "Where this clip starts on the timeline (s). Every other time here is TIMELINE seconds. composition write fills it from t.", "display": false },
+    "words": { "type": "list", "default": [], "label": "Voice words", "description": "The voice-over's words with timeline times [{w, s, e}]: each beat lands on its word.", "of": { "type": "object", "fields": { "w": { "type": "string" }, "s": { "type": "number" }, "e": { "type": "number", "default": 0 } } } },
+    "beats": { "type": "list", "minItems": 1, "maxItems": 8, "required": true, "label": "Beat words", "description": "One word per beat, in order; each appears when said and replaces the one before.",
+      "of": { "type": "object", "fields": {
+        "text": { "type": "string", "maxLength": 12 },
+        "at": { "type": "number", "default": -1, "min": -1, "max": 600, "description": "timeline s; -1 = when the word is said" },
+        "word": { "type": "string", "default": "", "description": "the voice word, when not the text itself" } } },
+      "default": [ { "text": "ONE" }, { "text": "TWO" } ] },
+    "arrow": { "type": "boolean", "default": true, "label": "Return arrow", "description": "A return arrow draws before the first beat." },
+    "ink": { "type": "color", "default": "#07070A", "label": "Ink", "description": "The words and the arrow." },
+    "accent": { "type": "color", "default": "#FF5A1F", "label": "Fill", "description": "The frame's solid colour." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "label": "Speed", "description": "How fast the light drifts and each word grows (the beats stay on the voice)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #07070A; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+var S = {};
+RC.composition({
+  build: function (RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, st = document.getElementById("stage");
+    var T = new KIT.Timing(P, RC.duration);
+    S.T = T;
+    S.fill = RC.el("div", { style: { position: "absolute", left: "0", top: "0", width: W + "px", height: H + "px", background: P.accent } });
+    st.appendChild(S.fill);
+    S.ac = RC.el("canvas", { width: W, height: H, style: { position: "absolute", left: "0", top: "0" } });
+    S.fill.appendChild(S.ac); S.actx = S.ac.getContext("2d");
+    var n = P.beats.length;
+    S.words = P.beats.map(function (b, i) {
+      var d = KIT.big(S.fill, b.text, 340 * u, { color: P.ink });
+      RC.fitText(d, W - 120 * u, 360 * u, 120 * u);
+      d.style.left = (W - d.offsetWidth) / 2 + "px"; d.style.top = (H * 0.46 - d.offsetHeight / 2) + "px";
+      d._at = T.at(b, T.frac(0.14 + (0.72 * i) / n));
+      KIT.cue(T, d._at, "word", "beat " + (i + 1));
+      return d;
+    });
+  },
+  render: function (time, RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, T = S.T;
+    var g = T.t0 + time.T;
+    var ac = S.actx, first = S.words[0]._at;
+    ac.clearRect(0, 0, W, H);
+    // a moving light across the fill
+    var lp = RC.clamp(time.t / Math.max(0.5, RC.duration), 0, 1.5);
+    var hl = ac.createRadialGradient(W * (0.3 + 0.4 * lp), H * 0.4, 0, W * 0.5, H * 0.45, H * 0.7);
+    hl.addColorStop(0, "rgba(255,190,120,.35)"); hl.addColorStop(1, "rgba(255,190,120,0)");
+    ac.fillStyle = hl; ac.fillRect(0, 0, W, H);
+    // the return arrow draws: down, then left, then its head (before the first beat)
+    if (P.arrow && g < first) {
+      var d = RC.progress(g, T.t0, Math.max(0.05, first - T.t0 - 0.02), "snappy");
+      ac.strokeStyle = P.ink; ac.lineWidth = 46 * u; ac.lineCap = "square"; ac.lineJoin = "miter";
+      var x0 = 760 * u, y0 = 620 * u, y1 = 1010 * u, x1 = 330 * u;
+      var p1 = RC.clamp(d * 2, 0, 1), p2 = RC.clamp(d * 2 - 1, 0, 1);
+      ac.beginPath(); ac.moveTo(x0, y0); ac.lineTo(x0, RC.mix(y0, y1, p1));
+      if (p2 > 0) ac.lineTo(RC.mix(x0, x1, p2), y1);
+      ac.stroke();
+      if (p2 >= 1) { ac.beginPath(); ac.moveTo(x1 + 120 * u, y1 - 120 * u); ac.lineTo(x1, y1); ac.lineTo(x1 + 120 * u, y1 + 120 * u); ac.stroke(); }
+    }
+    // one word per beat: the newest replaces the last, with a two-frame vertical smear, then grows slowly
+    var cur = -1;
+    S.words.forEach(function (w, i) { if (g >= w._at) cur = i; });
+    S.words.forEach(function (w, i) {
+      if (i !== cur) { w.style.opacity = "0"; return; }
+      var p = RC.progress(g, w._at, 0.08, "snappy");
+      var next = S.words[i + 1] ? S.words[i + 1]._at : T.end;
+      w.style.opacity = "1";
+      RC.set(w, { y: (1 - p) * -70 * u, scale: 1 + 0.07 * RC.clamp(RC.since(g, w._at) / Math.max(0.1, next - w._at), 0, 1.5), sy: 1 + 0.6 * (1 - p), blur: 12 * (1 - p) });
+    });
+  },
+});
+</script>
+</body>
+</html>

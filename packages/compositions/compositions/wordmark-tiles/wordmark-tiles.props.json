@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/wordmark-tiles); fictional.",
+  "text": "ORBIT",
+  "columns": 14,
+  "waveStagger": 28,
+  "speed": 1
+}

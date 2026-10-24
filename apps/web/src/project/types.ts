@@ -1,4 +1,4 @@
-import type { FrameRate } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
 import type { TScene } from "@/timeline/types";
 import type { MediaTime } from "@/wasm";
 
@@ -26,6 +26,18 @@ export interface TProjectMetadata {
 	updatedAt: Date;
 }
 
+/**
+ * Restorff (project v32): the master loudness the export normalises to, measured on the
+ * encoded file (EXPORT-GATE "LOUD"). Absent = the owner's default, −14 LUFS / −1 dBTP.
+ */
+export interface TLoudnessTarget {
+	enabled: boolean;
+	/** Integrated loudness target, LUFS (BS.1770-4). */
+	integratedLufs: number;
+	/** True-peak ceiling, dBTP. */
+	truePeakDb: number;
+}
+
 export interface TProjectSettings {
 	fps: FrameRate;
 	canvasSize: TCanvasSize;
@@ -33,6 +45,17 @@ export interface TProjectSettings {
 	lastCustomCanvasSize?: TCanvasSize | null;
 	originalCanvasSize?: TCanvasSize | null;
 	background: TBackground;
+	loudness?: TLoudnessTarget;
+	/** Restorff: the delivery preset every export uses unless the caller overrides it. */
+	delivery?: TDeliverySettings;
+}
+
+/** Restorff (optional, no migration needed): see `@/export/presets`. */
+export interface TDeliverySettings {
+	/** Preset id; absent = the project canvas as it is. */
+	preset?: string;
+	/** When the preset's aspect differs from the canvas: letterbox ("contain") or crop ("cover"). */
+	fit?: "contain" | "cover";
 }
 
 export interface TTimelineViewState {

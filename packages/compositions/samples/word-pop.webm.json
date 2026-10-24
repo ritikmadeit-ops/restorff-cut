@@ -1,0 +1,100 @@
+{
+  "composition": "word-pop",
+  "source": "compositions/word-pop/word-pop.html",
+  "renderer": "@restorffcut/compositions 0.1.0",
+  "chrome": "HeadlessChrome/153.0.8010.12",
+  "out": "samples/word-pop.webm",
+  "format": "webm",
+  "frames": 120,
+  "fps": 30,
+  "duration": 4,
+  "width": 1080,
+  "height": 1920,
+  "ms": {
+    "total": 3793,
+    "load": 263,
+    "capture": 3531
+  },
+  "secondsPerSecond": 0.95,
+  "workers": 4,
+  "bytes": 384426,
+  "inputHash": "fcc7dc187a2ec59b4a14e7b6f6ff50435cc33180a8c414b7afb5a7f4edc120e6",
+  "framesHash": "da026d9d6f1c95ca38acd60de46144ab8a6d8075fd84aa5e34bc62b8f5df42db",
+  "params": {
+    "words": [
+      {
+        "text": "Cold",
+        "start": 0.1,
+        "end": 0.38
+      },
+      {
+        "text": "brew",
+        "start": 0.38,
+        "end": 0.7
+      },
+      {
+        "text": "that",
+        "start": 0.7,
+        "end": 0.86
+      },
+      {
+        "text": "tastes",
+        "start": 0.86,
+        "end": 1.2
+      },
+      {
+        "text": "like",
+        "start": 1.2,
+        "end": 1.36
+      },
+      {
+        "text": "it",
+        "start": 1.36,
+        "end": 1.46
+      },
+      {
+        "text": "took",
+        "start": 1.46,
+        "end": 1.7
+      },
+      {
+        "text": "twelve",
+        "start": 1.7,
+        "end": 2.02
+      },
+      {
+        "text": "hours.",
+        "start": 2.02,
+        "end": 2.5
+      },
+      {
+        "text": "Because",
+        "start": 2.75,
+        "end": 3.1
+      },
+      {
+        "text": "it",
+        "start": 3.1,
+        "end": 3.22
+      },
+      {
+        "text": "did.",
+        "start": 3.22,
+        "end": 3.7
+      }
+    ],
+    "maxWords": 3,
+    "style": "color",
+    "color": "#FFFFFF",
+    "accent": "#F6FF00",
+    "uppercase": true,
+    "scale": 1,
+    "ease": "bouncy",
+    "anchor": "bottom",
+    "offsetY": -120
+  },
+  "sidecar": "samples/word-pop.webm.json",
+  "crf": 31,
+  "warnings": [],
+  "renderedAt": "2026-10-19T23:00:14.198Z"
+}

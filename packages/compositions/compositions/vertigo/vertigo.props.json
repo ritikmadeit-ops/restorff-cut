@@ -1,0 +1,6 @@
+{
+  "$comment": "Fictional Halcyon set-up. In the editor: this composition above the clip, the clip's person cutout above it with no keys. Give background (a clean plate of the empty room) when you have one; else plate (a still of the clip at the effect's start) + matte ([the cutout frame at that moment]).",
+  "face": { "x": 0.5, "y": 0.43, "w": 0.26, "h": 0.17 },
+  "amount": 0.42,
+  "move": 1.0
+}

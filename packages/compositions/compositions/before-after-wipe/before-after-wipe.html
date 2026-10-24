@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Before/after wipe</title>
+<script src="../../src/runtime.js"></script>
+<!-- New for library-v2 (the warm-moody recreation found FX-36 missing: docs/restorff/recreations/warm-moody/REPORT.md). -->
+<script type="application/json" id="params">
+{
+  "name": "before-after-wipe",
+  "title": "Before/after wipe",
+  "description": "A slanted white divider with a round ‹› handle sweeps across the frame at constant speed; behind it the BEFORE still gives way to the AFTER, with mono BEFORE / AFTER labels. Place it over the clip right where a new look starts and send a still of the same frame before the change as `before`: the footage under the overlay is the after. Use to show a grade or style change ('make it more aesthetic') (EFFECTS.md FX-36).",
+  "duration": 2,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["before-after", "wipe", "compare", "grade", "look", "transition"],
+  "params": {
+    "before": { "type": "image", "display": true, "required": true, "default": "../halftone-push/assets/barista.png", "label": "Before still", "description": "A still of the frame BEFORE the change, same framing as the clip (data: URL, or a file next to the props). It fills the frame (cover) on the not-yet-wiped side." },
+    "after": { "type": "image", "default": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "label": "After still", "description": "Optional still for the wiped side. The 1-pixel default means none: that side stays transparent, so the footage below (the after) shows." },
+    "afterLook": { "type": "enum", "options": ["none", "warm", "moody", "mono", "bright"], "default": "none", "label": "After look (demo)", "description": "Only when there is no after still: show the before still with this look on the wiped side (a demo without footage). none = transparent." },
+    "beforeLabel": { "type": "string", "display": false, "default": "BEFORE", "maxLength": 14, "label": "Before label", "description": "Mono label on the before side. Empty to hide." },
+    "afterLabel": { "type": "string", "display": false, "default": "AFTER", "maxLength": 14, "label": "After label", "description": "Mono label on the after side. Empty to hide." },
+    "direction": { "type": "enum", "options": ["right", "left"], "default": "right", "label": "Direction", "description": "right = the divider sweeps left → right (the after grows from the left); left = the other way." },
+    "angle": { "type": "number", "default": 12, "min": -30, "max": 30, "step": 1, "unit": "deg", "label": "Slant", "description": "Tilt of the divider from vertical." },
+    "at": { "type": "number", "default": 0.35, "min": 0, "max": 20, "step": 0.05, "unit": "s", "label": "Sweep at", "description": "Animation seconds when the divider starts moving." },
+    "sweep": { "type": "number", "default": 0.5, "min": 0.15, "max": 5, "step": 0.05, "unit": "s", "label": "Sweep time", "description": "Seconds the divider takes to cross (the reel: at most 0.5 s, constant speed)." },
+    "stop": { "type": "number", "default": 1, "min": 0.2, "max": 1, "step": 0.01, "label": "Stop at", "description": "Where the divider stops (1 = off the far edge: all after; 0.5 = holds a split screen)." },
+    "handleY": { "type": "number", "default": 0.5, "min": 0.15, "max": 0.85, "step": 0.01, "label": "Handle height", "description": "Height of the round handle on the divider (fraction of the frame)." },
+    "line": { "type": "color", "default": "#FFFFFF", "label": "Divider", "description": "Divider and handle colour." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size of the handle, labels and divider." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Divider, handle and labels fade over the last 0.3 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .side { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; }
+  .side img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .div { position: absolute; left: 0; top: 0; transform-origin: 50% 50%; }
+  .knob { position: absolute; left: 0; top: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: "JetBrains Mono", monospace; font-weight: 800; color: #0C0C0E; }
+  .lab { position: absolute; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .18em; color: #EDEBE6; background: rgba(12,12,14,.72); border-radius: 999px; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var BA = {};
+  var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  var LOOKS = {
+    warm: "sepia(.35) saturate(1.3) hue-rotate(-10deg) brightness(1.06) contrast(.96)",
+    moody: "brightness(.7) saturate(.65) contrast(1.1) hue-rotate(10deg)",
+    mono: "grayscale(1) contrast(1.12)",
+    bright: "brightness(1.16) saturate(1.12)",
+  };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params, W = RC.width, H = RC.height, u = RC.u * P.scale, st = document.getElementById("stage");
+      BA.tan = Math.tan((P.angle * Math.PI) / 180);
+      BA.e = (H / 2) * Math.abs(BA.tan) + 8 * u;
+      // the after side: an after still, or the before still with a demo look, or nothing (the footage shows)
+      var afterSrc = P.after && P.after !== BLANK ? P.after : P.afterLook !== "none" ? P.before : null;
+      if (afterSrc) {
+        BA.after = RC.el("div", { class: "side" }, [RC.el("img", { src: afterSrc, style: { filter: P.after && P.after !== BLANK ? "none" : LOOKS[P.afterLook] } })]);
+        st.appendChild(BA.after);
+      }
+      BA.before = RC.el("div", { class: "side" }, [RC.el("img", { src: P.before })]);
+      st.appendChild(BA.before);
+      var len = H / Math.cos((P.angle * Math.PI) / 180) + 40 * u;
+      BA.lw = 6 * u;
+      BA.line = RC.el("div", { class: "div", style: { width: BA.lw + "px", height: len + "px", background: P.line, boxShadow: "0 0 " + 18 * u + "px rgba(0,0,0,.45)" } });
+      st.appendChild(BA.line);
+      BA.len = len;
+      BA.kd = 96 * u;
+      BA.knob = RC.el("div", { class: "knob", text: "‹ ›", style: { width: BA.kd + "px", height: BA.kd + "px", fontSize: 40 * u + "px", background: P.line, boxShadow: "0 " + 6 * u + "px " + 22 * u + "px rgba(0,0,0,.45)" } });
+      st.appendChild(BA.knob);
+      var top = RC.safe.top + 10 * u;
+      var lab = function (text, side) {
+        var n = RC.el("div", { class: "lab", text: text, style: { fontSize: 28 * u + "px", padding: 10 * u + "px " + 22 * u + "px", top: top + "px" } });
+        st.appendChild(n);
+        n.style.left = (side === "left" ? RC.safe.left : W - RC.safe.right - n.offsetWidth) + "px";
+        return n;
+      };
+      // the after grows from the side the divider starts on
+      var afterSide = P.direction === "right" ? "left" : "right";
+      if (P.afterLabel) BA.aLab = lab(P.afterLabel, afterSide);
+      if (P.beforeLabel) BA.bLab = lab(P.beforeLabel, afterSide === "left" ? "right" : "left");
+    },
+    render: function (time, RC) {
+      var P = RC.params, t = time.t, W = RC.width, H = RC.height, e = BA.e;
+      var out = P.exit ? 1 - RC.clamp(time.left / 0.3, 0, 1) : 0;
+      // f: 0 = the divider is off the start edge (all before), 1 = off the far edge (all after); constant speed
+      var f = RC.mix(0, P.stop, RC.clamp((t - P.at) / P.sweep, 0, 1));
+      var right = P.direction === "right";
+      var X = right ? RC.mix(-e, W + e, f) : RC.mix(W + e, -e, f);
+      var dxh = (H / 2) * BA.tan;
+      var xt = X + dxh, xb = X - dxh, pad = 20;
+      // before = the side the divider has not reached yet
+      var beforePoly = right
+        ? [[xt, -pad], [W + pad, -pad], [W + pad, H + pad], [xb, H + pad]]
+        : [[-pad, -pad], [xt, -pad], [xb, H + pad], [-pad, H + pad]];
+      var afterPoly = right
+        ? [[-pad, -pad], [xt, -pad], [xb, H + pad], [-pad, H + pad]]
+        : [[xt, -pad], [W + pad, -pad], [W + pad, H + pad], [xb, H + pad]];
+      var poly = function (pts) { return "polygon(" + pts.map(function (p) { return p[0].toFixed(2) + "px " + p[1].toFixed(2) + "px"; }).join(", ") + ")"; };
+      BA.before.style.clipPath = poly(beforePoly);
+      if (BA.after) BA.after.style.clipPath = poly(afterPoly);
+      // a held split (stop < 1) fades with the exit, so the clip ends on the footage, not on a cut from the still
+      BA.before.style.opacity = String(1 - out);
+      if (BA.after) BA.after.style.opacity = String(1 - out);
+      // the divider, its handle and the labels
+      var lineOn = RC.progress(t, 0, 0.2, "linear") * (1 - out) * (f >= 1 ? 0 : 1);
+      RC.set(BA.line, { x: X - BA.lw / 2, y: (H - BA.len) / 2, rotate: P.angle, opacity: lineOn });
+      var hy = H * P.handleY, hx = X + (H / 2 - hy) * BA.tan;
+      var pop = RC.progress(t, 0.05, 0.3, "bouncy");
+      RC.set(BA.knob, { x: hx - BA.kd / 2, y: hy - BA.kd / 2, scale: pop, opacity: lineOn });
+      var labOn = RC.progress(t, 0.1, 0.25, "linear") * (1 - out);
+      if (BA.aLab) BA.aLab.style.opacity = String(labOn);
+      // the before label leaves once the divider has passed it
+      if (BA.bLab) {
+        var bx = BA.bLab.offsetLeft + BA.bLab.offsetWidth / 2;
+        var passed = right ? xt > bx : xt < bx;
+        BA.bLab.style.opacity = String(labOn * (passed ? 0 : 1));
+      }
+    },
+  });
+</script>
+</body>
+</html>

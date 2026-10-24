@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chart grow</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "chart-grow",
+  "title": "Chart grow",
+  "description": "A titled bar chart (or line) on a dark card: bars grow one after another while their numbers count up, and the highlighted bar is the neon isolate. Use for growth, comparisons, before/after numbers: 3-7 values.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["chart", "data", "numbers", "reels"],
+  "params": {
+    "title": { "type": "string", "default": "CANS SOLD PER WEEK", "maxLength": 36, "label": "Title", "description": "What is measured. Empty to hide." },
+    "bars": {
+      "type": "list", "minItems": 2, "maxItems": 8, "label": "Values",
+      "description": "One bar per value, left to right. Values must be >= 0.",
+      "of": { "type": "object", "fields": {
+        "label": { "type": "string", "maxLength": 10, "description": "Short axis label under the bar (W1, JAN, 2025)." },
+        "value": { "type": "number", "min": 0, "description": "The number the bar grows to." }
+      } },
+      "default": [
+        { "label": "W1", "value": 1.2 }, { "label": "W2", "value": 2.9 }, { "label": "W3", "value": 4.1 },
+        { "label": "W4", "value": 7.8 }, { "label": "W5", "value": 12.4 }
+      ]
+    },
+    "prefix": { "type": "string", "default": "", "maxLength": 4, "label": "Prefix", "description": "Before each number, e.g. $." },
+    "suffix": { "type": "string", "default": "k", "maxLength": 6, "label": "Suffix", "description": "After each number, e.g. k, %, h." },
+    "decimals": { "type": "number", "default": 1, "min": 0, "max": 3, "step": 1, "label": "Decimals", "description": "Digits after the point in the labels." },
+    "highlight": { "type": "number", "default": -1, "min": -1, "max": 7, "step": 1, "label": "Highlighted bar", "description": "Index of the neon bar (0 = first). -1 = the last bar." },
+    "style": { "type": "enum", "options": ["bars", "line"], "default": "bars", "label": "Style", "description": "bars = growing columns; line = a line drawing through the values." },
+    "callout": { "type": "string", "default": "", "maxLength": 24, "label": "Callout", "description": "Neon pill that pops above the highlighted value once it is reached (e.g. \"10x IN 5 WEEKS\"). Must be true of the numbers. Empty to hide." },
+    "source": { "type": "string", "default": "Halcyon sales dashboard, weeks 1-5 (fictional)", "maxLength": 70, "label": "Source line", "description": "Where the numbers come from. Empty to hide; real ads should always cite." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Highlighted bar, line and its number." },
+    "stagger": { "type": "number", "default": 0.14, "min": 0, "max": 1, "step": 0.01, "unit": "s", "label": "Stagger", "description": "Delay between bars." },
+    "card": { "type": "boolean", "default": true, "label": "Card", "description": "Dark card behind the chart." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed. 0.8 = slower, 1.25 = faster." },
+    "ease": { "type": "easing", "default": "snappy", "label": "Easing", "description": "How bars grow." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "center", "label": "Anchor", "description": "Vertical placement inside the safe area." },
+    "offsetY": { "type": "number", "default": 0, "min": -900, "max": 900, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Bars drop and the card fades over the last 0.4 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .card { position: absolute; display: flex; flex-direction: column; }
+  .card.on { background: rgba(12,12,14,.88); box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 0 0 2px rgba(237,235,230,.10); }
+  .title { font-family: "Archivo", sans-serif; font-weight: 800; font-stretch: 125%; text-transform: uppercase; letter-spacing: .14em; color: var(--bone); }
+  .plot { position: relative; }
+  .bar { position: absolute; bottom: 0; transform-origin: 50% 100%; }
+  .val { position: absolute; text-align: center; font-family: "JetBrains Mono", monospace; font-weight: 700; color: var(--bone); white-space: nowrap; }
+  .lab { position: absolute; text-align: center; font-family: "JetBrains Mono", monospace; font-weight: 500; color: var(--fog); letter-spacing: .08em; text-transform: uppercase; }
+  .base { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(237,235,230,.35); }
+  .src { font-family: "JetBrains Mono", monospace; color: var(--fog); letter-spacing: .04em; }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var CH = { bars: [] };
+  function fmt(P, v) { return P.prefix + v.toFixed(P.decimals) + P.suffix; }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var cw = Math.min(RC.width - RC.safe.left - RC.safe.right, 860 * u);
+      var pad = 52 * u;
+      var pw = cw - 2 * pad;
+      var ph = 560 * u;
+      var card = RC.el("div", { class: "card" + (P.card ? " on" : ""), style: { width: cw + "px", padding: pad + "px", borderRadius: 30 * u + "px", gap: 40 * u + "px" } });
+      if (P.title) card.appendChild(RC.el("div", { class: "title", text: P.title, style: { fontSize: 32 * u + "px" } }));
+      var plot = RC.el("div", { class: "plot", style: { width: pw + "px", height: ph + 64 * u + "px", marginTop: 50 * u + "px" } });
+      var area = RC.el("div", { class: "plot", style: { position: "absolute", left: 0, top: 0, width: pw + "px", height: ph + "px" } });
+      plot.appendChild(area);
+      area.appendChild(RC.el("div", { class: "base", style: { height: 3 * u + "px" } }));
+      var n = P.bars.length;
+      var gap = 26 * u;
+      var bw = (pw - gap * (n - 1)) / n;
+      var max = Math.max.apply(null, P.bars.map(function (b) { return b.value; })) || 1;
+      var hi = P.highlight < 0 ? n - 1 : P.highlight;
+      P.bars.forEach(function (b, i) {
+        var x = i * (bw + gap);
+        var h = (b.value / max) * (ph - 90 * u);
+        var isHi = i === hi;
+        var bar = P.style === "bars" ? RC.el("div", { class: "bar", style: {
+          left: x + "px", width: bw + "px", height: h + "px", borderRadius: 10 * u + "px " + 10 * u + "px 0 0",
+          background: isHi ? P.accent : "rgba(237,235,230,.86)",
+        } }) : null;
+        if (bar) area.appendChild(bar);
+        var val = RC.el("div", { class: "val", text: fmt(P, b.value), style: { left: x - 30 * u + "px", width: bw + 60 * u + "px", fontSize: (isHi ? 40 : 30) * u + "px", color: isHi ? P.accent : null } });
+        area.appendChild(val);
+        plot.appendChild(RC.el("div", { class: "lab", text: b.label, style: { left: x + "px", width: bw + "px", top: ph + 18 * u + "px", fontSize: 26 * u + "px" } }));
+        CH.bars.push({ bar: bar, val: val, h: h, x: x, value: b.value, hi: isHi });
+      });
+      if (P.style === "line") {
+        var pts = CH.bars.map(function (b) { return [b.x + bw / 2, ph - b.h]; });
+        var d = pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
+        var fill = d + " L" + pts[pts.length - 1][0].toFixed(1) + " " + ph + " L" + pts[0][0].toFixed(1) + " " + ph + " Z";
+        var dots = pts.map(function (p, i) { return '<circle class="dot" cx="' + p[0] + '" cy="' + p[1] + '" r="' + (CH.bars[i].hi ? 14 : 10) * u + '" fill="' + (CH.bars[i].hi ? P.accent : "#EDEBE6") + '"/>'; }).join("");
+        area.insertAdjacentHTML("beforeend",
+          '<svg width="' + pw + '" height="' + ph + '"><defs><clipPath id="reveal"><rect class="rev" x="0" y="-50" width="0" height="' + (ph + 100) + '"/></clipPath></defs>' +
+          '<path d="' + fill + '" fill="' + RC.alpha(P.accent, 0.14) + '" clip-path="url(#reveal)"/>' +
+          '<path class="ln" d="' + d + '" fill="none" stroke="' + P.accent + '" stroke-width="' + 7 * u + '" stroke-linejoin="round" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>' +
+          dots + "</svg>");
+        CH.line = area.querySelector(".ln");
+        CH.rev = area.querySelector(".rev");
+        CH.dots = Array.prototype.slice.call(area.querySelectorAll(".dot"));
+        CH.pw = pw;
+        // where along the line (0..1 of its length) each point sits: dots appear when the stroke reaches them
+        var cum = [0];
+        for (var j = 1; j < pts.length; j++) cum.push(cum[j - 1] + Math.hypot(pts[j][0] - pts[j - 1][0], pts[j][1] - pts[j - 1][1]));
+        CH.frac = cum.map(function (c) { return c / (cum[cum.length - 1] || 1); });
+      }
+      if (P.callout) {
+        var hb = CH.bars[hi];
+        var pill = RC.el("div", { class: "callout", text: P.callout, style: {
+          position: "absolute", whiteSpace: "nowrap", fontFamily: "'JetBrains Mono', monospace", fontWeight: "700",
+          letterSpacing: ".08em", textTransform: "uppercase", fontSize: 26 * u + "px", padding: 12 * u + "px " + 20 * u + "px",
+          borderRadius: "999px", background: P.accent, color: "#0C0C0E", boxShadow: "0 8px 24px rgba(0,0,0,.4)", opacity: "0",
+        } });
+        area.appendChild(pill);
+        pill.style.transformOrigin = "50% 100%";
+        // measured and placed after the card is in the document (an unattached element measures 0 x 0)
+        CH.placeCallout = function () {
+          var pwid = pill.offsetWidth;
+          var phei = pill.offsetHeight;
+          pill.style.left = RC.clamp(hb.x + bw / 2 - pwid / 2, 0, pw - pwid) + "px";
+          pill.style.top = ph - hb.h - (P.style === "line" ? 14 * u : 0) - 62 * u - phei - 16 * u + "px";
+        };
+        CH.callout = pill;
+        CH.calloutAt = P.style === "line" ? 0.35 + 0.5 + n * P.stagger : 0.35 + hi * P.stagger + 0.55;
+      }
+      card.appendChild(plot);
+      if (P.source) card.appendChild(RC.el("div", { class: "src", text: P.source, style: { fontSize: 22 * u + "px" } }));
+      stage.appendChild(card);
+      if (CH.placeCallout) CH.placeCallout();
+      var h = card.offsetHeight;
+      card.style.left = (RC.width - cw) / 2 - (RC.safe.right - RC.safe.left) / 2 + "px";
+      var y = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - h : (RC.height - h) / 2;
+      card.style.top = y + P.offsetY * RC.u + "px";
+      CH.card = card;
+      CH.u = u;
+      CH.ph = ph;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var u = CH.u;
+      var t = time.t;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      var cin = RC.progress(t, 0, 0.4, "snappy");
+      RC.set(CH.card, { y: (1 - cin) * 60 * u, scale: RC.mix(0.95, 1, cin), opacity: RC.progress(t, 0, 0.15, "linear") * (1 - out) });
+      var n = CH.bars.length;
+      if (CH.callout) {
+        var cp = RC.progress(t, CH.calloutAt, 0.35, "bouncy");
+        RC.set(CH.callout, { scale: RC.mix(0.6, 1, cp), y: (1 - cp) * 16 * u, opacity: RC.progress(t, CH.calloutAt, 0.08, "linear") * (1 - out) });
+      }
+      var lk = 0;
+      if (P.style === "line") {
+        lk = RC.progress(t, 0.35, 0.5 + n * P.stagger, "smooth");
+        CH.line.setAttribute("stroke-dashoffset", String(100 - 100 * lk));
+        CH.rev.setAttribute("width", String(CH.pw * lk + 20 * u));
+      }
+      CH.bars.forEach(function (b, i) {
+        var t0 = 0.35 + i * P.stagger;
+        // line: a dot starts 8 % of the line before the stroke reaches it and is complete exactly when it does,
+        // so the last value is the input value when the line ends (numbers on screen = the input, NFR-04)
+        var k = P.style === "line"
+          ? (lk > 0 ? RC.ease(P.ease, RC.clamp((lk - CH.frac[i] + 0.08) / 0.08, 0, 1)) : 0)
+          : RC.progress(t, t0, 0.7, P.ease);
+        var shown = RC.clamp(k, 0, 1);
+        var ko = Math.max(0, k * (1 - out));
+        if (b.bar) b.bar.style.height = b.h * ko + "px"; // height, not scaleY: keeps the rounded top round
+        if (CH.dots) RC.set(CH.dots[i], { opacity: shown > 0 ? 1 - out : 0 });
+        b.val.textContent = fmt(P, b.value * shown);
+        var topOf = P.style === "bars" ? CH.ph - b.h * ko : CH.ph - b.h - 14 * u;
+        b.val.style.top = topOf - (b.hi ? 62 : 48) * u + "px";
+        var vis = P.style === "line" ? RC.clamp(k * 4, 0, 1) : RC.progress(t, t0, 0.12, "linear");
+        b.val.style.opacity = String(vis * (shown > 0 ? 1 : 0) * (1 - out));
+      });
+    },
+  });
+</script>
+</body>
+</html>

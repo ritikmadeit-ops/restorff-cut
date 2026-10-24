@@ -1,0 +1,14 @@
+{
+  "$comment": "Example props. Fictional numbers for the fictional brand Halcyon Cold Brew; 1,200 → 3,740 is +212 %.",
+  "title": "BOTTLES A WEEK",
+  "subtitle": "HALCYON COLD BREW · MAR–SEP",
+  "data": [
+    { "label": "MAR", "value": 1200 },
+    { "label": "APR", "value": 1480 },
+    { "label": "MAY", "value": 1350 },
+    { "label": "JUN", "value": 2100 },
+    { "label": "JUL", "value": 2760 },
+    { "label": "AUG", "value": 3050 },
+    { "label": "SEP", "value": 3740 }
+  ]
+}

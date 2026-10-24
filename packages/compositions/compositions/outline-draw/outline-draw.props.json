@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/outline-draw); fictional.",
+  "progress": 100,
+  "thickness": 10,
+  "radius": 42,
+  "speed": 1
+}

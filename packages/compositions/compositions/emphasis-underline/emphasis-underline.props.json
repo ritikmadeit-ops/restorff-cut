@@ -1,0 +1,9 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew). Give each word its spoken start (`at`) when word timings exist.",
+  "words": [
+    { "text": "Never", "key": false },
+    { "text": "bitter.", "key": true },
+    { "text": "Never", "key": false },
+    { "text": "sweetened.", "key": true }
+  ]
+}

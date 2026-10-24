@@ -6,6 +6,7 @@ import type {
 	SceneTracks,
 } from "@/timeline";
 import { shouldMaintainPitch } from "@/retime/rate";
+import { libraryUrlRefusal } from "@/lib/url-guard";
 import type { MediaAsset } from "@/media/types";
 import { applyAudioMasteringToBuffer } from "@/media/audio-mastering";
 import type { AudioCapableElement } from "@/timeline/audio-state";
@@ -22,9 +23,26 @@ import { getSourceTimeAtClipTime, renderRetimedBuffer } from "@/retime";
 import { Input, ALL_FORMATS, BlobSource, AudioBufferSink } from "mediabunny";
 import { TICKS_PER_SECOND } from "@/wasm";
 import {
+	type AudioCrossfade,
+	crossfadeGainAt,
+	planAudioCrossfades,
+} from "@/transitions/audio-crossfade";
+import {
 	computeRmsBuckets,
 	type SampleBucket,
 } from "@/media/waveform-summary";
+
+/**
+ * fetch() for a library audio element's sourceUrl (security-pass, 2026-10-23; review finding F1): this code also runs in
+ * the server's headless render, so a timeline must not be able to point it at the server's own network. Refuses
+ * private / loopback / link-local IP literals, localhost and internal names (src/lib/url-guard.ts).
+ */
+export function fetchLibraryUrl(sourceUrl: string): Promise<Response> {
+	const origin = typeof location !== "undefined" ? location.origin : "http://localhost";
+	const refused = libraryUrlRefusal(sourceUrl, origin);
+	if (refused) return Promise.reject(new Error(`Library audio URL refused: ${refused}`));
+	return fetch(sourceUrl);
+}
 
 const MAX_AUDIO_CHANNELS = 2;
 const EXPORT_SAMPLE_RATE = 44100;
@@ -232,7 +250,7 @@ async function resolveAudioBufferForElement({
 
 		if (element.buffer) return element.buffer;
 
-		const response = await fetch(element.sourceUrl);
+		const response = await fetchLibraryUrl(element.sourceUrl);
 		if (!response.ok) {
 			throw new Error(`Library audio fetch failed: ${response.status}`);
 		}
@@ -371,7 +389,7 @@ async function fetchLibraryAudioSource({
 	volume: number;
 }): Promise<AudioMixSource | null> {
 	try {
-		const response = await fetch(element.sourceUrl);
+		const response = await fetchLibraryUrl(element.sourceUrl);
 		if (!response.ok) {
 			throw new Error(`Library audio fetch failed: ${response.status}`);
 		}
@@ -407,7 +425,7 @@ async function fetchLibraryAudioClip({
 	volume: number;
 }): Promise<AudioClipSource | null> {
 	try {
-		const response = await fetch(element.sourceUrl);
+		const response = await fetchLibraryUrl(element.sourceUrl);
 		if (!response.ok) {
 			throw new Error(`Library audio fetch failed: ${response.status}`);
 		}
@@ -417,15 +435,16 @@ async function fetchLibraryAudioClip({
 			type: "audio/mpeg",
 		});
 
+		// RestorffCut (ui-fix-render, QA 2026-10-20 #5): seconds, like every other collector here. Upstream passed the
+		// element's TICKS, so a library bed (the MUSIC/SFX the sounds/music tools place) played at tick-many seconds —
+		// never, unless it started at 0 — and a ducked bed (volume keyframes → the prepared-buffer path) asked for
+		// createBuffer(2, ticks × 48000) which wrapped mod 2^32 to 2,618,995,712 frames: NotSupportedError, audio dropped.
 		return {
 			timelineElement: element,
 			id: element.id,
 			sourceKey: element.id,
 			file,
-			startTime: element.startTime,
-			duration: element.duration,
-			trimStart: element.trimStart,
-			trimEnd: element.trimEnd,
+			...elementSpanSeconds(element),
 			volume,
 			muted,
 			retime: element.retime,
@@ -457,6 +476,21 @@ function collectMediaAudioSource({
 	};
 }
 
+/** An element's span in SECONDS (the model stores ticks). Every AudioClipSource / AudioMixSource uses this. */
+export function elementSpanSeconds(element: {
+	startTime: number;
+	duration: number;
+	trimStart: number;
+	trimEnd: number;
+}): { startTime: number; duration: number; trimStart: number; trimEnd: number } {
+	return {
+		startTime: element.startTime / TICKS_PER_SECOND,
+		duration: element.duration / TICKS_PER_SECOND,
+		trimStart: element.trimStart / TICKS_PER_SECOND,
+		trimEnd: element.trimEnd / TICKS_PER_SECOND,
+	};
+}
+
 function collectMediaAudioClip({
 	element,
 	mediaAsset,
@@ -473,10 +507,7 @@ function collectMediaAudioClip({
 		id: element.id,
 		sourceKey: mediaAsset.id,
 		file: mediaAsset.file,
-		startTime: element.startTime / TICKS_PER_SECOND,
-		duration: element.duration / TICKS_PER_SECOND,
-		trimStart: element.trimStart / TICKS_PER_SECOND,
-		trimEnd: element.trimEnd / TICKS_PER_SECOND,
+		...elementSpanSeconds(element),
 		volume,
 		muted,
 		retime: element.retime,
@@ -645,6 +676,13 @@ export async function createTimelineAudioBuffer({
 
 	if (audioElements.length === 0) return null;
 
+	// RestorffCut (polish, 2026-10-20): audio crossfades where two clips with audio meet under a picture transition
+	// (transitions/audio-crossfade.ts — the same plan the preview's AudioManager uses). Upstream hard-cut the audio.
+	const audibleIds = new Set(
+		audioElements.filter((element) => !element.muted).map((element) => element.timelineElement.id),
+	);
+	const crossfades = planAudioCrossfades({ tracks, isAudible: (id) => audibleIds.has(id) });
+
 	const outputChannels = 2;
 	const durationSeconds = duration / TICKS_PER_SECOND;
 	const outputLength = Math.ceil(durationSeconds * sampleRate);
@@ -679,6 +717,7 @@ export async function createTimelineAudioBuffer({
 			outputBuffer,
 			outputLength,
 			sampleRate,
+			crossfade: crossfades.get(element.timelineElement.id) ?? null,
 		});
 	}
 
@@ -819,6 +858,7 @@ function mixAudioChannels({
 	outputBuffer,
 	outputLength,
 	sampleRate,
+	crossfade = null,
 }: {
 	element: CollectedAudioElement;
 	buffer: AudioBuffer;
@@ -827,11 +867,18 @@ function mixAudioChannels({
 	outputBuffer: AudioBuffer;
 	outputLength: number;
 	sampleRate: number;
+	/** RestorffCut: fade windows + handle extension under a picture transition (transitions/audio-crossfade.ts). */
+	crossfade?: AudioCrossfade | null;
 }): void {
 	const { startTime, duration: elementDuration } = element;
+	// Handles: play `extendBefore` s before the start and `extendAfter` s after the end (0 without a crossfade).
+	const extendBefore = crossfade?.extendBefore ?? 0;
+	const extendAfter = crossfade?.extendAfter ?? 0;
 
-	const outputStartSample = Math.floor(startTime * sampleRate);
-	const renderedLength = Math.ceil(elementDuration * sampleRate);
+	const outputStartSample = Math.floor((startTime - extendBefore) * sampleRate);
+	const renderedLength = Math.ceil(
+		(elementDuration + extendBefore + extendAfter) * sampleRate,
+	);
 
 	const outputChannels = 2;
 	for (let channel = 0; channel < outputChannels; channel++) {
@@ -842,22 +889,27 @@ function mixAudioChannels({
 		for (let i = 0; i < renderedLength; i++) {
 			const outputIndex = outputStartSample + i;
 			if (outputIndex >= outputLength) break;
+			if (outputIndex < 0) continue;
 
-			const clipTime = i / sampleRate;
+			const clipTime = i / sampleRate - extendBefore;
 			const sourceTime =
 				trimStart + getSourceTimeAtClipTime({ clipTime, retime });
 			const sourceIndex = sourceTime * buffer.sampleRate;
 			if (sourceIndex >= sourceData.length) break;
+			if (sourceIndex < 0) continue;
 
 			const lowerIndex = Math.floor(sourceIndex);
 			const upperIndex = Math.min(sourceData.length - 1, lowerIndex + 1);
 			const fraction = sourceIndex - lowerIndex;
-			const gain = hasAnimatedVolume({ element: element.timelineElement })
+			const volumeGain = hasAnimatedVolume({ element: element.timelineElement })
 				? resolveEffectiveAudioGain({
 						element: element.timelineElement,
-						localTime: clipTime,
+						localTime: Math.min(elementDuration, Math.max(0, clipTime)),
 					})
 				: element.volume;
+			const gain = crossfade
+				? volumeGain * crossfadeGainAt(crossfade, startTime + clipTime)
+				: volumeGain;
 			outputData[outputIndex] +=
 				(sourceData[lowerIndex] * (1 - fraction) +
 					sourceData[upperIndex] * fraction) *

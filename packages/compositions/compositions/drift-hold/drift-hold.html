@@ -1,0 +1,286 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/drift-hold@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-id="drift-hold"
+  data-composition-duration="4"
+  data-composition-variables='[
+    { "id": "text", "type": "string", "role": "content", "label": "Text", "description": "Text displayed in the default centered card.", "default": "Always alive" },
+    { "id": "intensity", "type": "enum", "role": "motion", "label": "Intensity", "description": "Amplitude of the ambient rotation, breathing, and light sweep.", "default": "standard", "options": [{ "value": "whisper", "label": "Whisper" }, { "value": "standard", "label": "Standard" }] }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "drift-hold",
+  "title": "Drift Hold",
+  "description": "A centered content card stays subtly alive through loop-exact rotation, scale breathing, and a slow light sweep. Imported from a HyperFrames component (ui-product; provenance below).",
+  "duration": 4,
+  "size": [
+    1114,
+    584
+  ],
+  "fps": 30,
+  "tags": [
+    "ui-product",
+    "motion-primitive",
+    "camera",
+    "ambient",
+    "drift",
+    "hold",
+    "loopable",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "text": {
+      "type": "string",
+      "default": "Always alive",
+      "label": "Text",
+      "description": "Text displayed in the default centered card.",
+      "required": true
+    },
+    "intensity": {
+      "type": "enum",
+      "options": [
+        "whisper",
+        "standard"
+      ],
+      "default": "standard",
+      "label": "Intensity",
+      "description": "Amplitude of the ambient rotation, breathing, and light sweep."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1114x583 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "text": "text",
+      "intensity": "intensity"
+    },
+    "width": 1114,
+    "height": 583,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/drift-hold",
+    "path": "registry/components/drift-hold",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="drift-hold" data-start="0" data-duration="4" data-width="1114" data-height="583" style="position:absolute;left:0;top:0;width:1114px;height:583px">
+
+      <div id="root" data-composition-id="drift-hold" data-duration="4" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            container-type: size;
+            isolation: isolate;
+            color: var(--fg, #f8fafc);
+            font-family: var(--font-body, Inter, system-ui, sans-serif);
+            pointer-events: none;
+          }
+
+          .dh-clip {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+          }
+
+          .dh-card {
+            position: relative;
+            display: grid;
+            width: 68cqw;
+            min-height: 44cqh;
+            place-items: center;
+            overflow: hidden;
+            padding: var(--space-3, 5cqh) var(--space-3, 6cqw);
+            border: 0.16cqmin solid color-mix(in srgb, var(--border, #475569) 82%, transparent);
+            border-radius: var(--radius, 3.2cqmin);
+            background: color-mix(in srgb, var(--surface, #172033) 94%, var(--accent, #38bdf8));
+            box-shadow: 0 3.5cqh 10cqh color-mix(in srgb, var(--bg, #05070d) 58%, transparent);
+            transform-origin: 50% 50%;
+            
+          }
+
+          .dh-sweep {
+            position: absolute;
+            top: -45%;
+            left: 42%;
+            width: 20cqw;
+            height: 190%;
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              color-mix(in srgb, var(--accent, #38bdf8) 10%, transparent) 25%,
+              color-mix(in srgb, var(--fg, #f8fafc) 28%, transparent) 50%,
+              color-mix(in srgb, var(--accent, #38bdf8) 10%, transparent) 75%,
+              transparent 100%
+            );
+            filter: blur(1.8cqmin);
+            
+          }
+
+          .dh-label {
+            position: relative;
+            z-index: 1;
+            max-width: 56cqw;
+            overflow: hidden;
+            color: var(--fg, #f8fafc);
+            font-family: var(--font-display, Inter, system-ui, sans-serif);
+            font-size: clamp(20px, 9cqmin, 76px);
+            font-weight: 720;
+            line-height: 1.05;
+            letter-spacing: -0.035em;
+            text-align: center;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        </style>
+
+        <div
+          id="drift-hold-clip"
+          class="dh-clip clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="0"
+        >
+          <div class="dh-card">
+            <div class="dh-sweep" aria-hidden="true"></div>
+            <div class="dh-label"></div>
+          </div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var card = root.querySelector(".dh-card");
+            var sweep = root.querySelector(".dh-sweep");
+            var label = root.querySelector(".dh-label");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            var text = vars.text == null ? "Always alive" : String(vars.text);
+            var intensity = vars.intensity === "whisper" ? "whisper" : "standard";
+            var amplitudes = {
+              whisper: { rotation: 0.24, scale: 0.006, sweep: 30, light: 0.04 },
+              standard: { rotation: 0.6, scale: 0.015, sweep: 42, light: 0.08 },
+            };
+            var motion = amplitudes[intensity];
+
+            label.textContent = text;
+
+            var TAU = Math.PI * 2;
+            var duration = Math.max(0.001, parseFloat(root.dataset.duration || "4"));
+            var state = { phase: 0 };
+
+            function renderPose() {
+              // Literal phase zero at the endpoint removes floating point
+              // residue from Math.sin(2 * PI) and makes the seam exact.
+              var phase = state.phase === TAU ? 0 : state.phase;
+              var rotation = Math.sin(phase + Math.PI / 6) * motion.rotation;
+              var scale = 1 + Math.sin(phase + Math.PI / 2) * motion.scale;
+              var sweepX = Math.sin(phase - Math.PI / 2) * motion.sweep;
+              var sweepOpacity = 0.12 + Math.sin(phase + Math.PI / 3) * motion.light;
+
+              gsap.set(card, { rotation: rotation, scale: scale });
+              gsap.set(sweep, {
+                x: sweepX + "cqw",
+                rotation: 14,
+                opacity: sweepOpacity,
+              });
+            }
+
+            var tl = gsap.timeline({ paused: true });
+
+            // HOLD: uniform phase travel drives only whole-cycle sine motion.
+            tl.to(state, { phase: TAU, duration: duration, ease: "none", onUpdate: renderPose }, 0);
+
+            renderPose();
+            tl.seek(0);
+            window.__timelines = window.__timelines || {};
+            window.__timelines["drift-hold"] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

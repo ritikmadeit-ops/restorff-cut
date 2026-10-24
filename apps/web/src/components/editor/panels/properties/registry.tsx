@@ -21,6 +21,8 @@ import {
 	MusicNote03Icon,
 	MagicWand05Icon,
 	DashboardSpeed02Icon,
+	ArrowRightDoubleIcon,
+	MusicNote01Icon,
 } from "@hugeicons/core-free-icons";
 import { ElementParamsTab } from "./components/element-params-tab";
 import { ClipEffectsTab, StandaloneEffectTab } from "@/effects/components/effects-tab";
@@ -28,6 +30,8 @@ import { MasksTab } from "@/masks/components/masks-tab";
 import { SpeedTab } from "@/speed/components/speed-tab";
 import { GraphicTab } from "@/graphics/components/graphic-tab";
 import { OcShapesIcon } from "@/components/icons";
+import { TransitionTab } from "@/transitions/components/transition-tab";
+import { MusicTab } from "@/beats/components/music-tab";
 
 const TRANSFORM_PARAM_KEYS = [
 	"transform.positionX",
@@ -176,6 +180,28 @@ function buildClipEffectsTab({
 	};
 }
 
+function buildTransitionTab({
+	element,
+}: {
+	element: VideoElement | ImageElement;
+}): PropertiesTabDef {
+	return {
+		id: "transition",
+		label: "Transition",
+		icon: <HugeiconsIcon icon={ArrowRightDoubleIcon} size={16} />,
+		content: ({ trackId }) => <TransitionTab element={element} trackId={trackId} />,
+	};
+}
+
+function buildMusicTab({ element }: { element: AudioElement }): PropertiesTabDef {
+	return {
+		id: "music",
+		label: "Beats & mix",
+		icon: <HugeiconsIcon icon={MusicNote01Icon} size={16} />,
+		content: ({ trackId }) => <MusicTab element={element} trackId={trackId} />,
+	};
+}
+
 function buildTextTab({ element }: { element: TextElement }): PropertiesTabDef {
 	return {
 		id: "text",
@@ -252,6 +278,7 @@ function getVideoConfig({
 			buildBlendingTab({ element }),
 			buildMasksTab({ element }),
 			buildClipEffectsTab({ element }),
+			buildTransitionTab({ element }),
 		],
 	};
 }
@@ -268,6 +295,7 @@ function getImageConfig({
 			buildBlendingTab({ element }),
 			buildMasksTab({ element }),
 			buildClipEffectsTab({ element }),
+			buildTransitionTab({ element }),
 		],
 	};
 }
@@ -311,7 +339,11 @@ function getAudioConfig({
 }): ElementPropertiesConfig {
 	return {
 		defaultTab: "audio",
-		tabs: [buildAudioTab({ element }), buildSpeedTab({ element })],
+		tabs: [
+			buildAudioTab({ element }),
+			buildMusicTab({ element }),
+			buildSpeedTab({ element }),
+		],
 	};
 }
 

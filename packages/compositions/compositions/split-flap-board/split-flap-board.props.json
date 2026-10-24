@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/split-flap-board); fictional.",
+  "boardText": "NOW BOARDING",
+  "flapAlphabet": " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,'",
+  "flipDuration": 0.09,
+  "cellStagger": 0.05,
+  "cellCount": 12,
+  "speed": 1
+}

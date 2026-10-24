@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/constellation-hub); fictional.",
+  "hubLabel": "Creator OS",
+  "nodes": "Capture,Compose,Animate,Render,Publish",
+  "cues": "",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

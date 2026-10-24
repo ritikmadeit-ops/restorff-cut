@@ -1,0 +1,15 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/share-sheet-carousel); fictional.",
+  "shareTitle": "Share",
+  "senderName": "Halcyon",
+  "itemLabel": "a video",
+  "stripText": "OPEN-SOURCE VIDEO ENGINE · SHIP FROM HTML",
+  "acceptLabel": "Accept",
+  "declineLabel": "Decline",
+  "slideImage1": "assets/slide-01.jpg",
+  "slideImage2": "assets/slide-02.jpg",
+  "slideImage3": "assets/slide-03.jpg",
+  "slideImage4": "assets/slide-04.jpg",
+  "brandLogo": "assets/rc-logo-placeholder.svg",
+  "speed": 1
+}

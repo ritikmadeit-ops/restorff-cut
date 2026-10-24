@@ -10,6 +10,8 @@ import { SoundsView } from "@/sounds/components/assets-view";
 import { StickersView } from "@/stickers/components/assets-view";
 import { TextView } from "@/text/components/assets-view";
 import { EffectsView } from "@/effects/components/assets-view";
+import { TransitionsView } from "@/transitions/components/assets-view";
+import { StylesLabView } from "@/styles-lab/styles-view"; // styles agent
 
 export function AssetsPanel() {
 	const { activeTab } = useAssetsPanelStore();
@@ -20,22 +22,14 @@ export function AssetsPanel() {
 		text: <TextView />,
 		stickers: <StickersView />,
 		effects: <EffectsView />,
-		transitions: (
-			<div className="text-muted-foreground p-4">
-				Transitions view coming soon...
-			</div>
-		),
+		transitions: <TransitionsView />,
 		captions: <Captions />,
-		adjustment: (
-			<div className="text-muted-foreground p-4">
-				Adjustment view coming soon...
-			</div>
-		),
+		styles: <StylesLabView />, // styles agent
 		settings: <SettingsView />,
 	};
 
 	return (
-		<div className="panel bg-background flex h-full rounded-sm border overflow-hidden">
+		<div className="panel bg-background flex h-full overflow-hidden">
 			<TabBar />
 			<Separator orientation="vertical" />
 			<div className="flex-1 overflow-hidden">{viewMap[activeTab]}</div>

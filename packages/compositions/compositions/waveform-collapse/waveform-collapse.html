@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Waveform collapse</title>
+<script src="../../src/runtime.js"></script>
+<!-- Promoted from the explainer-overlay recreation's kit, widget "collapse" (docs/restorff/recreations/explainer-overlay/
+     inputs/kit.html, our own code), generalised: gaps from a real cut list (seconds or fractions), any number of them. -->
+<script type="application/json" id="params">
+{
+  "name": "waveform-collapse",
+  "title": "Waveform collapse",
+  "description": "A white waveform on a frosted glass panel with labelled dead gaps; the gaps close, the waveform slides together into one tight block and a caption lands under it. Use for 'cut out the dead space' / 'the pauses are gone' in an explainer above the speaker. Feed the real cut list: the gap count and positions must be the true ones (EFFECTS.md FX-33).",
+  "duration": 1.6,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["waveform", "audio", "cut", "dead-space", "explainer", "glass"],
+  "params": {
+    "gaps": { "type": "list", "minItems": 1, "maxItems": 8, "label": "Gaps",
+      "of": { "type": "object", "fields": { "start": { "type": "number", "min": 0, "max": 100000, "description": "Where the cut starts." }, "end": { "type": "number", "min": 0, "max": 100000, "description": "Where the cut ends." } } },
+      "default": [ { "start": 0.27, "end": 0.4 }, { "start": 0.63, "end": 0.75 } ],
+      "description": "The removed stretches, from the real cut list: seconds when `total` is set, else fractions of the take (0..1)." },
+    "total": { "type": "number", "default": 0, "min": 0, "max": 100000, "unit": "s", "label": "Take length", "description": "Length of the raw take in seconds; then gaps are in seconds too. 0 = gaps are fractions." },
+    "label": { "type": "string", "default": "RAW TAKE", "maxLength": 24, "label": "Panel label", "description": "Mono label at the panel's top left. Empty to hide." },
+    "caption": { "type": "string", "default": "TIGHT · −2.6 S", "maxLength": 28, "label": "Caption", "description": "Mono line that lands under the waveform once it has closed up (say what was cut, truthfully). Empty to hide." },
+    "gapLabel": { "type": "string", "display": false, "default": "DEAD", "maxLength": 10, "label": "Gap label", "description": "Small label over each gap. Empty to hide." },
+    "bars": { "type": "number", "default": 60, "min": 20, "max": 120, "step": 1, "label": "Bars", "description": "How many bars draw the waveform." },
+    "seed": { "type": "number", "default": 11, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the waveform's shape." },
+    "color": { "type": "color", "default": "#FFFFFF", "label": "Waveform", "description": "Bar colour." },
+    "gapColor": { "type": "color", "default": "#FF8A73", "label": "Gap colour", "description": "Gap outline and label." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "The line under the closed-up waveform." },
+    "collapseAt": { "type": "number", "default": 0.6, "min": 0, "max": 30, "step": 0.05, "unit": "s", "label": "Collapse at", "description": "Animation seconds when the gaps start closing." },
+    "collapseTime": { "type": "number", "default": 0.4, "min": 0.1, "max": 3, "step": 0.05, "unit": "s", "label": "Collapse time", "description": "Seconds the gaps take to close." },
+    "panel": { "type": "boolean", "default": true, "label": "Glass panel", "description": "The frosted dark panel behind the waveform." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 1.5, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "top", "label": "Anchor", "description": "Vertical placement inside the safe area (top = above the speaker)." },
+    "offsetY": { "type": "number", "default": 0, "min": -600, "max": 1200, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.15 s (the reel's beat change)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .grp { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  .glass { position: absolute; background: linear-gradient(160deg, rgba(78,78,84,.84), rgba(34,34,38,.9)); border: 1.5px solid rgba(255,255,255,.22); box-shadow: 0 18px 50px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.2); }
+  .bar { position: absolute; left: 0; top: 0; }
+  .gap { position: absolute; box-sizing: border-box; }
+  .mono { position: absolute; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var WC = { bars: [], gaps: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params, U = RC.u, u = RC.u * P.scale, W = RC.width, H = RC.height, st = document.getElementById("stage");
+      var grp = RC.el("div", { class: "grp" });
+      st.appendChild(grp);
+      WC.grp = grp;
+      // 410 tall: the caption under the waveform must clear the panel's bottom edge (it sat on it at 360, SEEN)
+      var pw = Math.min(W - 2 * RC.safe.left * 0.9, 960 * u), ph = 410 * u;
+      var top = P.anchor === "top" ? RC.safe.top + 40 * U : P.anchor === "bottom" ? H - RC.safe.bottom - ph : (H - ph) / 2;
+      top += P.offsetY * U;
+      var left = (W - pw) / 2;
+      if (P.panel) {
+        WC.panel = RC.el("div", { class: "glass", style: { left: left + "px", top: top + "px", width: pw + "px", height: ph + "px", borderRadius: 34 * u + "px" } });
+        grp.appendChild(WC.panel);
+      }
+      WC.cx = W / 2; WC.cy = top + ph / 2;
+      // gaps as fractions of the take, merged and clamped
+      var tot = P.total > 0 ? P.total : 1;
+      var gaps = P.gaps.map(function (g) { return [RC.clamp(Math.min(g.start, g.end) / tot, 0, 1), RC.clamp(Math.max(g.start, g.end) / tot, 0, 1)]; })
+        .filter(function (g) { return g[1] - g[0] > 0.002; })
+        .sort(function (a, b) { return a[0] - b[0]; });
+      var aw = pw - 88 * u, x0 = left + 44 * u, mid = top + 200 * u;
+      var cut = gaps.reduce(function (s, g) { return s + (g[1] - g[0]); }, 0);
+      var centre = (aw * cut) / 2; // the closed-up waveform ends centred in the panel
+      var n = Math.round(P.bars), step = aw / n, bw = Math.max(2, step * 0.55);
+      var rnd = RC.random(P.seed);
+      for (var i = 0; i < n; i++) {
+        var f = (i + 0.5) / n;
+        var r = rnd();
+        var inGap = gaps.some(function (g) { return f >= g[0] && f <= g[1]; });
+        if (inGap) continue;
+        var h = (34 + 150 * Math.abs(Math.sin(i * 0.55 + P.seed) * 0.6 + (r - 0.5) * 0.7)) * u;
+        var shift = 0;
+        gaps.forEach(function (g) { if (g[1] < f) shift += (g[1] - g[0]) * aw; });
+        var b = RC.el("div", { class: "bar", style: { width: bw + "px", height: h + "px", background: P.color, borderRadius: bw / 2 + "px" } });
+        grp.appendChild(b);
+        WC.bars.push({ el: b, x: x0 + i * step + (step - bw) / 2, y: mid - h / 2, dx: -shift + centre, i: i, n: n });
+      }
+      gaps.forEach(function (g) {
+        var gx = x0 + g[0] * aw, gw = (g[1] - g[0]) * aw;
+        var box = RC.el("div", { class: "gap", style: { left: gx + "px", top: mid - 90 * u + "px", width: gw + "px", height: 180 * u + "px", border: 2 * u + "px dashed " + RC.alpha(P.gapColor, 0.8), borderRadius: 10 * u + "px", background: RC.alpha(P.gapColor, 0.08) } });
+        grp.appendChild(box);
+        var lab = null;
+        if (P.gapLabel) {
+          lab = RC.el("div", { class: "mono", text: P.gapLabel, style: { fontSize: 26 * u + "px", color: P.gapColor, top: mid - 140 * u + "px" } });
+          grp.appendChild(lab);
+          lab.style.left = gx + gw / 2 - lab.offsetWidth / 2 + "px";
+        }
+        WC.gaps.push({ box: box, lab: lab, gw: gw, gx: gx });
+      });
+      if (P.label) {
+        WC.label = RC.el("div", { class: "mono", text: P.label, style: { fontSize: 24 * u + "px", color: "rgba(255,255,255,.7)", left: x0 + "px", top: top + 26 * u + "px" } });
+        grp.appendChild(WC.label);
+      }
+      var keptW = aw * (1 - cut);
+      WC.under = RC.el("div", { style: { position: "absolute", left: x0 + centre + "px", top: mid + 110 * u + "px", width: keptW + "px", height: 5 * u + "px", background: P.accent, borderRadius: 3 * u + "px", transformOrigin: "50% 50%" } });
+      grp.appendChild(WC.under);
+      if (P.caption) {
+        WC.cap = RC.el("div", { class: "mono", text: P.caption, style: { fontSize: 28 * u + "px", color: "#FFFFFF", top: mid + 132 * u + "px" } });
+        grp.appendChild(WC.cap);
+        RC.fitText(WC.cap, pw - 60 * u, 28 * u, 16 * u);
+        WC.cap.style.left = W / 2 - WC.cap.offsetWidth / 2 + "px";
+      }
+    },
+    render: function (time, RC) {
+      var P = RC.params, t = time.t;
+      var out = P.exit ? RC.progress(0.15 - time.left, 0, 0.15, "linear") : 0;
+      var pp = RC.progress(t, 0, 0.28, "snappy");
+      if (WC.panel) RC.set(WC.panel, { opacity: RC.progress(t, 0, 0.14, "linear"), scale: 0.95 + 0.05 * pp });
+      if (WC.label) WC.label.style.opacity = String(RC.progress(t, 0.1, 0.15, "linear"));
+      var c = RC.progress(t, P.collapseAt, P.collapseTime, "smooth");
+      WC.bars.forEach(function (b) {
+        var grow = RC.progress(t, 0.06 + (b.i / b.n) * 0.3, 0.2, "smooth");
+        RC.set(b.el, { x: b.x + b.dx * c, y: b.y, sy: 0.2 + 0.8 * grow, opacity: grow });
+      });
+      var g = 1 - RC.progress(t, P.collapseAt, Math.min(0.2, P.collapseTime), "linear");
+      WC.gaps.forEach(function (gp, k) {
+        var on = RC.progress(t, 0.2 + k * 0.05, 0.15, "linear") * g;
+        RC.set(gp.box, { opacity: on, sx: 1 - c });
+        if (gp.lab) RC.set(gp.lab, { opacity: on, y: (1 - RC.progress(t, 0.2 + k * 0.05, 0.25, "snappy")) * 12 * RC.u });
+      });
+      var land = RC.progress(t, P.collapseAt + P.collapseTime * 0.7, 0.3, "snappy");
+      RC.set(WC.under, { sx: land, opacity: land > 0 ? 1 : 0 });
+      if (WC.cap) RC.set(WC.cap, { opacity: land, y: (1 - land) * 12 * RC.u });
+      WC.grp.style.opacity = String(1 - out);
+    },
+  });
+</script>
+</body>
+</html>

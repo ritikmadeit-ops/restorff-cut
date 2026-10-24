@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paper cut</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "paper-cut",
+  "title": "Paper cut",
+  "description": "Paper-collage moment: a torn sheet of grid paper with a red-outlined cut-out edge and a drop shadow slaps in, yellow and pink crayon scribbles and X marks draw on, ransom-note letter tiles stamp in one by one and a red hand-drawn ellipse circles them, with a typed label tag. Use for one number or word in a collage / explainer edit (EFFECTS.md FX-13, FX-52, FX-60). 'full' covers the whole frame like a collage background.",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["collage", "paper", "explainer", "type", "reels", "matte", "named-effect"],
+  "effect": {
+    "fx": ["FX-13", "FX-52", "FX-60"],
+    "stack": ["plate", "self:back", "cutout", "self:front"],
+    "inputs": {
+      "cutout": "the clip's person cutout on the track above it (editor: Cut out person; MCP: cutout): the speaker on the paper",
+      "matte": "props.matte = the same cutout as PNG frames (alpha) at props.matteFps from the effect's start (MCP cutout can write them; or ffmpeg -c:v libvpx-vp9 -i cutout.webm -vf fps=30,scale=540:-2 f_%04d.png): the torn white edge and shadow follow it"
+    },
+    "note": "FX-13 = layout full + matte (the speaker becomes a torn-paper cut-out on grid paper; put the tiles above the head with offsetY and scale). Without a matte it is the card collage piece (FX-52/60) in one overlay."
+  },
+  "params": {
+    "text": { "type": "string", "required": true, "default": "100%", "maxLength": 10, "label": "Tiles", "description": "The word or number spelled in ransom-note tiles, one tile per character (spaces become gaps)." },
+    "tag": { "type": "string", "default": "COLD BREW · NO SUGAR", "maxLength": 32, "label": "Label tag", "description": "Typed label on a yellow tag under the tiles. Empty to hide." },
+    "note": { "type": "string", "default": "steeped, never boiled", "maxLength": 36, "label": "Hand note", "description": "A handwritten-style note in serif italic. Empty to hide." },
+    "layout": { "type": "enum", "options": ["card", "full"], "default": "card", "label": "Layout", "description": "card = a torn sheet over the footage; full = grid paper fills the frame (a collage background)." },
+    "paper": { "type": "color", "default": "#F3EFE4", "label": "Paper", "description": "Paper colour." },
+    "ink": { "type": "color", "default": "#C8352B", "label": "Ink", "description": "The red of the ellipse, the X marks and the cut-out outline." },
+    "accent": { "type": "color", "default": "#F2D04B", "label": "Crayon / tag", "description": "Yellow crayon scribble and the label tag colour." },
+    "tileStagger": { "type": "number", "default": 0.12, "min": 0.04, "max": 0.5, "step": 0.01, "unit": "s", "label": "Tile stagger", "description": "Delay between tiles (the reel stamps one every ~0.12 s)." },
+    "seed": { "type": "number", "default": 11, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the tear, the tile fonts/colours and the scribbles." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "top", "label": "Anchor", "description": "Vertical placement of the card (card layout)." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "ease": { "type": "easing", "default": "bouncy", "label": "Slap easing", "description": "How the sheet and tiles land." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Everything drops away over the last 0.4 s." },
+    "layer": { "type": "enum", "options": ["all", "back", "front"], "default": "all", "label": "Layer", "description": "back = paper + the speaker's torn edge and shadow (under the person cutout), front = scribbles, tiles, tag, note (above it), all = everything in one overlay." },
+    "matte": { "type": "list", "of": { "type": "image" }, "minItems": 0, "maxItems": 1800, "default": [], "label": "Person matte", "description": "Frames of the speaker cut-out (PNG with alpha, or black/white masks with matteChannel luma), one per 1/matteFps s from the effect's start. Empty = no speaker edge." },
+    "matteFps": { "type": "number", "default": 30, "min": 1, "max": 60, "step": 1, "unit": "fps", "label": "Matte rate", "description": "Frames per second of the matte frames (match the clip when the speaker moves fast)." },
+    "matteChannel": { "type": "enum", "options": ["alpha", "luma"], "default": "alpha", "label": "Matte channel", "description": "alpha = cut-out PNGs; luma = white-on-black masks." },
+    "border": { "type": "number", "default": 16, "min": 2, "max": 60, "step": 1, "unit": "px", "label": "Paper edge", "description": "Width of the white torn edge around the speaker, px on a 1080 grid (the reel: ~12 px)." },
+    "tear": { "type": "number", "default": 0.5, "min": 0, "max": 1, "step": 0.05, "label": "Tear", "description": "How ragged the edge is (0 = smooth sticker edge)." },
+    "edgeColor": { "type": "color", "default": "#FFFFFF", "label": "Edge colour", "description": "Colour of the paper edge around the speaker." },
+    "drawSubject": { "type": "boolean", "default": false, "label": "Draw subject", "description": "Also draw the matte frames (cut-out PNGs) in the back layer, for a one-overlay version without the cutout track (lower frame rate = stop-motion look)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .shadow { position: absolute; filter: drop-shadow(0 calc(10px * var(--u)) calc(14px * var(--u)) rgba(0,0,0,.38)); }
+  .outline { position: absolute; inset: 0; }
+  .sheet { position: absolute; }
+  .grid { position: absolute; inset: 0; }
+  svg { position: absolute; overflow: visible; }
+  .tiles { position: absolute; display: flex; align-items: flex-end; justify-content: center; }
+  .tile { display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 calc(4px * var(--u)) calc(6px * var(--u)) rgba(0,0,0,.3); }
+  .tagw { position: absolute; display: flex; justify-content: center; }
+  .tag { font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #111; box-shadow: 0 calc(3px * var(--u)) calc(6px * var(--u)) rgba(0,0,0,.25); }
+  .note { position: absolute; font-family: "Instrument Serif", serif; font-style: italic; color: #2a2a2e; white-space: nowrap; }
+  .subj { position: absolute; inset: 0; }
+  .subj img { position: absolute; left: 0; top: 0; display: none; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="torn" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+    <feColorMatrix in="SourceGraphic" type="luminanceToAlpha" result="luma"/>
+    <feMorphology id="tnDilate" in="SourceAlpha" operator="dilate" radius="16" result="d"/>
+    <feTurbulence id="tnNoise" type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="11" result="n"/>
+    <feDisplacementMap id="tnDisp" in="d" in2="n" scale="18" xChannelSelector="R" yChannelSelector="G" result="t"/>
+    <feFlood id="tnColor" flood-color="#FFFFFF"/>
+    <feComposite in2="t" operator="in" result="edge"/>
+    <feGaussianBlur id="tnBlur" in="t" stdDeviation="7" result="sb"/>
+    <feOffset id="tnOff" in="sb" dx="0" dy="9" result="so"/>
+    <feFlood flood-color="#000000" flood-opacity="0.32"/>
+    <feComposite in2="so" operator="in" result="shadow"/>
+    <feMerge id="tnMerge"><feMergeNode in="shadow"/><feMergeNode in="edge"/></feMerge>
+  </filter>
+</defs></svg>
+<script>
+  var PC = { tiles: [], strokes: [] };
+  var TILE_FONTS = [
+    ["Archivo", "900", "normal", "125%"],
+    ["Instrument Serif", "400", "normal", "100%"],
+    ["JetBrains Mono", "800", "normal", "100%"],
+    ["Archivo", "800", "normal", "62%"],
+    ["Instrument Serif", "400", "italic", "100%"],
+  ];
+  function tornPolygon(w, h, rnd, amp) {
+    // jagged edge: points around the rectangle with seeded jitter (percent coords for clip-path)
+    var pts = [];
+    var n = 26;
+    function j() { return (rnd() - 0.5) * amp; }
+    var i;
+    for (i = 0; i <= n; i++) pts.push([(i / n) * 100, Math.max(0, 1.6 + j())]);
+    for (i = 1; i <= n; i++) pts.push([100 - Math.max(0, 1.2 + j() * 0.6), (i / n) * 100]);
+    for (i = n - 1; i >= 0; i--) pts.push([(i / n) * 100, 100 - Math.max(0, 1.6 + j())]);
+    for (i = n - 1; i >= 1; i--) pts.push([Math.max(0, 1.2 + j() * 0.6), (i / n) * 100]);
+    return "polygon(" + pts.map(function (p) { return p[0].toFixed(2) + "% " + p[1].toFixed(2) + "%"; }).join(",") + ")";
+  }
+  function scribble(x, y, w, h, rnd, turns) {
+    var d = "M" + x.toFixed(1) + " " + y.toFixed(1);
+    for (var i = 1; i <= turns; i++) {
+      var px = x + (i / turns) * w + (rnd() - 0.5) * w * 0.08;
+      var py = y + (i % 2 ? h : 0) + (rnd() - 0.5) * h * 0.25;
+      d += " L" + px.toFixed(1) + " " + py.toFixed(1);
+    }
+    return d;
+  }
+  function addStroke(svg, d, color, width, start, dur, opacity) {
+    var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("d", d);
+    p.setAttribute("fill", "none");
+    p.setAttribute("stroke", color);
+    p.setAttribute("stroke-width", width);
+    p.setAttribute("stroke-linecap", "round");
+    p.setAttribute("stroke-linejoin", "round");
+    if (opacity != null) p.setAttribute("opacity", opacity);
+    svg.appendChild(p);
+    PC.strokes.push({ node: p, start: start, dur: dur });
+  }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var rnd = RC.random(P.seed * 104729 + 1);
+      var stage = document.getElementById("stage");
+      var full = P.layout === "full";
+      var W = full ? RC.width : Math.min(RC.width * 0.86, 900 * u);
+      var H = full ? RC.height : W * 0.78;
+      var left = (RC.width - W) / 2;
+      var top = full ? 0 : P.anchor === "top" ? RC.safe.top + 40 * RC.u : P.anchor === "bottom" ? RC.height - RC.safe.bottom - H : (RC.height - H) / 2;
+      if (!full) top += P.offsetY * RC.u;
+      var wrap = RC.el("div", { class: "shadow", style: { left: left + "px", top: top + "px", width: W + "px", height: H + "px" } });
+      var clip = full ? "none" : tornPolygon(W, H, rnd, 3.2);
+      // red cut-out outline: the same torn shape, slightly bigger, behind the paper
+      if (!full) {
+        var ol = RC.el("div", { class: "outline", style: { background: P.ink, clipPath: clip, transform: "scale(1.035, 1.045)" } });
+        wrap.appendChild(ol);
+        var ow = RC.el("div", { class: "outline", style: { background: "#FFFFFF", clipPath: clip, transform: "scale(1.018, 1.024)" } });
+        wrap.appendChild(ow);
+      }
+      var sheet = RC.el("div", { class: "sheet", style: { left: 0, top: 0, width: W + "px", height: H + "px", background: P.paper, clipPath: clip } });
+      var cell = 44 * RC.u;
+      sheet.appendChild(RC.el("div", { class: "grid", style: {
+        backgroundImage: "linear-gradient(rgba(70,110,170,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(70,110,170,.22) 1px, transparent 1px)",
+        backgroundSize: cell + "px " + cell + "px",
+      } }));
+      wrap.appendChild(sheet);
+      stage.appendChild(wrap);
+      PC.wrap = wrap;
+      PC.full = full;
+
+      // the speaker's torn paper edge + shadow from the matte frames (sits under the person cutout)
+      PC.mattes = [];
+      if (P.matte.length) {
+        var subj = RC.el("div", { class: "subj", style: { filter: "url(#torn)" } });
+        P.matte.forEach(function (src) {
+          var im = RC.el("img", { src: src, style: { width: RC.width + "px", height: RC.height + "px" } });
+          subj.appendChild(im);
+          PC.mattes.push(im);
+        });
+        stage.appendChild(subj);
+        PC.subj = subj;
+        var dil = document.getElementById("tnDilate");
+        if (P.matteChannel === "luma") dil.setAttribute("in", "luma");
+        dil.setAttribute("radius", String(Math.max(1, P.border * RC.u)));
+        document.getElementById("tnDisp").setAttribute("scale", String(P.tear * 36 * RC.u));
+        document.getElementById("tnNoise").setAttribute("baseFrequency", String(0.045 / Math.max(0.25, RC.u)));
+        document.getElementById("tnNoise").setAttribute("seed", String(P.seed));
+        document.getElementById("tnColor").setAttribute("flood-color", P.edgeColor);
+        document.getElementById("tnBlur").setAttribute("stdDeviation", String(7 * RC.u));
+        document.getElementById("tnOff").setAttribute("dy", String(9 * RC.u));
+        if (P.drawSubject) {
+          var mn = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+          mn.setAttribute("in", "SourceGraphic");
+          document.getElementById("tnMerge").appendChild(mn);
+        }
+      }
+
+      // content box inside the sheet (centred block in full layout)
+      var cw = full ? Math.min(RC.width * 0.86, 900 * u) : W;
+      var ch = full ? cw * 0.78 : H;
+      var cx = left + (W - cw) / 2;
+      var cy = full ? (RC.height - ch) / 2 + P.offsetY * RC.u : top;
+
+      // crayon scribbles + X marks (drawn on)
+      var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("width", RC.width);
+      svg.setAttribute("height", RC.height);
+      svg.style.left = "0px";
+      svg.style.top = "0px";
+      addStroke(svg, scribble(cx + cw * 0.08, cy + ch * 0.1, cw * 0.36, ch * 0.08, rnd, 9), P.accent, 14 * u, 0.35, 0.35, 0.9);
+      addStroke(svg, scribble(cx + cw * 0.58, cy + ch * 0.84, cw * 0.32, ch * 0.07, rnd, 8), "#FF5FA2", 12 * u, 0.5, 0.35, 0.85);
+      var xs = [[cx + cw * 0.84, cy + ch * 0.14], [cx + cw * 0.9, cy + ch * 0.6]];
+      for (var k = 0; k < xs.length; k++) {
+        var s = 26 * u;
+        var x0 = xs[k][0];
+        var y0 = xs[k][1];
+        addStroke(svg, "M" + (x0 - s) + " " + (y0 - s) + " L" + (x0 + s) + " " + (y0 + s), P.ink, 9 * u, 0.6 + k * 0.1, 0.12);
+        addStroke(svg, "M" + (x0 + s) + " " + (y0 - s) + " L" + (x0 - s) + " " + (y0 + s), P.ink, 9 * u, 0.7 + k * 0.1, 0.12);
+      }
+
+      // ransom tiles
+      var tiles = RC.el("div", { class: "tiles", style: { left: cx + "px", width: cw + "px", top: cy + ch * 0.22 + "px", height: ch * 0.4 + "px", gap: 10 * u + "px" } });
+      var chars = String(P.text).split("");
+      var n = chars.filter(function (c) { return c !== " "; }).length || 1;
+      var tileH = Math.min(ch * 0.36, (cw * 0.84) / Math.max(n, 1) * 1.15);
+      var BG = ["#111111", "#FFFFFF", P.ink, P.accent, "#F3EFE4"];
+      var idx = 0;
+      chars.forEach(function (c) {
+        if (c === " ") { tiles.appendChild(RC.el("span", { style: { width: tileH * 0.35 + "px" } })); return; }
+        var f = TILE_FONTS[Math.floor(rnd() * TILE_FONTS.length)];
+        var bg = BG[Math.floor(rnd() * BG.length)];
+        var fg = bg === "#111111" || bg === P.ink ? "#F3EFE4" : "#111111";
+        var h = tileH * (0.82 + rnd() * 0.3);
+        var tile = RC.el("span", { class: "tile", text: c, style: {
+          background: bg, color: fg, fontFamily: '"' + f[0] + '"', fontWeight: f[1], fontStyle: f[2], fontStretch: f[3],
+          fontSize: h * 0.78 + "px", lineHeight: "1", height: h + "px", minWidth: h * 0.7 + "px", padding: "0 " + h * 0.08 + "px",
+        } });
+        tiles.appendChild(tile);
+        PC.tiles.push({ node: tile, rot: (rnd() - 0.5) * 16, i: idx++ });
+      });
+      stage.appendChild(tiles);
+      PC.tilesBox = tiles;
+
+      // hand-drawn ellipse around the tiles (after they land)
+      var tb = tiles.getBoundingClientRect();
+      var ex = tb.left + tb.width / 2;
+      var ey = cy + ch * 0.22 + ch * 0.4 - tileH * 0.5;
+      var rx = Math.min(cw * 0.48, (n * tileH * 0.8 + 60 * u) / 2 + 40 * u);
+      var ry = tileH * 0.75;
+      var d = "";
+      var steps = 40;
+      for (var i = 0; i <= steps + 6; i++) {
+        var a = -Math.PI * 0.6 + (i / steps) * Math.PI * 2;
+        var wob = 1 + (rnd() - 0.5) * 0.05 + i * 0.002;
+        var px = ex + Math.cos(a) * rx * wob;
+        var py = ey + Math.sin(a) * ry * wob;
+        d += (i ? " L" : "M") + px.toFixed(1) + " " + py.toFixed(1);
+      }
+      var lastTile = 0.55 + n * P.tileStagger;
+      addStroke(svg, d, P.ink, 8 * u, lastTile + 0.05, 0.45);
+      stage.appendChild(svg);
+      PC.svg = svg;
+      PC.strokes.forEach(function (s) {
+        var len = s.node.getTotalLength();
+        s.len = len;
+        s.node.setAttribute("stroke-dasharray", len + " " + len);
+      });
+
+      if (P.tag) {
+        var tw = RC.el("div", { class: "tagw", style: { left: cx + "px", width: cw + "px", top: cy + ch * 0.66 + "px" } });
+        var tag = RC.el("span", { class: "tag", text: P.tag, style: { background: P.accent, fontSize: 30 * u + "px", padding: 8 * u + "px " + 16 * u + "px" } });
+        tw.appendChild(tag);
+        stage.appendChild(tw);
+        PC.tag = tag;
+        PC.tagAt = lastTile + 0.25;
+      }
+      if (P.note) {
+        PC.note = RC.el("div", { class: "note", text: P.note, style: { fontSize: 48 * u + "px", left: cx + cw * 0.1 + "px", top: cy + ch * 0.79 + "px" } });
+        stage.appendChild(PC.note);
+        PC.noteAt = lastTile + 0.4;
+      }
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var t = time.t;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.4, 0, 1)) : 0;
+      var slap = RC.progress(t, 0, 0.35, P.ease);
+      var drop = out * RC.height * 1.1;
+      if (PC.full) RC.set(PC.wrap, { opacity: RC.progress(t, 0, 0.2, "linear") * (1 - out) });
+      else RC.set(PC.wrap, { y: (1 - slap) * -RC.height * 0.35 + drop, rotate: (1 - slap) * -9 + 1.5 + out * 8, opacity: RC.clamp(t / 0.08, 0, 1) * (1 - out) });
+      for (var i = 0; i < PC.strokes.length; i++) {
+        var s = PC.strokes[i];
+        var p = RC.progress(t, s.start, s.dur, "smooth");
+        s.node.setAttribute("stroke-dashoffset", String(s.len * (1 - p)));
+        s.node.style.visibility = p > 0 ? "visible" : "hidden";
+      }
+      for (var k = 0; k < PC.tiles.length; k++) {
+        var tile = PC.tiles[k];
+        var tp = RC.progress(t, 0.55 + tile.i * P.tileStagger, 0.14, P.ease);
+        RC.set(tile.node, { scale: t < 0.55 + tile.i * P.tileStagger ? 0 : RC.mix(1.7, 1, tp), rotate: tile.rot, opacity: tp > 0 ? 1 : 0 });
+      }
+      RC.set(PC.tilesBox, { y: drop, opacity: 1 - out });
+      RC.set(PC.svg, { y: drop, opacity: 1 - out });
+      if (PC.tag) {
+        var gp = RC.progress(t, PC.tagAt, 0.25, P.ease);
+        RC.set(PC.tag, { scale: 0.6 + 0.4 * gp, rotate: -2.5, opacity: gp });
+        RC.set(PC.tag.parentNode, { y: drop, opacity: 1 - out });
+      }
+      if (PC.note) {
+        var np = RC.progress(t, PC.noteAt, 0.4, "smooth");
+        RC.set(PC.note, { y: drop, opacity: np * (1 - out), clip: "inset(0 " + (1 - np) * 100 + "% 0 0)" });
+      }
+      // layers (display, not visibility: the strokes set their own visibility)
+      var showBack = P.layer !== "front", showFront = P.layer !== "back";
+      PC.wrap.style.display = showBack ? "" : "none";
+      [PC.svg, PC.tilesBox, PC.tag ? PC.tag.parentNode : null, PC.note].forEach(function (n) { if (n) n.style.display = showFront ? "" : "none"; });
+      if (PC.subj) {
+        PC.subj.style.display = showBack ? "" : "none";
+        PC.subj.style.opacity = String(RC.progress(t, 0, 0.2, "linear") * (1 - out));
+        var mi = Math.max(0, Math.min(PC.mattes.length - 1, Math.floor(time.T * P.matteFps + 1e-6)));
+        for (var m = 0; m < PC.mattes.length; m++) PC.mattes[m].style.display = m === mi ? "block" : "none";
+      }
+    },
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/particle-image-reveal); fictional.",
+  "density": "high",
+  "direction": "center",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

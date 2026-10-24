@@ -1,0 +1,55 @@
+{
+ "$comment": "Example (fictional Halcyon Cold Brew, from packages/compositions/examples/neon-grid/halcyon-cold-brew-18h.json): the scene at 21.7 s, its voice words moved to the clip (t0 = 0). On a timeline, send the voice's real words and t0 = the clip's start (composition write fills t0 from t).",
+ "t0": 0,
+ "title": "STRENGTH",
+ "suffix": "(t)",
+ "file": "steep.js",
+ "code": [
+  "// halcyon cold brew",
+  "const TAU = 6.2;   // hours",
+  "function strength(t) {",
+  "  return 1 - Math.exp(-t / TAU);",
+  "}",
+  "",
+  "strength(18);   // 0.95"
+ ],
+ "keyword": "strength",
+ "preview": "PREVIEW · strength(18)",
+ "previewValue": 0.95,
+ "previewDecimals": 2,
+ "keys": [
+  "strength"
+ ],
+ "words": [
+  {
+   "w": "Strength,",
+   "s": 0.34,
+   "e": 0.89
+  },
+  {
+   "w": "as",
+   "s": 1.2,
+   "e": 1.368
+  },
+  {
+   "w": "a",
+   "s": 1.368,
+   "e": 1.423
+  },
+  {
+   "w": "function",
+   "s": 1.423,
+   "e": 1.804
+  },
+  {
+   "w": "of",
+   "s": 1.804,
+   "e": 1.94
+  },
+  {
+   "w": "t.",
+   "s": 1.94,
+   "e": 2.138
+  }
+ ]
+}

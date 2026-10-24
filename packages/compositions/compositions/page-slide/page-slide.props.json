@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/page-slide); fictional.",
+  "labelA": "Dashboard",
+  "labelB": "Analytics",
+  "accent": "green",
+  "corner": "round",
+  "speed": 1
+}

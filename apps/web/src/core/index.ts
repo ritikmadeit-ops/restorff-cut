@@ -13,6 +13,7 @@ import { DiagnosticsManager } from "./managers/diagnostics-manager";
 import { registerDefaultEffects } from "@/effects";
 import { registerDefaultMasks } from "@/masks";
 import { registerTranscriptionDiagnostics } from "@/transcription/diagnostics";
+import { createRestorffLaneKeeper } from "@/timeline/restorff-lanes";
 
 export class EditorCore {
 	private static instance: EditorCore | null = null;
@@ -53,10 +54,19 @@ export class EditorCore {
 			}
 
 			const tracks = activeScene.tracks;
+			// RestorffCut (polish, 2026-10-20): the artboard's lanes (TEXT · CAPTIONS · V2 B-ROLL · MUSIC · SFX; V1 A-ROLL
+			// is the main track) are FIXED — the gateway skeleton creates them empty and ops fill them. Upstream dropped
+			// every empty overlay/audio track after each command, so they vanished on the first edit. Keep the first
+			// empty track per Restorff lane; other empty tracks (V3, AUDIO 3, GRAPHICS, duplicates) are still pruned.
+			const keepEmptyLane = createRestorffLaneKeeper();
 			const prunedTracks = {
 				...tracks,
-				overlay: tracks.overlay.filter((track) => track.elements.length > 0),
-				audio: tracks.audio.filter((track) => track.elements.length > 0),
+				overlay: tracks.overlay.filter(
+					(track) => track.elements.length > 0 || keepEmptyLane(track, tracks),
+				),
+				audio: tracks.audio.filter(
+					(track) => track.elements.length > 0 || keepEmptyLane(track, tracks),
+				),
 			};
 			if (
 				prunedTracks.overlay.length !== tracks.overlay.length ||

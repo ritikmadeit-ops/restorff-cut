@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/notification-stack); fictional.",
+  "titles": "Upload received,Transcode started,Scenes detected,Draft ready",
+  "bodies": "clip_final_v3.mp4 landed in the inbox,1080p and 4K renditions in flight,14 scenes cut on speech pauses,Storyboard open for review",
+  "expand": 1,
+  "cues": "0.2,0.8,1.4,2.0",
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

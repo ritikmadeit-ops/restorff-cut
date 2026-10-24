@@ -1,0 +1,23 @@
+{
+  "id": "comp:gl-transition",
+  "kind": "transition",
+  "apply": { "via": "effects", "ref": "comp:gl-transition" },
+  "name": "GL transition (shape wipe over a cut)",
+  "purpose": ["transition", "pattern-interrupt", "product-showcase"],
+  "beats": ["bridge", "reveal", "product", "hook"],
+  "energy": 4,
+  "duration": { "min": 0.4, "max": 1.2, "ideal": 0.7 },
+  "aspects": [],
+  "placement": "cut",
+  "needs": [],
+  "pairsWith": ["sfx:whoosh", "kind:sound"],
+  "avoidWith": ["FX-40"],
+  "minSpacing": 8,
+  "withCaptions": "hide",
+  "cost": { "renderS": 4, "basis": "measured" },
+  "retention": "A shaped wipe in the brand colour hides the cut and resets the eye; a new shape each time keeps cuts from feeling repeated.",
+  "example": "And that's just the first one. Here's the second.",
+  "params": { "mode": "cover" },
+  "credit": "Shaders adapted from gl-transitions (MIT) transitions/*.glsl@66a9759; modified (wrapped for RestorffCut's seek-per-frame runtime)",
+  "notes": "Centre the clip on the cut (cover mode holds full cover for `hold` s at the middle). 16 shapes work in cover/in/out; the 11 distortion ones (cube, swirl, pixelize, ripple, cross-zoom…) need mode images with two pictures and are refused otherwise. renderS measured: 3.8 s cold / 2.2 s warm for 1 s at 1080x1920 (scout, 2026-10-24)."
+}

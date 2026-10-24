@@ -1,0 +1,22 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/code-slice-hero); fictional.",
+  "headline": "MAKE IT",
+  "reverseHeadline": "MATTER.",
+  "direction": "left-to-right",
+  "sweepDuration": 4.2,
+  "sweepEaseStrength": 3,
+  "flipDuration": 0.75,
+  "cursorRadius": 210,
+  "cursorFalloff": 1.4,
+  "cursorDepth": 80,
+  "tiltStrength": 55,
+  "noiseStrength": 2,
+  "flipBounce": 0.15,
+  "cellSize": 112,
+  "formationScale": 1,
+  "fontSize": 310,
+  "behindColor": "#212121",
+  "shadowStrength": 0.19,
+  "shadowSoftness": 4,
+  "speed": 1
+}

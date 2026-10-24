@@ -212,7 +212,7 @@ function NumberField({
 			ref={inputRef}
 			disabled={disabled}
 			value={value}
-			className="text-sm leading-none bg-transparent outline-none min-w-0 flex-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+			className="rc-mono text-[0.8rem] leading-none bg-transparent outline-none min-w-0 flex-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 			onMouseDown={(event) => {
 				const inputElement = event.currentTarget;
 				const shouldPreventNativeCaretPlacement =
@@ -246,7 +246,7 @@ function NumberField({
 		<div
 			ref={wrapperRef}
 			className={cn(
-				"border-border bg-accent flex h-7 w-full min-w-0 items-center rounded-md border text-sm outline-none cursor-text disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-within:border-primary focus-within:ring-0 focus-within:ring-primary/10 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+				"border-border bg-surface flex h-7 w-full min-w-0 items-center rounded-[8px] border text-sm outline-none cursor-text disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-within:border-primary focus-within:ring-0 focus-within:ring-primary/10 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
 				disabled && "pointer-events-none cursor-not-allowed opacity-50",
 				className,
 			)}
@@ -282,7 +282,7 @@ function NumberField({
 						{/* Ghost mirrors value text to measure width for suffix positioning */}
 						<span
 							ref={ghostRef}
-							className="invisible absolute text-sm leading-none whitespace-pre pointer-events-none"
+							className="rc-mono invisible absolute text-[0.8rem] leading-none whitespace-pre pointer-events-none"
 							aria-hidden="true"
 						>
 							{ghostValue}

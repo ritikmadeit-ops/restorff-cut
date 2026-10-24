@@ -1,5 +1,10 @@
 use bytemuck::{Pod, Zeroable};
-use effects::{ApplyEffectsOptions, EffectPass, EffectPipeline, UniformValue};
+use std::collections::HashMap;
+
+use effects::{
+    ApplyEffectsOptions, ApplyTransitionOptions, EffectPass, EffectPipeline, TransitionPipeline,
+    UniformValue,
+};
 use gpu::{FULLSCREEN_SHADER_SOURCE, GpuContext, wgpu};
 use masks::{ApplyMaskFeatherOptions, MaskFeatherPipeline};
 use thiserror::Error;
@@ -9,7 +14,7 @@ use crate::{
     BlendMode,
     frame::{
         EffectPassDescriptor, EffectUniformValueDescriptor, FrameDescriptor, FrameItemDescriptor,
-        LayerDescriptor,
+        LayerDescriptor, TransitionDescriptor,
     },
     texture_pool::TexturePool,
     texture_store::TextureStore,
@@ -28,6 +33,7 @@ pub struct Compositor {
     textures: TextureStore,
     texture_pool: TexturePool,
     effects: EffectPipeline,
+    transitions: TransitionPipeline,
     masks: MaskFeatherPipeline,
     layer_uniform_bind_group_layout: wgpu::BindGroupLayout,
     layer_pipeline: wgpu::RenderPipeline,
@@ -270,6 +276,7 @@ impl Compositor {
             textures: TextureStore::default(),
             texture_pool: TexturePool::default(),
             effects: EffectPipeline::new(context),
+            transitions: TransitionPipeline::new(context),
             masks: MaskFeatherPipeline::new(context),
             layer_uniform_bind_group_layout,
             layer_pipeline,
@@ -302,40 +309,7 @@ impl Compositor {
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("compositor-frame-encoder"),
                 });
-        let mut scene = self.create_cleared_texture(
-            context,
-            &mut encoder,
-            frame.width,
-            frame.height,
-            frame.clear.color,
-        );
-
-        for item in &frame.items {
-            match item {
-                FrameItemDescriptor::Layer(layer) => {
-                    let layer_texture = self.render_layer(context, &mut encoder, frame, layer)?;
-                    scene = self.blend_texture(
-                        context,
-                        &mut encoder,
-                        &scene,
-                        &layer_texture,
-                        layer.blend_mode,
-                        frame.width,
-                        frame.height,
-                    )?;
-                }
-                FrameItemDescriptor::SceneEffect { effect_pass_groups } => {
-                    scene = self.apply_effect_groups(
-                        context,
-                        &mut encoder,
-                        &scene,
-                        frame.width,
-                        frame.height,
-                        effect_pass_groups,
-                    )?;
-                }
-            }
-        }
+        let scene = self.composite_items(context, &mut encoder, frame)?;
 
         context.queue().submit([encoder.finish()]);
         Ok(scene)
@@ -358,40 +332,7 @@ impl Compositor {
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("compositor-frame-encoder"),
                 });
-        let mut scene = self.create_cleared_texture(
-            context,
-            &mut encoder,
-            frame.width,
-            frame.height,
-            frame.clear.color,
-        );
-
-        for item in &frame.items {
-            match item {
-                FrameItemDescriptor::Layer(layer) => {
-                    let layer_texture = self.render_layer(context, &mut encoder, frame, layer)?;
-                    scene = self.blend_texture(
-                        context,
-                        &mut encoder,
-                        &scene,
-                        &layer_texture,
-                        layer.blend_mode,
-                        frame.width,
-                        frame.height,
-                    )?;
-                }
-                FrameItemDescriptor::SceneEffect { effect_pass_groups } => {
-                    scene = self.apply_effect_groups(
-                        context,
-                        &mut encoder,
-                        &scene,
-                        frame.width,
-                        frame.height,
-                        effect_pass_groups,
-                    )?;
-                }
-            }
-        }
+        let scene = self.composite_items(context, &mut encoder, frame)?;
 
         context.encode_texture_blit_to_view(
             &mut encoder,
@@ -402,6 +343,101 @@ impl Compositor {
         context.queue().submit([encoder.finish()]);
         surface_texture.present();
         Ok(())
+    }
+
+    /// Clears to the frame's colour and composites every item in order.
+    fn composite_items(
+        &mut self,
+        context: &GpuContext,
+        encoder: &mut wgpu::CommandEncoder,
+        frame: &FrameDescriptor,
+    ) -> Result<wgpu::Texture, CompositorError> {
+        let mut scene = self.create_cleared_texture(
+            context,
+            encoder,
+            frame.width,
+            frame.height,
+            frame.clear.color,
+        );
+
+        for item in &frame.items {
+            match item {
+                FrameItemDescriptor::Layer(layer) => {
+                    scene = self.composite_layer(context, encoder, frame, &scene, layer)?;
+                }
+                FrameItemDescriptor::SceneEffect { effect_pass_groups } => {
+                    scene = self.apply_effect_groups(
+                        context,
+                        encoder,
+                        &scene,
+                        frame.width,
+                        frame.height,
+                        effect_pass_groups,
+                    )?;
+                }
+                FrameItemDescriptor::Transition(transition) => {
+                    scene = self.composite_transition(context, encoder, frame, &scene, transition)?;
+                }
+            }
+        }
+        Ok(scene)
+    }
+
+    fn composite_layer(
+        &mut self,
+        context: &GpuContext,
+        encoder: &mut wgpu::CommandEncoder,
+        frame: &FrameDescriptor,
+        base: &wgpu::Texture,
+        layer: &LayerDescriptor,
+    ) -> Result<wgpu::Texture, CompositorError> {
+        let layer_texture = self.render_layer(context, encoder, frame, layer)?;
+        self.blend_texture(
+            context,
+            encoder,
+            base,
+            &layer_texture,
+            layer.blend_mode,
+            frame.width,
+            frame.height,
+        )
+    }
+
+    /// Each side is composited over the scene below it (so both inputs are as opaque as the
+    /// scene), the transition shader mixes them, and the mix becomes the scene: what shows
+    /// through transparent parts of a clip (letterbox bars, a scaled-down clip) is the
+    /// content underneath, exactly as without a transition.
+    fn composite_transition(
+        &mut self,
+        context: &GpuContext,
+        encoder: &mut wgpu::CommandEncoder,
+        frame: &FrameDescriptor,
+        scene: &wgpu::Texture,
+        transition: &TransitionDescriptor,
+    ) -> Result<wgpu::Texture, CompositorError> {
+        let mut from = self.copy_texture(context, encoder, scene, frame.width, frame.height);
+        for layer in &transition.from {
+            from = self.composite_layer(context, encoder, frame, &from, layer)?;
+        }
+        let mut to = self.copy_texture(context, encoder, scene, frame.width, frame.height);
+        for layer in &transition.to {
+            to = self.composite_layer(context, encoder, frame, &to, layer)?;
+        }
+        let uniforms = map_uniforms(&transition.uniforms);
+        let mixed = self.transitions.apply_with_encoder(
+            context,
+            encoder,
+            ApplyTransitionOptions {
+                from: &from,
+                to: &to,
+                width: frame.width,
+                height: frame.height,
+                shader: &transition.shader,
+                progress: transition.progress,
+                uniforms: &uniforms,
+            },
+        )?;
+        Ok(mixed)
     }
 
     fn render_layer(
@@ -854,17 +890,22 @@ fn map_effect_passes(passes: &[EffectPassDescriptor]) -> Vec<EffectPass> {
         .iter()
         .map(|pass| EffectPass {
             shader: pass.shader.clone(),
-            uniforms: pass
-                .uniforms
-                .iter()
-                .map(|(name, value)| {
-                    let uniform_value = match value {
-                        EffectUniformValueDescriptor::Number(n) => UniformValue::Number(*n),
-                        EffectUniformValueDescriptor::Vector(v) => UniformValue::Vector(v.clone()),
-                    };
-                    (name.clone(), uniform_value)
-                })
-                .collect(),
+            uniforms: map_uniforms(&pass.uniforms),
+        })
+        .collect()
+}
+
+fn map_uniforms(
+    uniforms: &HashMap<String, EffectUniformValueDescriptor>,
+) -> HashMap<String, UniformValue> {
+    uniforms
+        .iter()
+        .map(|(name, value)| {
+            let uniform_value = match value {
+                EffectUniformValueDescriptor::Number(n) => UniformValue::Number(*n),
+                EffectUniformValueDescriptor::Vector(v) => UniformValue::Vector(v.clone()),
+            };
+            (name.clone(), uniform_value)
         })
         .collect()
 }

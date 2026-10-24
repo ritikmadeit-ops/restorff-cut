@@ -9,4 +9,5 @@ pub use compositor::{Compositor, CompositorError, RenderFrameOptions};
 pub use frame::{
     CanvasClearDescriptor, CanvasTextureDescriptor, EffectPassDescriptor, FrameDescriptor,
     FrameItemDescriptor, LayerDescriptor, LayerMaskDescriptor, QuadTransformDescriptor,
+    TransitionDescriptor,
 };

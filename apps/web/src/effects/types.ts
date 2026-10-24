@@ -20,6 +20,8 @@ export interface EffectPassTemplate {
 		effectParams: ParamValues;
 		width: number;
 		height: number;
+		/** Seconds into the element (or the timeline, for effect layers); film grain seeds from it. Optional. */
+		time?: number;
 	}): Record<string, EffectUniformValue>;
 }
 
@@ -29,6 +31,7 @@ export interface EffectRendererConfig {
 		effectParams: ParamValues;
 		width: number;
 		height: number;
+		time?: number;
 	}) => EffectPass[];
 }
 

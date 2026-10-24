@@ -1,0 +1,95 @@
+{
+ "$comment": "Example (fictional Halcyon Cold Brew, from packages/compositions/examples/neon-grid/halcyon-cold-brew-18h.json): the scene at 3.2 s, its voice words moved to the clip (t0 = 0). On a timeline, send the voice's real words and t0 = the clip's start (composition write fills t0 from t).",
+ "t0": 0,
+ "kicker": "HALCYON · STEEP TIME",
+ "lines": [
+  {
+   "text": "EIGHTEEN"
+  },
+  {
+   "text": "HOURS"
+  }
+ ],
+ "ruler": {
+  "from": 0,
+  "to": 24,
+  "step": 1,
+  "major": 6,
+  "unit": "H",
+  "marks": [
+   {
+    "value": 18,
+    "kind": "keep"
+   },
+   {
+    "value": 12,
+    "kind": "strike"
+   },
+   {
+    "value": 24,
+    "kind": "strike"
+   }
+  ]
+ },
+ "keys": [
+  "eighteen",
+  "hours"
+ ],
+ "words": [
+  {
+   "w": "At",
+   "s": 0.13,
+   "e": 0.261
+  },
+  {
+   "w": "Halcyon,",
+   "s": 0.261,
+   "e": 0.9
+  },
+  {
+   "w": "we",
+   "s": 1.17,
+   "e": 1.306
+  },
+  {
+   "w": "steep",
+   "s": 1.306,
+   "e": 1.596
+  },
+  {
+   "w": "for",
+   "s": 1.596,
+   "e": 1.756
+  },
+  {
+   "w": "eighteen",
+   "s": 1.756,
+   "e": 2.051
+  },
+  {
+   "w": "hours.",
+   "s": 2.051,
+   "e": 2.49
+  },
+  {
+   "w": "Not",
+   "s": 3.26,
+   "e": 3.47
+  },
+  {
+   "w": "twelve.",
+   "s": 3.47,
+   "e": 3.91
+  },
+  {
+   "w": "Not",
+   "s": 4.68,
+   "e": 4.89
+  },
+  {
+   "w": "twenty-four.",
+   "s": 4.89,
+   "e": 5.54
+  }
+ ]
+}

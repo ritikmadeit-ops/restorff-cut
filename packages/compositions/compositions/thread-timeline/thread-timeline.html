@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thread timeline</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "thread-timeline",
+  "title": "Thread timeline",
+  "description": "A red thread runs across the frame and dated paper cards get pinned onto it one by one (a pin, a slight tilt, a typed date and a short line), with a legend tag. Use for a history or a sequence of dated facts in a collage explainer (EFFECTS.md FX-58). Dates and facts must come from the script's sources.",
+  "duration": 4.5,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["collage", "timeline", "history", "explainer"],
+  "params": {
+    "items": {
+      "type": "list",
+      "of": { "type": "object", "fields": {
+        "date": { "type": "string", "maxLength": 14, "description": "The date or period on the card." },
+        "text": { "type": "string", "maxLength": 40, "description": "One short line." }
+      } },
+      "minItems": 2, "maxItems": 4,
+      "default": [ { "date": "2019", "text": "First batch, one kitchen" }, { "date": "2022", "text": "Oat Vanilla joins the line" }, { "date": "2026", "text": "Bottled in 12 cities" } ],
+      "label": "Items", "description": "Dated cards left to right (2-4)." },
+    "legend": { "type": "string", "default": "HALCYON · A SHORT HISTORY", "maxLength": 32, "label": "Legend", "description": "Yellow tag above the thread. Empty to hide." },
+    "thread": { "type": "color", "default": "#C8352B", "label": "Thread", "description": "Thread and pin colour." },
+    "paper": { "type": "color", "default": "#F3EFE4", "label": "Paper", "description": "Card paper colour." },
+    "accent": { "type": "color", "default": "#F2D04B", "label": "Tag", "description": "Legend tag colour." },
+    "seed": { "type": "number", "default": 8, "min": 0, "max": 9999, "step": 1, "label": "Seed", "description": "Changes the card tilts." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier for the cards." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "top", "label": "Anchor", "description": "Vertical placement of the thread." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Motion speed." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.35 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+  .card { position: absolute; display: flex; flex-direction: column; box-shadow: 0 calc(10px * var(--u)) calc(22px * var(--u)) rgba(0,0,0,.4); transform-origin: 50% 0%; }
+  .date { font-family: "Instrument Serif", serif; line-height: .9; color: #111; }
+  .txt { font-family: "JetBrains Mono", monospace; font-weight: 600; color: #2a2a2e; line-height: 1.3; }
+  .pin { position: absolute; border-radius: 50%; box-shadow: 0 3px 6px rgba(0,0,0,.4); }
+  .tag { position: absolute; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #111; box-shadow: 0 3px 8px rgba(0,0,0,.3); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var TT = { cards: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var rnd = RC.random(P.seed * 4099 + 7);
+      var stage = document.getElementById("stage");
+      var y = P.anchor === "top" ? RC.safe.top + 120 * RC.u : P.anchor === "bottom" ? RC.height - RC.safe.bottom - 520 * u : RC.height * 0.38;
+      y += P.offsetY * RC.u;
+      var NS = "http://www.w3.org/2000/svg";
+      var svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("width", RC.width);
+      svg.setAttribute("height", RC.height);
+      var path = document.createElementNS(NS, "path");
+      var x0 = -40;
+      var x1 = RC.width + 40;
+      path.setAttribute("d", "M" + x0 + " " + (y + 30 * RC.u) + " Q" + RC.width * 0.3 + " " + (y - 20 * RC.u) + " " + RC.width * 0.55 + " " + y + " T" + x1 + " " + (y - 10 * RC.u));
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", P.thread);
+      path.setAttribute("stroke-width", 6 * RC.u);
+      path.setAttribute("stroke-linecap", "round");
+      svg.appendChild(path);
+      stage.appendChild(svg);
+      TT.path = path;
+      TT.len = path.getTotalLength();
+      path.setAttribute("stroke-dasharray", TT.len + " " + TT.len);
+      var n = P.items.length;
+      var slot = (RC.width - 2 * RC.safe.left) / n;
+      var cw = Math.min(slot - 16 * u, 320 * u);
+      P.items.forEach(function (it, i) {
+        var cx = RC.safe.left + slot * (i + 0.5);
+        // the thread's height under this card
+        var best = 0;
+        for (var s = 0; s <= 200; s++) {
+          var q = path.getPointAtLength((s / 200) * TT.len);
+          if (Math.abs(q.x - cx) < Math.abs(path.getPointAtLength(best * TT.len).x - cx)) best = s / 200;
+        }
+        var py = path.getPointAtLength(best * TT.len).y;
+        var card = RC.el("div", { class: "card", style: { left: cx - cw / 2 + "px", top: py + 6 * u + "px", width: cw + "px", background: P.paper, padding: 20 * u + "px " + 18 * u + "px " + 22 * u + "px", gap: 10 * u + "px" } });
+        card.appendChild(RC.el("div", { class: "date", text: it.date, style: { fontSize: 96 * u + "px" } }));
+        card.appendChild(RC.el("div", { class: "txt", text: it.text, style: { fontSize: 28 * u + "px" } }));
+        stage.appendChild(card);
+        var pin = RC.el("div", { class: "pin", style: { width: 26 * u + "px", height: 26 * u + "px", left: cx - 13 * u + "px", top: py - 4 * u + "px", background: P.thread } });
+        stage.appendChild(pin);
+        TT.cards.push({ card: card, pin: pin, rot: (rnd() - 0.5) * 10, at: 0.6 + i * 0.45 });
+      });
+      if (P.legend) {
+        TT.tag = RC.el("div", { class: "tag", text: P.legend, style: { left: RC.safe.left + "px", top: y - 120 * RC.u + "px", background: P.accent, fontSize: 28 * RC.u + "px", padding: 8 * RC.u + "px " + 14 * RC.u + "px" } });
+        stage.appendChild(TT.tag);
+      }
+      TT.stage = stage;
+    },
+    render: function (time, RC) {
+      var t = time.t;
+      var P = RC.params;
+      var out = P.exit ? 1 - RC.clamp(time.left / 0.35, 0, 1) : 0;
+      var tp = RC.progress(t, 0, 0.6, "smooth");
+      TT.path.setAttribute("stroke-dashoffset", String(TT.len * (1 - tp)));
+      for (var i = 0; i < TT.cards.length; i++) {
+        var c = TT.cards[i];
+        var p = RC.progress(t, c.at, 0.4, "bouncy");
+        var swing = t > c.at + 0.3 ? Math.sin((t - c.at - 0.3) * 7) * 3 * Math.exp(-(t - c.at - 0.3) * 3) : 0;
+        RC.set(c.card, { y: (1 - p) * -80 * RC.u, rotate: c.rot + swing, opacity: p > 0 ? Math.min(1, p * 3) : 0 });
+        var pp = RC.progress(t, c.at + 0.12, 0.2, "bouncy");
+        RC.set(c.pin, { scale: pp });
+      }
+      if (TT.tag) RC.set(TT.tag, { rotate: -3, opacity: RC.progress(t, 0.3, 0.25, "linear"), scale: 0.8 + 0.2 * RC.progress(t, 0.3, 0.3, "bouncy") });
+      TT.stage.style.opacity = String(1 - out);
+    },
+  });
+</script>
+</body>
+</html>

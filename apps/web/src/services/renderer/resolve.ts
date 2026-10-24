@@ -38,6 +38,10 @@ import {
 import { ImageNode, loadImageSource } from "./nodes/image-node";
 import { StickerNode, loadStickerSource } from "./nodes/sticker-node";
 import { TextNode, type ResolvedTextNodeState } from "./nodes/text-node";
+import {
+	TransitionNode,
+	type ResolvedTransitionNodeState,
+} from "./nodes/transition-node";
 import { VideoNode } from "./nodes/video-node";
 import type {
 	ResolvedVisualNodeState,
@@ -49,6 +53,49 @@ type ResolveContext = {
 	renderer: CanvasRenderer;
 	time: number;
 };
+
+/** A held transition side reads no closer than this to the media's end (~1 frame at 25 fps). */
+const HOLD_END_MARGIN_TICKS = 4800;
+
+function isVisibleAt({
+	params,
+	time,
+}: {
+	params: Pick<
+		VisualNodeParams,
+		"timeOffset" | "duration" | "suppress" | "holdOutsideSpan"
+	>;
+	time: number;
+}): boolean {
+	if (params.suppress?.some((range) => time >= range.start && time < range.end)) {
+		return false;
+	}
+	if (params.holdOutsideSpan) {
+		return true;
+	}
+	const clipTime = time - params.timeOffset;
+	return clipTime >= 0 && clipTime < params.duration;
+}
+
+async function resolveTransitionNode({
+	node,
+	context,
+}: {
+	node: TransitionNode;
+	context: ResolveContext;
+}): Promise<ResolvedTransitionNodeState | null> {
+	const { start, end, from, to } = node.params;
+	if (context.time < start || context.time >= end || end <= start) {
+		to.resolved = null;
+		if (from) from.resolved = null;
+		return null;
+	}
+	await Promise.all([
+		resolveNode({ node: to, context }),
+		from ? resolveNode({ node: from, context }) : Promise.resolve(),
+	]);
+	return { progress: (context.time - start) / (end - start) };
+}
 
 export async function resolveRenderTree({
 	node,
@@ -89,6 +136,8 @@ async function resolveNode({
 		node.resolved = await resolveBlurBackgroundNode({ node, context });
 	} else if (node instanceof EffectLayerNode) {
 		node.resolved = resolveEffectLayerNode({ node, context });
+	} else if (node instanceof TransitionNode) {
+		node.resolved = await resolveTransitionNode({ node, context });
 	}
 
 	await Promise.all(
@@ -124,6 +173,8 @@ function resolveEffectPassGroups({
 				effectParams: resolvedParams,
 				width,
 				height,
+				// grade agent, 2026-10-20: seconds into the clip (the grade's grain seed)
+				time: mediaTimeToSeconds({ time: roundMediaTime({ time: localTime }) }),
 			});
 		});
 }
@@ -139,8 +190,7 @@ function resolveVisualState({
 	sourceWidth: number;
 	sourceHeight: number;
 }): ResolvedVisualNodeState | null {
-	const clipTime = context.time - params.timeOffset;
-	if (clipTime < 0 || clipTime >= params.duration) {
+	if (!isVisibleAt({ params, time: context.time })) {
 		return null;
 	}
 
@@ -191,19 +241,27 @@ async function resolveVideoNode({
 	node: VideoNode;
 	context: ResolveContext;
 }): Promise<ResolvedVisualSourceNodeState | null> {
-	const clipTime = context.time - node.params.timeOffset;
-	if (clipTime < 0 || clipTime >= node.params.duration) {
+	if (!isVisibleAt({ params: node.params, time: context.time })) {
 		return null;
 	}
+	const clipTime = context.time - node.params.timeOffset;
 
-	const sourceTimeTicks =
+	let sourceTimeTicks =
 		node.params.trimStart +
 		getSourceTimeAtClipTime({
 			clipTime,
 			retime: node.params.retime,
 		});
+	if (node.params.holdOutsideSpan) {
+		// A transition side reads into the media's handles and freezes at its ends.
+		const lastReadable =
+			node.params.sourceDuration !== undefined
+				? Math.max(0, node.params.sourceDuration - HOLD_END_MARGIN_TICKS)
+				: Number.POSITIVE_INFINITY;
+		sourceTimeTicks = Math.min(Math.max(0, sourceTimeTicks), lastReadable);
+	}
 	const frame = await videoCache.getFrameAt({
-		mediaId: node.params.mediaId,
+		mediaId: node.params.frameCacheKey ?? node.params.mediaId,
 		file: node.params.file,
 		time: mediaTimeToSeconds({ time: roundMediaTime({ time: sourceTimeTicks }) }),
 	});
@@ -226,7 +284,14 @@ async function resolveVideoNode({
 		source: frame.canvas,
 		sourceWidth: frame.canvas.width,
 		sourceHeight: frame.canvas.height,
+		// The canvas is pooled and redrawn with other frames: the frame's timestamp says what it holds (QA #6).
+		sourceVersion: videoFrameVersion(frame),
 	};
+}
+
+/** What a pooled video-frame canvas holds: its frame's timestamp (and length), stable for the same decoded frame. */
+export function videoFrameVersion(frame: { timestamp: number; duration: number }): string {
+	return `${frame.timestamp}+${frame.duration}`;
 }
 
 async function resolveImageNode({
@@ -436,6 +501,7 @@ async function resolveBackdropSource({
 			source: frame.canvas,
 			width: frame.canvas.width,
 			height: frame.canvas.height,
+			version: videoFrameVersion(frame),
 		};
 	}
 
@@ -468,6 +534,8 @@ function resolveEffectLayerNode({
 		effectParams: node.params.effectParams,
 		width: context.renderer.width,
 		height: context.renderer.height,
+		// grade agent, 2026-10-20: timeline seconds (the grade's grain seed)
+		time: mediaTimeToSeconds({ time: roundMediaTime({ time: context.time }) }),
 	});
 	if (passes.length === 0) {
 		return null;

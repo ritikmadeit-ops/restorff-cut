@@ -1,0 +1,672 @@
+{
+ "$comment": "neon-grid kit, product 2 (fictional Halcyon Nitro Cold Brew, 12 s cascade): the SAME eight pieces as halcyon-cold-brew-18h.json, only the params and the words differ. Place: bun packages/compositions/examples/neon-grid/place.ts <this file>; local renders: bun packages/compositions/examples/neon-grid/render.ts <this file>.",
+ "product": "Halcyon Nitro Cold Brew",
+ "script": "What if nitro bubbles were a function of time? At Halcyon, the cascade lasts twelve seconds. Not six. Not twenty-four. Cold brew, nitrogen, and a pour. That's the whole recipe. Foam climbs fast, then eases out. Cascade first, creaminess last. So we wrote it down. Creaminess, as a function of t. Warm can, a minute later? Flat. Cold can, twelve seconds? Creamy. Every bubble on that curve is a choice we made on purpose. Halcyon Nitro Cold Brew. Creamy without cream.",
+ "voice": {
+  "voice": "david-desktop",
+  "rate": 1,
+  "tighten": true,
+  "t": 0.6,
+  "note": "word timings from the 2026-10-21 Sonnet run (neon-grid-nitro)"
+ },
+ "duration": 36,
+ "words": [
+  {
+   "w": "What",
+   "s": 0.72,
+   "e": 0.93
+  },
+  {
+   "w": "if",
+   "s": 0.95,
+   "e": 1.1
+  },
+  {
+   "w": "nitro",
+   "s": 1.12,
+   "e": 1.43
+  },
+  {
+   "w": "bubbles",
+   "s": 1.45,
+   "e": 1.78
+  },
+  {
+   "w": "were",
+   "s": 1.8,
+   "e": 1.98
+  },
+  {
+   "w": "a",
+   "s": 2,
+   "e": 2.1
+  },
+  {
+   "w": "function",
+   "s": 2.164,
+   "e": 2.6
+  },
+  {
+   "w": "of",
+   "s": 2.629,
+   "e": 2.75
+  },
+  {
+   "w": "time?",
+   "s": 2.764,
+   "e": 3.2
+  },
+  {
+   "w": "At",
+   "s": 3.38,
+   "e": 3.529
+  },
+  {
+   "w": "Halcyon,",
+   "s": 3.529,
+   "e": 4.22
+  },
+  {
+   "w": "the",
+   "s": 4.57,
+   "e": 4.664
+  },
+  {
+   "w": "cascade",
+   "s": 4.664,
+   "e": 5.249
+  },
+  {
+   "w": "lasts",
+   "s": 5.249,
+   "e": 5.659
+  },
+  {
+   "w": "twelve",
+   "s": 5.659,
+   "e": 5.989
+  },
+  {
+   "w": "seconds.",
+   "s": 5.989,
+   "e": 6.63
+  },
+  {
+   "w": "Not",
+   "s": 6.83,
+   "e": 7.058
+  },
+  {
+   "w": "six.",
+   "s": 7.058,
+   "e": 7.55
+  },
+  {
+   "w": "Not",
+   "s": 7.75,
+   "e": 7.998
+  },
+  {
+   "w": "twenty-four.",
+   "s": 7.998,
+   "e": 8.74
+  },
+  {
+   "w": "Cold",
+   "s": 8.94,
+   "e": 9.283
+  },
+  {
+   "w": "brew,",
+   "s": 9.283,
+   "e": 9.65
+  },
+  {
+   "w": "nitrogen,",
+   "s": 9.75,
+   "e": 10.42
+  },
+  {
+   "w": "and",
+   "s": 10.53,
+   "e": 10.693
+  },
+  {
+   "w": "a",
+   "s": 10.693,
+   "e": 10.758
+  },
+  {
+   "w": "pour.",
+   "s": 10.758,
+   "e": 11.12
+  },
+  {
+   "w": "That's",
+   "s": 11.32,
+   "e": 11.583
+  },
+  {
+   "w": "the",
+   "s": 11.583,
+   "e": 11.688
+  },
+  {
+   "w": "whole",
+   "s": 11.688,
+   "e": 11.958
+  },
+  {
+   "w": "recipe.",
+   "s": 11.958,
+   "e": 13.36
+  },
+  {
+   "w": "Foam",
+   "s": 13.36,
+   "e": 13.688
+  },
+  {
+   "w": "climbs",
+   "s": 13.688,
+   "e": 14.112
+  },
+  {
+   "w": "fast,",
+   "s": 14.112,
+   "e": 14.6
+  },
+  {
+   "w": "then",
+   "s": 14.8,
+   "e": 15.002
+  },
+  {
+   "w": "eases",
+   "s": 15.002,
+   "e": 15.387
+  },
+  {
+   "w": "out.",
+   "s": 15.387,
+   "e": 15.68
+  },
+  {
+   "w": "Cascade",
+   "s": 15.88,
+   "e": 16.442
+  },
+  {
+   "w": "first,",
+   "s": 16.442,
+   "e": 16.94
+  },
+  {
+   "w": "creaminess",
+   "s": 17.14,
+   "e": 17.712
+  },
+  {
+   "w": "last.",
+   "s": 17.712,
+   "e": 18.17
+  },
+  {
+   "w": "So",
+   "s": 18.37,
+   "e": 18.56
+  },
+  {
+   "w": "we",
+   "s": 18.587,
+   "e": 18.72
+  },
+  {
+   "w": "wrote",
+   "s": 18.747,
+   "e": 18.96
+  },
+  {
+   "w": "it",
+   "s": 18.987,
+   "e": 19.09
+  },
+  {
+   "w": "down.",
+   "s": 19.112,
+   "e": 19.5
+  },
+  {
+   "w": "Creaminess,",
+   "s": 19.69,
+   "e": 20.42
+  },
+  {
+   "w": "as",
+   "s": 20.74,
+   "e": 20.936
+  },
+  {
+   "w": "a",
+   "s": 20.936,
+   "e": 21.001
+  },
+  {
+   "w": "function",
+   "s": 21.001,
+   "e": 21.466
+  },
+  {
+   "w": "of",
+   "s": 21.466,
+   "e": 21.601
+  },
+  {
+   "w": "t.",
+   "s": 21.601,
+   "e": 21.811
+  },
+  {
+   "w": "Warm",
+   "s": 21.811,
+   "e": 22.116
+  },
+  {
+   "w": "can,",
+   "s": 22.116,
+   "e": 22.63
+  },
+  {
+   "w": "a",
+   "s": 22.95,
+   "e": 23.041
+  },
+  {
+   "w": "minute",
+   "s": 23.041,
+   "e": 23.366
+  },
+  {
+   "w": "later?",
+   "s": 23.366,
+   "e": 23.74
+  },
+  {
+   "w": "Flat.",
+   "s": 23.94,
+   "e": 24.34
+  },
+  {
+   "w": "Cold",
+   "s": 24.54,
+   "e": 24.876
+  },
+  {
+   "w": "can,",
+   "s": 24.876,
+   "e": 25.31
+  },
+  {
+   "w": "twelve",
+   "s": 25.51,
+   "e": 25.836
+  },
+  {
+   "w": "seconds?",
+   "s": 25.836,
+   "e": 26.47
+  },
+  {
+   "w": "Creamy.",
+   "s": 26.67,
+   "e": 27.06
+  },
+  {
+   "w": "Every",
+   "s": 27.26,
+   "e": 27.581
+  },
+  {
+   "w": "bubble",
+   "s": 27.581,
+   "e": 27.905
+  },
+  {
+   "w": "on",
+   "s": 27.905,
+   "e": 28.065
+  },
+  {
+   "w": "that",
+   "s": 28.065,
+   "e": 28.265
+  },
+  {
+   "w": "curve",
+   "s": 28.265,
+   "e": 28.525
+  },
+  {
+   "w": "is",
+   "s": 28.525,
+   "e": 28.68
+  },
+  {
+   "w": "a",
+   "s": 28.68,
+   "e": 28.745
+  },
+  {
+   "w": "choice",
+   "s": 28.745,
+   "e": 29.1
+  },
+  {
+   "w": "we",
+   "s": 29.1,
+   "e": 29.245
+  },
+  {
+   "w": "made",
+   "s": 29.245,
+   "e": 29.495
+  },
+  {
+   "w": "on",
+   "s": 29.495,
+   "e": 29.67
+  },
+  {
+   "w": "purpose.",
+   "s": 29.67,
+   "e": 30.21
+  },
+  {
+   "w": "Halcyon",
+   "s": 30.41,
+   "e": 30.975
+  },
+  {
+   "w": "Nitro",
+   "s": 30.975,
+   "e": 31.435
+  },
+  {
+   "w": "Cold",
+   "s": 31.435,
+   "e": 31.77
+  },
+  {
+   "w": "Brew.",
+   "s": 31.77,
+   "e": 32.14
+  },
+  {
+   "w": "Creamy",
+   "s": 32.34,
+   "e": 32.68
+  },
+  {
+   "w": "without",
+   "s": 32.68,
+   "e": 33.049
+  },
+  {
+   "w": "cream.",
+   "s": 33.049,
+   "e": 33.48
+  }
+ ],
+ "scenes": [
+  {
+   "piece": "neon-hook",
+   "t": 0,
+   "duration": 3.3,
+   "props": {
+    "prompt": "> what if nitro bubbles were a",
+    "lines": [
+     {
+      "text": "FUNCTION"
+     },
+     {
+      "text": "OF TIME?"
+     }
+    ],
+    "keyword": "TIME?"
+   }
+  },
+  {
+   "piece": "neon-grid-ruler",
+   "t": 3.3,
+   "duration": 5.45,
+   "props": {
+    "kicker": "HALCYON · NITRO CASCADE",
+    "lines": [
+     {
+      "text": "TWELVE"
+     },
+     {
+      "text": "SECONDS"
+     }
+    ],
+    "ruler": {
+     "from": 0,
+     "to": 24,
+     "step": 1,
+     "major": 6,
+     "unit": "S",
+     "marks": [
+      {
+       "value": 12,
+       "kind": "keep"
+      },
+      {
+       "value": 6,
+       "kind": "strike"
+      },
+      {
+       "value": 24,
+       "kind": "strike"
+      }
+     ]
+    },
+    "keys": [
+     "twelve",
+     "seconds"
+    ]
+   }
+  },
+  {
+   "piece": "neon-flow",
+   "t": 8.75,
+   "duration": 4.5,
+   "props": {
+    "heading": "NITRO PIPELINE · 3 INPUTS",
+    "nodes": [
+     {
+      "text": "COLD BREW"
+     },
+     {
+      "text": "NITROGEN"
+     },
+     {
+      "text": "POUR"
+     }
+    ],
+    "label": "= THE WHOLE RECIPE",
+    "keys": [
+     "pour",
+     "recipe"
+    ]
+   }
+  },
+  {
+   "piece": "neon-curve",
+   "t": 13.25,
+   "duration": 4.95,
+   "props": {
+    "title": "FOAM",
+    "tag": "EASE · OUT",
+    "curve": {
+     "label": "foam(t)",
+     "note": "τ = 3.5 s",
+     "shape": "exp",
+     "tau": 3.5,
+     "end": 12,
+     "unit": "s",
+     "ticks": 3
+    },
+    "marks": [
+     {
+      "text": "CASCADE",
+      "tone": "bright"
+     },
+     {
+      "text": "CREAMINESS",
+      "tone": "dim"
+     }
+    ],
+    "readout": "t = {x} s · {y}",
+    "keys": [
+     "foam",
+     "eases",
+     "cascade",
+     "creaminess"
+    ]
+   }
+  },
+  {
+   "piece": "neon-beats",
+   "t": 18.2,
+   "duration": 1.35,
+   "props": {
+    "beats": [
+     {
+      "text": "SO"
+     },
+     {
+      "text": "WE"
+     },
+     {
+      "text": "WROTE"
+     },
+     {
+      "text": "IT"
+     },
+     {
+      "text": "DOWN."
+     }
+    ]
+   }
+  },
+  {
+   "piece": "neon-code",
+   "t": 19.55,
+   "duration": 2.25,
+   "props": {
+    "title": "CREAMINESS",
+    "suffix": "(t)",
+    "file": "cascade.js",
+    "code": [
+     "// halcyon nitro cold brew",
+     "const TAU = 3.5;   // seconds",
+     "function creaminess(t) {",
+     "  return 1 - Math.exp(-t / TAU);",
+     "}",
+     "",
+     "creaminess(12);   // 0.97"
+    ],
+    "keyword": "creaminess",
+    "preview": "PREVIEW · creaminess(12)",
+    "previewValue": 0.97,
+    "previewDecimals": 2,
+    "keys": [
+     "creaminess"
+    ]
+   }
+  },
+  {
+   "piece": "neon-form",
+   "t": 21.8,
+   "duration": 5.4,
+   "props": {
+    "form": {
+     "title": "FORM 12-S",
+     "subtitle": "POUR LOG · HALCYON NITRO",
+     "number": "No. 012"
+    },
+    "rows": [
+     {
+      "label": "METHOD A · WARM",
+      "cells": [
+       {
+        "text": "WARM CAN"
+       },
+       {
+        "text": "60 SEC",
+        "word": "minute"
+       },
+       {
+        "text": "FLAT"
+       }
+      ],
+      "verdict": "strike",
+      "check": "A — WARM, 60 SEC"
+     },
+     {
+      "label": "METHOD B · COLD",
+      "cells": [
+       {
+        "text": "COLD CAN"
+       },
+       {
+        "text": "12 SEC"
+       },
+       {
+        "text": "CREAMY"
+       }
+      ],
+      "verdict": "tick",
+      "check": "B — COLD, 12 SEC"
+     }
+    ],
+    "stamp": "NO CREAM",
+    "keys": [
+     "flat",
+     "creamy"
+    ],
+    "seed": 12
+   }
+  },
+  {
+   "piece": "neon-outro",
+   "t": 27.2,
+   "duration": 8.8,
+   "props": {
+    "dial": {
+     "count": 12,
+     "major": 3,
+     "unit": "S",
+     "to": 30
+    },
+    "pulseWord": "choice",
+    "kicker": "HALCYON NITRO COLD BREW",
+    "lines": [
+     {
+      "text": "CREAMY"
+     },
+     {
+      "text": "NO CREAM.",
+      "word": "without"
+     }
+    ],
+    "keyword": "CREAM.",
+    "keys": [
+     "bubble",
+     "choice",
+     "purpose"
+    ]
+   }
+  }
+ ]
+}

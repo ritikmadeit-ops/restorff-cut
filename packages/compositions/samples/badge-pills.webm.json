@@ -1,0 +1,54 @@
+{
+  "composition": "badge-pills",
+  "source": "compositions/badge-pills/badge-pills.html",
+  "renderer": "@restorffcut/compositions 0.1.0",
+  "chrome": "HeadlessChrome/153.0.8010.12",
+  "out": "samples/badge-pills.webm",
+  "format": "webm",
+  "frames": 105,
+  "fps": 30,
+  "duration": 3.5,
+  "width": 1080,
+  "height": 1920,
+  "ms": {
+    "total": 3400,
+    "load": 254,
+    "capture": 3146
+  },
+  "secondsPerSecond": 0.97,
+  "workers": 4,
+  "bytes": 392545,
+  "inputHash": "037d57326878580e831252b45fe8daa2226f995b082ee87c664c2e02593b1ba0",
+  "framesHash": "d890c2ccd470b36a338115f3e3c6099778d8c73383624a9c37acfd8aeee1fa52",
+  "params": {
+    "pills": [
+      "SMALL BATCH",
+      "12-HOUR STEEP",
+      "NO ADDED SUGAR",
+      "OAT MILK READY"
+    ],
+    "highlight": 1,
+    "accent": "#F6FF00",
+    "style": "glass",
+    "align": "left",
+    "direction": "left",
+    "times": [
+      0.1,
+      0.45,
+      0.8,
+      1.15
+    ],
+    "stagger": 0.16,
+    "dots": true,
+    "scale": 1,
+    "speed": 1,
+    "ease": "springy",
+    "anchor": "top",
+    "offsetY": 60,
+    "exit": true
+  },
+  "sidecar": "samples/badge-pills.webm.json",
+  "crf": 31,
+  "warnings": [],
+  "renderedAt": "2026-10-19T22:59:21.574Z"
+}

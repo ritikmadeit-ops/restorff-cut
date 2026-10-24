@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/kinetic-center-build); fictional.",
+  "text": "Words push left.",
+  "fontSize": 72,
+  "entryOffset": 88,
+  "color": "#171717",
+  "fontWeight": "600",
+  "speed": 1
+}

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Table of contents list</title>
+<script src="../../src/runtime.js"></script>
+<!-- Promoted from the effects-library recreation's custom TOC (docs/restorff/recreations/effects-library/compositions/
+     toc-list.html, our own code), generalised: any items, cue times or evenly spread, one or two columns, readable sizes. -->
+<script type="application/json" id="params">
+{
+  "name": "toc-list",
+  "title": "Table of contents list",
+  "description": "A numbered list of what the video covers sits above the speaker's head under a one-line title (big count in the accent); each item lights up in the accent when it starts, earlier ones dim. In compact windows the list folds into a small 'NN/total · name' pill so a full-frame effect can use the top of the frame. Use as a running table of contents for a list video ('5 ways to…', '17 effects…'). Lay it over the whole video; time the items to the spoken words.",
+  "duration": 12,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "tags": ["list", "toc", "contents", "chapters", "overlay", "explainer"],
+  "params": {
+    "count": { "type": "string", "default": "6", "maxLength": 4, "label": "Count", "description": "The big number at the start of the title, in the accent (e.g. 17). Empty to hide." },
+    "title": { "type": "string", "default": "steps", "maxLength": 28, "label": "Title", "description": "The rest of the title after the count. Empty to hide." },
+    "subtitle": { "type": "string", "default": "from bean to bottle", "maxLength": 32, "label": "Subtitle", "description": "Lighter words after the title on the same line. Empty to hide." },
+    "items": { "type": "list", "of": { "type": "string", "maxLength": 28 }, "minItems": 1, "maxItems": 24, "default": ["Source the beans", "Grind coarse", "Add cold water", "Steep 18 hours", "Filter twice", "Bottle it cold"], "label": "Items", "description": "The list, in order (what the video covers)." },
+    "times": { "type": "list", "of": { "type": "number", "min": 0, "max": 600 }, "minItems": 0, "maxItems": 24, "default": [], "label": "Item times", "description": "Seconds from the overlay start when each item becomes current (its first spoken word). Empty = spread evenly over the clip." },
+    "compact": { "type": "list", "of": { "type": "list", "of": { "type": "number", "min": 0, "max": 600 }, "minItems": 2, "maxItems": 2 }, "minItems": 0, "maxItems": 24, "default": [], "label": "Compact windows", "description": "[start, end] seconds when the list folds into the small pill (while a full-frame effect plays)." },
+    "columns": { "type": "enum", "options": ["auto", "1", "2"], "default": "auto", "label": "Columns", "description": "auto = two columns from 7 items." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "The count, the current item and the pill." },
+    "panel": { "type": "number", "default": 0.55, "min": 0, "max": 1, "step": 0.05, "label": "Panel", "description": "Opacity of the dark panel behind the list (0 = none)." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 1.6, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "top", "label": "Anchor", "description": "Vertical placement inside the safe area (top = above the head)." },
+    "offsetY": { "type": "number", "default": 0, "min": -400, "max": 1400, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge from the anchor, px on a 1080 grid. Negative = up." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Speed of each item's pop and of the fold. The items stay on their times." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.25 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .title { position: absolute; left: 0; right: 0; text-align: center; color: #FFFFFF; font-family: "Archivo", sans-serif; font-weight: 900; letter-spacing: -0.01em; line-height: 1.02; white-space: nowrap; text-shadow: 0 3px 14px rgba(0,0,0,0.55); }
+  .title .sub { font-weight: 600; opacity: .85; }
+  .panel { position: absolute; }
+  .row { position: absolute; white-space: nowrap; font-family: "Archivo", sans-serif; font-weight: 700; color: #EDEBE6; text-shadow: 0 2px 8px rgba(0,0,0,0.6); transform-origin: 0% 50%; }
+  .num { font-family: "JetBrains Mono", monospace; font-weight: 700; margin-right: 0.45em; }
+  .pill { position: absolute; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 700; color: #0C0C0E; border-radius: 999px; transform-origin: 0% 50%; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var TL = { rows: [] };
+  function two(n) { return (n < 10 ? "0" : "") + n; }
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params, U = RC.u, u = RC.u * P.scale, W = RC.width, H = RC.height, st = document.getElementById("stage");
+      var n = P.items.length;
+      // when each item becomes current: the given cue times (real seconds), else evenly over the clip
+      TL.times = P.items.map(function (_, i) { return P.times[i] != null ? P.times[i] : (i * RC.duration) / n; });
+      var cols = P.columns === "auto" ? (n > 6 ? 2 : 1) : Number(P.columns);
+      var perCol = Math.ceil(n / cols);
+      var rowSize = (cols === 2 ? 36 : 40) * u, lineH = rowSize * 1.32, padY = 18 * u;
+      var panelW = Math.min(W - RC.safe.left - RC.safe.right, (cols === 2 ? 900 : 640) * u);
+      var titleSize = 56 * u;
+      var blockH = (P.count || P.title || P.subtitle ? titleSize * 1.3 : 0) + perCol * lineH + padY * 2;
+      var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? H - RC.safe.bottom - blockH : (H - blockH) / 2;
+      top += P.offsetY * U;
+      TL.top = top;
+      var panelTop = top;
+      if (P.count || P.title || P.subtitle) {
+        // fit an inline-block line inside the full-width row (LEARNINGS §15: fitText must measure the words, not the row)
+        var line = RC.el("span", { style: { display: "inline-block" } });
+        if (P.count) line.appendChild(RC.el("span", { text: P.count + (P.title || P.subtitle ? " " : ""), style: { color: P.accent } }));
+        if (P.title) line.appendChild(RC.el("span", { text: P.title }));
+        if (P.subtitle) line.appendChild(RC.el("span", { class: "sub", text: (P.title ? " " : "") + P.subtitle }));
+        TL.title = RC.el("div", { class: "title", style: { top: top + "px" } }, [line]);
+        st.appendChild(TL.title);
+        RC.fitText(line, W - RC.safe.left - RC.safe.right, titleSize, 30 * u);
+        panelTop = top + TL.title.offsetHeight + 10 * u;
+      }
+      var panelX = (W - panelW) / 2;
+      TL.panel = RC.el("div", { class: "panel", style: { left: panelX + "px", top: panelTop + "px", width: panelW + "px", height: perCol * lineH + padY * 2 + "px", borderRadius: 22 * u + "px", background: "rgba(12,12,14," + P.panel + ")" } });
+      st.appendChild(TL.panel);
+      var colW = panelW / cols;
+      for (var i = 0; i < n; i++) {
+        var col = Math.floor(i / perCol), r = i % perCol;
+        var num = RC.el("span", { class: "num", text: two(i + 1) });
+        var name = RC.el("span", { text: P.items[i] });
+        var row = RC.el("div", { class: "row", style: { fontSize: rowSize + "px", left: panelX + 30 * u + col * colW + "px", top: panelTop + padY + r * lineH + (lineH - rowSize) / 2 + "px" } }, [num, name]);
+        st.appendChild(row);
+        RC.fitText(row, colW - 44 * u, rowSize, 20 * u);
+        TL.rows.push({ row: row, num: num, name: name });
+      }
+      TL.pill = RC.el("div", { class: "pill", style: { fontSize: 30 * u + "px", padding: 10 * u + "px " + 22 * u + "px", left: RC.safe.left + "px", top: top + "px", background: P.accent } });
+      st.appendChild(TL.pill);
+    },
+    render: function (time, RC) {
+      var P = RC.params, T = time.T, U = RC.u;
+      var fadeIn = RC.progress(time.t, 0, 0.2, "smooth");
+      var out = P.exit ? 1 - RC.clamp(time.left / 0.25, 0, 1) : 0;
+      var a = fadeIn * (1 - out);
+      // folded while inside a compact window (the fold itself runs at the clip's rate)
+      var c = 0;
+      for (var k = 0; k < P.compact.length; k++) {
+        var w = P.compact[k];
+        c = Math.max(c, RC.progress(RC.since(T, w[0] - 0.06), 0, 0.12, "smooth") - RC.progress(RC.since(T, w[1] - 0.06), 0, 0.12, "smooth"));
+      }
+      var full = a * (1 - c);
+      if (TL.title) RC.set(TL.title, { opacity: full, y: (1 - fadeIn) * -20 * U });
+      RC.set(TL.panel, { opacity: full });
+      var cur = -1;
+      for (var i = 0; i < TL.times.length; i++) if (T >= TL.times[i]) cur = i;
+      for (var j = 0; j < TL.rows.length; j++) {
+        var R = TL.rows[j], isCur = j === cur;
+        var pop = isCur ? 1 + 0.1 * (1 - RC.progress(RC.since(T, TL.times[j]), 0, 0.18, "snappy")) : 1;
+        R.name.style.color = isCur ? P.accent : j < cur ? "#BDBDC4" : "#EDEBE6";
+        R.num.style.color = isCur ? P.accent : "#EDEBE6";
+        R.num.style.opacity = isCur ? "1" : "0.6";
+        RC.set(R.row, { opacity: full * (isCur ? 1 : j < cur ? 0.7 : 0.9), scale: pop });
+      }
+      var label = cur < 0 ? "" : two(cur + 1) + "/" + two(P.items.length) + "  " + P.items[cur];
+      if (TL.pill.textContent !== label) TL.pill.textContent = label;
+      RC.set(TL.pill, { opacity: label ? a * c : 0, scale: 0.9 + 0.1 * c });
+    },
+  });
+</script>
+</body>
+</html>

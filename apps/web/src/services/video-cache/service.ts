@@ -278,9 +278,15 @@ export class VideoCache {
 				throw new Error("Video codec not supported for decoding");
 			}
 
+			// RestorffCut (compose agent, 2026-10-20): keep the alpha of transparent videos (WebM VP9 alpha_mode=1 from
+			// @restorffcut/compositions) instead of decoding them onto black. Opaque videos are unaffected.
+			const canBeTransparent = await videoTrack
+				.canBeTransparent()
+				.catch(() => false);
 			const sink = new CanvasSink(videoTrack, {
 				poolSize: 3,
 				fit: "contain",
+				alpha: canBeTransparent,
 			});
 
 			this.sinks.set(mediaId, {

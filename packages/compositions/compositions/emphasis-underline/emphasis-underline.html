@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Emphasis underline</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "emphasis-underline",
+  "title": "Emphasis underline",
+  "description": "A lower-third line whose words appear one by one grey → white, then a white underline draws under each key word left to right (~0.15 s each). Use for the one sentence of the script that must land: 'Not editing anything.' (EFFECTS.md FX-19). Words can carry their own times to sync with speech.",
+  "duration": 3,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["captions", "emphasis", "underline", "lower third"],
+  "params": {
+    "words": {
+      "type": "list",
+      "of": { "type": "object", "fields": {
+        "text": { "type": "string", "maxLength": 20, "description": "One word (with its punctuation)." },
+        "at": { "type": "number", "min": -1, "max": 60, "default": -1, "description": "Seconds the word appears; -1 = evenly after the previous one." },
+        "key": { "type": "boolean", "default": false, "description": "Underline this word." }
+      } },
+      "minItems": 1, "maxItems": 6,
+      "default": [ { "text": "Never", "key": false }, { "text": "bitter.", "key": true }, { "text": "Never", "key": false }, { "text": "sweetened.", "key": true } ],
+      "label": "Words", "description": "The line, word by word (at most 4-6 so it stays one or two lines). Mark the key words to underline." },
+    "gap": { "type": "number", "default": 0.22, "min": 0.05, "max": 1.5, "step": 0.01, "unit": "s", "label": "Word gap", "description": "Delay between words that have no time of their own." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Speed of each word lighting up, the gaps between untimed words and the underlines. Timed words stay on their spoken times." },
+    "color": { "type": "color", "default": "#FFFFFF", "label": "Colour", "description": "Text and underline colour once a word is said." },
+    "dim": { "type": "color", "default": "#8C8C95", "label": "Unsaid colour", "description": "Colour a word starts in." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier (1 = ~5 % of the frame height)." },
+    "offsetY": { "type": "number", "default": 0, "min": -900, "max": 300, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge up (negative) from the lower third." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Fades over the last 0.3 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .line { position: absolute; left: 0; width: 100%; display: flex; flex-wrap: wrap; justify-content: center; }
+  .w { position: relative; font-family: "Archivo", sans-serif; font-weight: 800; white-space: nowrap; line-height: 1.15; text-shadow: 0 3px 18px rgba(0,0,0,.55); }
+  .ul { position: absolute; left: 0; right: 0; transform-origin: 0 50%; border-radius: 999px; box-shadow: 0 2px 10px rgba(0,0,0,.4); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var EU = { words: [] };
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var line = RC.el("div", { class: "line", style: { gap: "0 " + 22 * u + "px", padding: "0 " + RC.safe.left + "px" } });
+      // timed words stay on the voice (fitted only if past a shortened clip); gaps and underlines are animation time
+      var at = 0.05;
+      var ats = RC.cues(P.words.map(function (w) { return w.at; }));
+      P.words.forEach(function (w, wi) {
+        var start = w.at >= 0 ? ats[wi] : at;
+        at = start + P.gap / RC.rate;
+        var node = RC.el("span", { class: "w", text: w.text, style: { fontSize: 96 * u + "px", color: P.dim } });
+        var ul = null;
+        if (w.key) {
+          ul = RC.el("span", { class: "ul", style: { bottom: -4 * u + "px", height: 9 * u + "px", background: P.color } });
+          node.appendChild(ul);
+        }
+        line.appendChild(node);
+        EU.words.push({ node: node, ul: ul, at: start });
+      });
+      stage.appendChild(line);
+      var last = EU.words[EU.words.length - 1].at;
+      var k = 0;
+      EU.words.forEach(function (w) { if (w.ul) { w.ulAt = RC.rate === 1 ? last + 0.25 + k * 0.18 : last + (0.25 + k * 0.18) / RC.rate; k++; } });
+      line.style.top = RC.height * 0.66 - line.offsetHeight / 2 + P.offsetY * RC.u + "px";
+      EU.line = line;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var T = time.T;
+      var out = P.exit ? 1 - RC.clamp(time.left / 0.3, 0, 1) : 0;
+      for (var i = 0; i < EU.words.length; i++) {
+        var w = EU.words[i];
+        var p = RC.clamp(RC.since(T, w.at) / 0.12, 0, 1);
+        w.node.style.opacity = String(T >= w.at - 0.05 ? 0.35 + 0.65 * p : 0);
+        w.node.style.color = RC.mixColor(P.dim, P.color, p);
+        if (w.ul) w.ul.style.transform = "scaleX(" + RC.ease("smooth", RC.clamp(RC.since(T, w.ulAt) / 0.15, 0, 1)) + ")";
+      }
+      EU.line.style.opacity = String(1 - out);
+    },
+  });
+</script>
+</body>
+</html>

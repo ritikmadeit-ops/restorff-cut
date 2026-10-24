@@ -146,7 +146,7 @@ export class SplitElementsCommand extends Command {
 						elementId: newId,
 					});
 					splitResult = [
-						{
+						withoutTransitionIn({
 							...element,
 							id: newId,
 							startTime: this.splitTime,
@@ -155,7 +155,7 @@ export class SplitElementsCommand extends Command {
 							name: `${element.name} (right)`,
 							animations: rightAnimations,
 							...(retimeRef !== undefined ? { retime: retimeRef } : {}),
-						},
+						}),
 					];
 				} else {
 					const secondElementId = generateUUID();
@@ -172,7 +172,7 @@ export class SplitElementsCommand extends Command {
 							animations: leftAnimations,
 							...(retimeRef !== undefined ? { retime: retimeRef } : {}),
 						},
-						{
+						withoutTransitionIn({
 							...element,
 							id: secondElementId,
 							startTime: this.splitTime,
@@ -181,7 +181,7 @@ export class SplitElementsCommand extends Command {
 							name: `${element.name} (right)`,
 							animations: rightAnimations,
 							...(retimeRef !== undefined ? { retime: retimeRef } : {}),
-						},
+						}),
 					];
 				}
 
@@ -211,4 +211,11 @@ export class SplitElementsCommand extends Command {
 			editor.timeline.updateTracks(this.savedState);
 		}
 	}
+}
+
+/** Restorff (media agent): a split's right half must not inherit the transition INTO the original clip. */
+function withoutTransitionIn<T extends object>(element: T): T {
+	if (!("transitionIn" in element)) return element;
+	const { transitionIn: _dropped, ...rest } = element as T & { transitionIn?: unknown };
+	return rest as T;
 }

@@ -40,7 +40,8 @@ export const usePanelStore = create<PanelState>()(
 			resetPanels: () => set({ ...PANEL_CONFIG }),
 		}),
 		{
-			name: "panel-sizes",
+			// Renamed from "panel-sizes" so the RestorffCut default split applies.
+			name: "restorffcut-panel-sizes",
 			version: 2,
 			migrate: (persistedState) => {
 				const state = persistedState as

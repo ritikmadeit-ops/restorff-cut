@@ -505,7 +505,7 @@ export class ProjectManager {
 		importedAssets,
 	}: {
 		importedAssets: Array<Pick<MediaAsset, "type" | "fps">>;
-	}): import("opencut-wasm").FrameRate | null {
+	}): import("restorffcut-wasm").FrameRate | null {
 		if (!this.active) return null;
 
 		const nextFps = getRaisedProjectFpsForImportedMedia({

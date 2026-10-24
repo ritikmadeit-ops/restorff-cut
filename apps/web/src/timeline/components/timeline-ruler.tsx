@@ -1,6 +1,6 @@
 import { type JSX } from "react";
 import { BASE_TIMELINE_PIXELS_PER_SECOND } from "@/timeline/scale";
-import { mediaTimeToSeconds } from "opencut-wasm";
+import { mediaTimeToSeconds } from "restorffcut-wasm";
 import { TICKS_PER_SECOND } from "@/wasm";
 import { TIMELINE_RULER_HEIGHT_PX } from "./layout";
 import { DEFAULT_FPS } from "@/fps/defaults";

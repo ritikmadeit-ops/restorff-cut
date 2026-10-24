@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 430" width="240" height="430">
+  <!-- Fictional iced cold brew glass (our own drawing, collage-fx 2026-10-20) -->
+  <defs>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8A5A3A"/><stop offset=".5" stop-color="#5A3520"/><stop offset="1" stop-color="#3A2214"/>
+    </linearGradient>
+  </defs>
+  <rect x="150" y="0" width="16" height="200" rx="6" fill="#C8553D" transform="rotate(12 158 100)"/>
+  <path d="M30 70 L210 70 L192 404 C191 418 180 426 166 426 L74 426 C60 426 49 418 48 404 Z" fill="#E6EEF2" opacity=".55"/>
+  <path d="M38 140 L202 140 L190 400 C189 412 180 418 168 418 L72 418 C60 418 51 412 50 400 Z" fill="url(#c)"/>
+  <rect x="62" y="150" width="56" height="50" rx="8" fill="#F4F8FA" opacity=".75" transform="rotate(-12 90 175)"/>
+  <rect x="120" y="190" width="58" height="52" rx="8" fill="#F4F8FA" opacity=".7" transform="rotate(18 149 216)"/>
+  <rect x="72" y="236" width="54" height="48" rx="8" fill="#F4F8FA" opacity=".6" transform="rotate(8 99 260)"/>
+  <path d="M30 70 L210 70" stroke="#FFFFFF" stroke-width="6" opacity=".8"/>
+  <path d="M52 100 L66 390" stroke="#FFFFFF" stroke-width="7" opacity=".35" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,14 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/notification-cascade); fictional.",
+  "notifTitle": "New render",
+  "message1": "Launch video is ready.",
+  "message2": "All checks passed.",
+  "message3": "4K render done in 92s.",
+  "message4": "Published to the catalog.",
+  "appName": "Halcyon",
+  "headlineTop": "SHIP VIDEO",
+  "headlineAccent": "FROM HTML",
+  "footerText": "halcyon.example",
+  "brandLogo": "assets/rc-logo-placeholder.svg",
+  "speed": 1
+}

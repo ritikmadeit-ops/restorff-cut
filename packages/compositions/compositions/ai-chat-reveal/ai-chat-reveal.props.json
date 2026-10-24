@@ -1,0 +1,17 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/ai-chat-reveal); fictional.",
+  "botName": "Assistant",
+  "userMessage": "How do I turn my HTML into real video?",
+  "answer1": "You do not need an editor. Halcyon renders the HTML you already write into deterministic, pixel-perfect video.",
+  "answer2": "It is markup, not magic.",
+  "answer3": "What you get out of the box:",
+  "bullet1": "A catalog of motion primitives you install and own",
+  "bullet2": "GSAP timelines that seek to any frame",
+  "bullet3": "4K renders from a single CLI command",
+  "ecHeadline": "It's not magic.|It's HTML.",
+  "ecSub": "Open-source video rendering — write HTML, ship pixel-perfect video.",
+  "ecCta": "Try Halcyon",
+  "ecFooter": "HALCYON.EXAMPLE",
+  "brandLogo": "assets/rc-logo-placeholder.svg",
+  "speed": 1
+}

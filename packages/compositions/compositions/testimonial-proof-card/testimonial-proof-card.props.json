@@ -1,0 +1,11 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/testimonial-proof-card); fictional.",
+  "quote": "The render pipeline paid for itself in one week",
+  "name": "Ana Ferreira",
+  "role": "VP Engineering",
+  "company": "LUMENWORKS",
+  "emphasis": "one week",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

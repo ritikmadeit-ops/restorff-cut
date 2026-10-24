@@ -72,12 +72,15 @@ import { useElementSelection } from "@/timeline/hooks/element/use-element-select
 import { useTimelineSeek } from "@/timeline/hooks/use-timeline-seek";
 import { useTimelineDragDrop } from "@/timeline/hooks/use-timeline-drag-drop";
 import { TimelineRuler } from "./timeline-ruler";
+import { ReviewMarkersRow } from "@/review/timeline-markers";
+import { useSyncStore } from "@/sync/store";
 import {
 	TimelineBookmarksRow,
 	useBookmarkDrag,
 } from "@/timeline/bookmarks/index";
 import { useEdgeAutoScroll } from "@/timeline/hooks/use-edge-auto-scroll";
 import { useInitialScrollBottom } from "@/timeline/hooks/use-initial-scroll-bottom";
+import { useFollowerResync } from "@/timeline/hooks/use-follower-resync";
 import { useTimelineResize } from "@/timeline/hooks/use-timeline-resize";
 import { useTimelineStore } from "@/timeline/timeline-store";
 import { useEditor } from "@/editor/use-editor";
@@ -229,6 +232,10 @@ export function Timeline() {
 		}
 	}, []);
 
+	// ui-fix-timeline (QA 2026-10-20 #1): also re-sync when either column resizes — the label column's header is
+	// measured a frame after the initial scroll, and the labels stayed one lane off until the first wheel.
+	useFollowerResync({ refs: [tracksScrollRef, trackLabelsScrollRef], sync: syncFollowers });
+
 	// Single non-passive capture listener owns all wheel input. Prevents any
 	// native scroll or browser zoom from firing inside the timeline.
 	useEffect(() => {
@@ -293,11 +300,26 @@ export function Timeline() {
 		};
 	}, [syncFollowers]);
 
+	// ui-fix-timeline (QA #20): the initial scroll stops where a lane starts, so the top-most visible lane (and its
+	// label) is whole under the sticky ruler / JUDGE row instead of half covered.
+	const getLaneStops = useCallback(
+		() =>
+			tracks.map((_, trackIndex) =>
+				getCumulativeHeightBefore({
+					tracks,
+					trackIndex,
+					getExtraHeight: getTrackExpansionHeight,
+				}),
+			),
+		[tracks, getTrackExpansionHeight],
+	);
+
 	useInitialScrollBottom({
 		tracksScrollRef,
 		trackLabelsScrollRef,
 		onAfterScroll: () => saveScrollPositionRef.current(),
 		isReady: tracks.length > 0,
+		getLaneStops,
 	});
 
 	const { dragView, handleElementMouseDown, handleElementClick } =
@@ -430,8 +452,9 @@ export function Timeline() {
 
 	return (
 		<section
+			// Artboard timeline section: its own ground #111114 under a #222228 hairline.
 			className={
-				"panel bg-background relative flex h-full flex-col overflow-hidden rounded-sm border"
+				"panel relative flex h-full flex-col overflow-hidden bg-[var(--rc-timeline)]"
 			}
 			{...dragProps}
 			aria-label="Timeline"
@@ -496,6 +519,11 @@ export function Timeline() {
 								handleTimelineContentClick={handleRulerClick}
 								handleRulerTrackingMouseDown={handleRulerMouseDown}
 								handleRulerMouseDown={handlePlayheadRulerMouseDown}
+							/>
+							{/* Review comments + Judge findings (port agent, src/review). */}
+							<ReviewMarkersRow
+								zoomLevel={zoomLevel}
+								dynamicTimelineWidth={dynamicTimelineWidth}
 							/>
 						</div>
 					</div>
@@ -612,6 +640,9 @@ function TrackLabelsPanel({
 }) {
 	const editor = useEditor();
 	const scene = useEditor((e) => e.scenes.getActiveSceneOrNull());
+	const reviewMarkerCount = useSyncStore(
+		(s) => s.comments.filter((c) => !c.parent_id).length,
+	);
 	const tracks = useMemo<TimelineTrack[]>(
 		() =>
 			scene
@@ -636,13 +667,18 @@ function TrackLabelsPanel({
 
 	return (
 		<div
-			className="flex shrink-0 flex-col border-r"
+			className="flex shrink-0 flex-col"
 			style={{ width: `${TIMELINE_TRACK_LABELS_COLUMN_WIDTH_PX}px` }}
 		>
 			<div
-				className="shrink-0"
+				className="flex shrink-0 flex-col justify-end pb-[3px] pl-6"
 				style={{ height: timelineHeaderHeight || 48 }}
-			/>
+			>
+				{/* Artboard: judge findings sit on a row labelled JUDGE (markers drawn by src/review). */}
+				{reviewMarkerCount > 0 && (
+					<span className="rc-mono text-mist text-[11px] leading-none">JUDGE</span>
+				)}
+			</div>
 			<div ref={trackLabelsRef} className="flex-1 overflow-hidden">
 				<div ref={trackLabelsScrollRef} className="size-full overflow-hidden">
 					{tracks.length > 0 && (
@@ -652,7 +688,7 @@ function TrackLabelsPanel({
 						>
 							{tracks.map((track, index) => {
 								const expandedRows = trackExpandedRowsMap[index];
-								const baseHeight = getTrackHeight({ type: track.type });
+								const baseHeight = getTrackHeight(track);
 
 								return (
 									<div
@@ -667,9 +703,17 @@ function TrackLabelsPanel({
 										}}
 									>
 										<div
-											className="flex shrink-0 items-center justify-end gap-2 px-3"
+											className="flex shrink-0 items-center gap-2 pr-2 pl-6"
 											style={{ height: `${baseHeight}px` }}
 										>
+											{/* Track name as the artboard prints it: mono 11 px #A6A6AE (V1 A-ROLL, MUSIC ...). */}
+											<span
+												className="rc-mono text-mist min-w-0 flex-1 truncate text-[11px] leading-none"
+												title={track.name}
+											>
+												{track.name}
+											</span>
+											<div className="hidden shrink-0 items-center gap-1.5 group-hover:flex has-[.text-destructive]:flex">
 											{canTrackHaveAudio(track) && (
 												<TrackToggleIcon
 													isOff={track.muted}
@@ -698,7 +742,7 @@ function TrackLabelsPanel({
 													}
 												/>
 											)}
-											<TrackIcon track={track} />
+											</div>
 										</div>
 										{expandedRows.length > 0 && (
 											<PropertyTree rows={expandedRows} />
@@ -708,6 +752,8 @@ function TrackLabelsPanel({
 							})}
 						</div>
 					)}
+					{/* ui-fix-timeline (QA #1): room to scroll as far as the tracks can, so the labels never clamp short. */}
+					<div aria-hidden className="h-full" />
 				</div>
 			</div>
 			<div
@@ -814,7 +860,7 @@ function TimelineTrackRows({
 							)}
 							style={{
 								top: `${TIMELINE_CONTENT_TOP_PADDING_PX + getCumulativeHeightBefore({ tracks, trackIndex: index, getExtraHeight: getTrackExpansionHeight })}px`,
-								height: `${getTrackHeight({ type: track.type }) + getTrackExpansionHeight(index)}px`,
+								height: `${getTrackHeight(track) + getTrackExpansionHeight(index)}px`,
 							}}
 						>
 							<TimelineTrackContent

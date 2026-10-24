@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/paper-collage-reveal); fictional.",
+  "panels": 7,
+  "tone": "mixed",
+  "spread": "scatter",
+  "speed": 1
+}

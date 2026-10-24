@@ -1,0 +1,11 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/ui-focus-zoom); fictional.",
+  "anchorX": 30,
+  "anchorY": 60,
+  "zoom": 2,
+  "zoomAt": 1.2,
+  "halo": "show",
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

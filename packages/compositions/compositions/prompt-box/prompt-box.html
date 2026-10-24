@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Prompt box</title>
+<script src="../../src/runtime.js"></script>
+<script type="application/json" id="params">
+{
+  "name": "prompt-box",
+  "title": "Prompt box",
+  "description": "A bone pill with a small 'TO CLAUDE' tab types a request character by character in sync with the voice, then shows • SENT with a spinner and lands on • DONE ✓. Our own neutral chat chrome, no third-party logos. Use when the script says what was asked: 'make it more aesthetic', 'tighter cut, bigger captions' (EFFECTS.md FX-30).",
+  "duration": 4,
+  "size": [1080, 1920],
+  "fps": 30,
+  "tags": ["prompt", "chat", "ui", "typing", "reels"],
+  "params": {
+    "text": { "type": "text", "required": true, "default": "make it more aesthetic", "maxLength": 90, "label": "Request", "description": "What gets typed." },
+    "to": { "type": "string", "default": "TO CLAUDE", "maxLength": 20, "label": "Tab", "description": "The small tab above the pill. Empty to hide." },
+    "typeStart": { "type": "number", "default": 0.3, "min": 0, "max": 30, "step": 0.05, "unit": "s", "label": "Typing starts", "description": "Seconds when typing begins (the first spoken word of the request)." },
+    "typeSpeed": { "type": "number", "default": 18, "min": 4, "max": 80, "step": 1, "unit": "chars/s", "label": "Typing speed", "description": "Characters per second." },
+    "sentHold": { "type": "number", "default": 0.7, "min": 0.1, "max": 10, "step": 0.05, "unit": "s", "label": "Thinking time", "description": "Seconds the SENT spinner shows before DONE." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "unit": "x", "label": "Speed", "description": "Speed of the entrance, the typing, SENT and DONE. Typing still starts at typeStart (the spoken word)." },
+    "accent": { "type": "color", "default": "#F6FF00", "label": "Accent", "description": "Caret and the DONE tick: the isolate." },
+    "scale": { "type": "number", "default": 1, "min": 0.5, "max": 2, "step": 0.01, "unit": "x", "label": "Scale", "description": "Size multiplier." },
+    "anchor": { "type": "enum", "options": ["top", "center", "bottom"], "default": "top", "label": "Anchor", "description": "Vertical placement." },
+    "offsetY": { "type": "number", "default": 0, "min": -700, "max": 700, "step": 1, "unit": "px", "label": "Vertical offset", "description": "Nudge, px on a 1080 grid. Negative = up." },
+    "exit": { "type": "boolean", "default": true, "label": "Animate out", "description": "Slides up and fades over the last 0.35 s." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; }
+  .grp { position: absolute; display: flex; flex-direction: column; align-items: flex-start; }
+  .tab { font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .14em; color: #0C0C0E; background: #C8C3B8; }
+  .pill { display: flex; align-items: center; background: #EDEBE6; color: #0C0C0E; font-family: "Archivo", sans-serif; font-weight: 600; box-shadow: 0 14px 40px rgba(0,0,0,.4); }
+  .txt { flex: 1; min-width: 0; line-height: 1.2; }
+  .caret { display: inline-block; vertical-align: -0.12em; }
+  .state { display: flex; align-items: center; font-family: "JetBrains Mono", monospace; font-weight: 700; letter-spacing: .12em; white-space: nowrap; flex: none; }
+  .spin { border-radius: 50%; border-style: solid; border-color: rgba(12,12,14,.18); border-top-color: #0C0C0E; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  var PB = {};
+  RC.composition({
+    build: function (RC) {
+      var P = RC.params;
+      var u = RC.u * P.scale;
+      var stage = document.getElementById("stage");
+      var w = RC.width - RC.safe.left - RC.safe.right;
+      var grp = RC.el("div", { class: "grp", style: { left: RC.safe.left + "px", width: w + "px" } });
+      if (P.to) grp.appendChild(RC.el("div", { class: "tab", text: P.to, style: { fontSize: 22 * u + "px", padding: 6 * u + "px " + 14 * u + "px", borderRadius: (12 * u) + "px " + (12 * u) + "px 0 0", marginLeft: 26 * u + "px" } }));
+      var pill = RC.el("div", { class: "pill", style: { width: "100%", minHeight: 110 * u + "px", borderRadius: 34 * u + "px", padding: 22 * u + "px " + 30 * u + "px", gap: 20 * u + "px", fontSize: 44 * u + "px" } });
+      PB.typed = RC.el("span", { text: "" });
+      PB.caret = RC.el("span", { class: "caret", style: { width: 6 * u + "px", height: 46 * u + "px", background: "#0C0C0E", marginLeft: 3 * u + "px" } });
+      var txt = RC.el("div", { class: "txt" }, [PB.typed, PB.caret]);
+      PB.state = RC.el("div", { class: "state", style: { fontSize: 22 * u + "px", gap: 10 * u + "px" } });
+      PB.dot = RC.el("span", { style: { width: 12 * u + "px", height: 12 * u + "px", borderRadius: "50%", background: "#0C0C0E" } });
+      PB.label = RC.el("span", { text: "" });
+      PB.spin = RC.el("span", { class: "spin", style: { width: 30 * u + "px", height: 30 * u + "px", borderWidth: 4 * u + "px" } });
+      PB.tick = RC.el("span", { text: "✓", style: { fontSize: 34 * u + "px", color: "#0C0C0E", background: P.accent, borderRadius: "50%", width: 44 * u + "px", height: 44 * u + "px", display: "inline-flex", alignItems: "center", justifyContent: "center" } });
+      PB.state.appendChild(PB.dot);
+      PB.state.appendChild(PB.label);
+      PB.state.appendChild(PB.spin);
+      PB.state.appendChild(PB.tick);
+      pill.appendChild(txt);
+      pill.appendChild(PB.state);
+      grp.appendChild(pill);
+      stage.appendChild(grp);
+      // reserve the full text's height so the pill does not grow while typing
+      PB.typed.textContent = P.text;
+      txt.style.minHeight = txt.offsetHeight + "px";
+      PB.typed.textContent = "";
+      var h = grp.offsetHeight;
+      var top = P.anchor === "top" ? RC.safe.top : P.anchor === "bottom" ? RC.height - RC.safe.bottom - h : (RC.height - h) / 2;
+      grp.style.top = top + P.offsetY * RC.u + "px";
+      PB.grp = grp;
+      PB.caret.style.background = P.accent === "#F6FF00" ? "#0C0C0E" : P.accent;
+    },
+    render: function (time, RC) {
+      var P = RC.params;
+      var T = time.T, t = time.t;
+      var out = P.exit ? RC.ease("ease-in", 1 - RC.clamp(time.left / 0.35, 0, 1)) : 0;
+      var inP = RC.progress(t, 0, 0.3, "snappy");
+      RC.set(PB.grp, { y: (1 - inP) * 40 * RC.u - out * 60 * RC.u, opacity: inP * (1 - out) });
+      // typing starts on the voice (typeStart, real time); typing, SENT and DONE then run on the clip's rate
+      var typing = RC.since(T, RC.cue(P.typeStart));
+      var n = Math.max(0, Math.min(P.text.length, Math.floor(typing * P.typeSpeed)));
+      PB.typed.textContent = P.text.slice(0, n);
+      var typedEnd = P.text.length / P.typeSpeed;
+      var sent = typing >= typedEnd + 0.15;
+      var done = typing >= typedEnd + 0.15 + P.sentHold;
+      PB.caret.style.opacity = !sent && (n < P.text.length || Math.floor(T * 3) % 2 === 0) ? "1" : "0";
+      PB.label.textContent = done ? "DONE" : sent ? "SENT" : "";
+      PB.dot.style.display = sent ? "inline-block" : "none";
+      PB.spin.style.display = sent && !done ? "inline-block" : "none";
+      PB.spin.style.transform = "rotate(" + T * 540 + "deg)";
+      PB.tick.style.display = done ? "inline-flex" : "none";
+      if (done) RC.set(PB.tick, { scale: RC.progress(typing, typedEnd + 0.15 + P.sentHold, 0.25, "bouncy") });
+    },
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/offset-path-traveler); fictional.",
+  "path": "M -100 410 C 110 475 190 80 410 145 C 610 205 690 395 820 245 C 940 110 1025 170 1100 55",
+  "travelerLabel": "Deploying",
+  "accent": "violet",
+  "speed": 1
+}

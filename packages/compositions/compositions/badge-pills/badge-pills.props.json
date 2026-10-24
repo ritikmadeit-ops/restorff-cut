@@ -1,0 +1,6 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew). The reel's version reads OPEN SOURCE / APACHE-2.0; same composition. `times` = the second each pill's word is spoken (from the word-timed transcript); here hand-written.",
+  "pills": ["SMALL BATCH", "12-HOUR STEEP", "NO ADDED SUGAR", "OAT MILK READY"],
+  "highlight": 1,
+  "times": [0.1, 0.45, 0.8, 1.15]
+}

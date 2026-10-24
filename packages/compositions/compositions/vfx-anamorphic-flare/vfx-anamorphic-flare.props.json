@@ -1,0 +1,12 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/blocks/vfx-anamorphic-flare); fictional.",
+  "intensity": 5,
+  "threshold": 0.3,
+  "streakLength": 1,
+  "tint": "#7a8aff",
+  "bloomRadius": 0,
+  "timeScale": 0.5,
+  "emitters": 140,
+  "backdropVar": "#04040a",
+  "speed": 1
+}

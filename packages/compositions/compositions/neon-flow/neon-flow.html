@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon grid flow</title>
+<!-- neon-grid kit, piece 3 of 8 (composition-v3). A vertical flowchart over the grid seen from above: nodes pop in
+     on their words, dashed connectors draw down, an accent spark rides them, the last node ignites, a bracket and a
+     typed label sum it up; it leaves on a soft push-in dissolve. Every word and time comes from the params. -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "neon-flow",
+  "title": "Neon grid flow",
+  "description": "Vertical two-to-four-node flowchart over a dark grid seen from above: nodes pop in as they are said, dashed connectors draw, an accent spark rides them, the last node ignites, then a bracket and a typed label sum it up; soft push-in dissolve out. Use for 'A, B and C: that's all it takes' beats. Times follow the voice-over's words.",
+  "duration": 4.75,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "kit": "neon-grid",
+  "opaque": true,
+  "tags": ["neon-grid", "flowchart", "steps", "process", "spark", "diagram", "grid"],
+  "params": {
+    "t0": { "type": "number", "default": 0, "min": 0, "max": 600, "step": 0.01, "label": "Starts at", "description": "Where this clip starts on the timeline (s). Every other time here is TIMELINE seconds. composition write fills it from t.", "display": false },
+    "words": { "type": "list", "default": [], "label": "Voice words", "description": "The voice-over's words with timeline times [{w, s, e}]: they time every item whose time is -1 and draw the captions.", "of": { "type": "object", "fields": { "w": { "type": "string" }, "s": { "type": "number" }, "e": { "type": "number", "default": 0 } } } },
+    "captions": { "type": "boolean", "default": true, "label": "Captions", "description": "Show the voice word by word under the chart (needs words)." },
+    "keys": { "type": "list", "default": [], "of": { "type": "string" }, "label": "Key words", "description": "Caption words painted in the accent." },
+    "heading": { "type": "string", "default": "", "maxLength": 34, "label": "Heading", "description": "Small mono line above the chart (blank: none)." },
+    "nodes": { "type": "list", "minItems": 2, "maxItems": 4, "required": true, "label": "Nodes", "description": "The steps, top to bottom; each pops in when said; the last one ignites.",
+      "of": { "type": "object", "fields": {
+        "text": { "type": "string", "maxLength": 14 },
+        "at": { "type": "number", "default": -1, "min": -1, "max": 600, "description": "timeline s; -1 = when its first word is said" },
+        "word": { "type": "string", "default": "", "description": "the voice word it lands on, when not its own first word" } } },
+      "default": [ { "text": "STEP ONE" }, { "text": "STEP TWO" } ] },
+    "label": { "type": "string", "default": "", "maxLength": 22, "label": "Sum-up label", "description": "Typed under the chart as a bracket closes over all the nodes (blank: no bracket)." },
+    "labelAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Label at", "description": "Timeline s; -1 = on the label's first word in the voice, after the last node." },
+    "accent": { "type": "color", "default": "#FF5A1F", "label": "Accent", "description": "The one isolate: spark, bracket, last node." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "label": "Speed", "description": "How fast the camera drifts (the words stay on the voice)." },
+    "exit": { "type": "boolean", "default": true, "label": "Exit", "description": "A soft push-in dissolve over the last 0.75 s (the grid stays)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #07070A; }
+  .node { position: absolute; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+    font-family: "JetBrains Mono"; font-weight: 700; letter-spacing: .12em; white-space: nowrap; color: #F2EEE6;
+    background: rgba(14,14,18,.92); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+var S = {};
+RC.composition({
+  build: function (RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, st = document.getElementById("stage");
+    var T = new KIT.Timing(P, RC.duration);
+    S.T = T;
+    // the grid on its own canvas under the chart, so it stays up while the chart dissolves out
+    S.bg = KIT.canvas(st); S.bctx = S.bg.getContext("2d");
+    S.world = RC.el("div", { style: { position: "absolute", left: "0", top: "0", width: W + "px", height: H + "px", transformOrigin: "50% 46%" } });
+    st.appendChild(S.world);
+    S.cv = KIT.canvas(S.world); S.ctx = S.cv.getContext("2d");
+    S.cam = new KIT.Camera(W, H, 64);
+    var n = P.nodes.length, sp = n <= 3 ? 300 : 220;
+    S.nw = 640 * u; S.nh = (n <= 3 ? 132 : 118) * u;
+    S.ys = P.nodes.map(function (_, i) { return (860 + (i - (n - 1) / 2) * sp) * u; });
+    if (P.heading) {
+      S.head = KIT.mono(S.world, P.heading, 28 * u, { fontWeight: "700", letterSpacing: ".2em", color: "rgba(242,238,230,.55)" });
+      KIT.centre(S.head, S.ys[0] - S.nh / 2 - 100 * u);
+    }
+    S.nodes = P.nodes.map(function (nd, i) {
+      var last = i === n - 1;
+      var d = RC.el("div", { class: "node", style: { width: S.nw + "px", height: S.nh + "px", fontSize: (last ? 54 : 42) * u + "px",
+        left: (W - S.nw) / 2 + "px", top: S.ys[i] - S.nh / 2 + "px", borderRadius: 22 * u + "px",
+        border: 3 * u + "px solid " + (last ? P.accent : "rgba(242,238,230,.55)") } });
+      d._lab = RC.el("span", { text: nd.text });
+      d.appendChild(d._lab);
+      S.world.appendChild(d);
+      RC.fitText(d._lab, S.nw - 60 * u, (last ? 54 : 42) * u, 24 * u);
+      return d;
+    });
+    S.labelFull = P.label || "";
+    S.label = KIT.mono(S.world, S.labelFull, 40 * u, { fontWeight: "800", letterSpacing: ".14em" });
+    KIT.centre(S.label, S.ys[n - 1] + S.nh / 2 + 64 * u);
+    S.label.textContent = "";
+    // times
+    S.at = P.nodes.map(function (nd, i) { return T.at(nd, T.frac(0.044 + 0.168 * i)); });
+    S.igniteAt = S.at[n - 1] + 0.16;
+    S.labelAt = S.labelFull ? T.at({ at: P.labelAt, text: S.labelFull }, T.frac(0.7)) : null;
+    S.at.forEach(function (t, i) { KIT.cue(T, t, i === n - 1 ? "ignite" : "pop", "node " + (i + 1)); });
+    if (S.labelAt != null) KIT.cue(T, S.labelAt, "type", "label types");
+    S.cap = KIT.captionsFor(st, P, T);
+  },
+  render: function (time, RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, ctx = S.ctx, A = P.accent, T = S.T;
+    var g = T.t0 + time.T, dr = time.t;
+    // camera: high over the grid, looking down, drifting forward and turning slowly
+    S.cam.set(1.2 - 0.35 * dr, 4.2, 24 + 0.8 * dr, -8 + 3.2 * dr, -38, 2);
+    var bc = S.bctx;
+    KIT.backdrop(bc, W, H);
+    KIT.drawGrid(bc, S.cam, { color: KIT.BONE, alpha: 0.26, lw: 1.7, reach: 26, accent: A, axes: 0, glow: 0.8, u: u });
+    KIT.vignette(bc, W, H, 0.55);
+    ctx.clearRect(0, 0, W, H);
+    var cx = W / 2, n = S.nodes.length, nh = S.nh;
+    var seg = [];
+    for (var i = 0; i < n - 1; i++) {
+      var top = S.ys[i] + nh / 2, bot = S.ys[i + 1] - nh / 2;
+      seg.push({ top: top, bot: bot, p: RC.progress(g, S.at[i] + 0.3, Math.max(0.1, S.at[i + 1] - S.at[i] - 0.3), "smooth") });
+    }
+    ctx.save();
+    ctx.strokeStyle = "rgba(242,238,230,.6)"; ctx.lineWidth = 4 * u; ctx.setLineDash([14 * u, 12 * u]);
+    ctx.beginPath();
+    seg.forEach(function (s) { if (s.p > 0) { ctx.moveTo(cx, s.top); ctx.lineTo(cx, RC.mix(s.top, s.bot, s.p)); } });
+    ctx.stroke();
+    ctx.setLineDash([]);
+    function sparkAt(y) {
+      ctx.fillStyle = A; ctx.shadowColor = A; ctx.shadowBlur = 30 * u;
+      ctx.beginPath(); ctx.arc(cx, y, 13 * u, 0, Math.PI * 2); ctx.fill();
+      var tr = ctx.createLinearGradient(0, y - 120 * u, 0, y);
+      tr.addColorStop(0, RC.alpha(A, 0)); tr.addColorStop(1, RC.alpha(A, 0.9));
+      ctx.fillStyle = tr; ctx.fillRect(cx - 5 * u, y - 120 * u, 10 * u, 120 * u);
+      ctx.shadowBlur = 0;
+    }
+    // the spark rides the connector that is drawing; a second lap down the whole chain on the label
+    var riding = seg.filter(function (s) { return s.p > 0 && s.p < 1; })[0];
+    if (riding) sparkAt(RC.mix(riding.top, riding.bot, riding.p));
+    if (S.labelAt != null && seg.length) {
+      var lap = RC.progress(g, S.labelAt - 0.1, 0.9, "smooth");
+      if (lap > 0 && lap < 1) {
+        var k = Math.min(seg.length - 1, Math.floor(lap * seg.length)), f = lap * seg.length - k;
+        sparkAt(RC.mix(seg[k].top, seg[k].bot, f));
+      }
+      // the bracket on the right of all the nodes
+      var br = RC.progress(g, S.labelAt, 0.4, "smooth");
+      if (br > 0) {
+        var bx = cx + S.nw / 2 + 36 * u, y0 = S.ys[0] - nh / 2, y1 = S.ys[n - 1] + nh / 2;
+        ctx.strokeStyle = A; ctx.lineWidth = 5 * u; ctx.shadowColor = A; ctx.shadowBlur = 16 * u; ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(bx - 22 * u, y0); ctx.lineTo(bx, y0); ctx.lineTo(bx, RC.mix(y0, y1, br)); if (br >= 1) ctx.lineTo(bx - 22 * u, y1);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+    // nodes: empty outlines from the first frame, the label pops in on its word
+    S.nodes.forEach(function (d, i) {
+      var p = RC.progress(g, S.at[i] - 0.05, 0.3, "snappy");
+      RC.set(d, { scale: 0.94 + 0.06 * p, opacity: 0.35 + 0.65 * p });
+      RC.set(d._lab, { scale: 0.8 + 0.2 * p, opacity: RC.clamp(p * 1.6, 0, 1) });
+      if (i === n - 1) KIT.ignite(d, g, S.igniteAt, A, u, 0.3);
+    });
+    if (S.labelAt != null) {
+      S.label.textContent = KIT.typed(S.labelFull, g, S.labelAt, S.labelAt + 0.5);
+      S.label.style.color = KIT.BONE;
+    }
+    // exit: an eased push-in with a soft blur that dissolves into the grid underneath
+    var x = P.exit ? RC.progress(0.75 - time.left, 0, 0.72, "smooth") : 0;
+    RC.set(S.world, { scale: 1 + 0.35 * x, blur: 9 * x, opacity: 1 - x });
+    S.cap.render(g, 1 - x);
+  },
+});
+</script>
+</body>
+</html>

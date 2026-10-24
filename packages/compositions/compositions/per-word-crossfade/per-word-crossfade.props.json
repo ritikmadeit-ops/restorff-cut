@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/per-word-crossfade); fictional.",
+  "text": "Create once reuse everywhere",
+  "drift": "standard",
+  "blur": "standard",
+  "tone": "ink",
+  "speed": 1
+}

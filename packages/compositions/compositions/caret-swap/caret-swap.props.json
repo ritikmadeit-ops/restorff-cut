@@ -1,0 +1,11 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/caret-swap); fictional.",
+  "fromText": "Executing it?",
+  "toText": "That's where everyone quits",
+  "fontSize": 72,
+  "fontWeight": "400",
+  "color": "#171717",
+  "caretColor": "#FF4DAA",
+  "caretColorEnd": "#8A5CF6",
+  "speed": 1
+}

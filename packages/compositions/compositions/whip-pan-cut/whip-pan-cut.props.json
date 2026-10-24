@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/whip-pan-cut); fictional.",
+  "direction": "right",
+  "whipAt": 0.35,
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

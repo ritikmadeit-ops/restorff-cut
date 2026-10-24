@@ -1,4 +1,4 @@
-import type { FrameRate } from "opencut-wasm";
+import type { FrameRate } from "restorffcut-wasm";
 import type { AnyBaseNode } from "./nodes/base-node";
 import { createCanvasSurface } from "./canvas-utils";
 import { buildFrameDescriptor } from "./compositor/frame-descriptor";

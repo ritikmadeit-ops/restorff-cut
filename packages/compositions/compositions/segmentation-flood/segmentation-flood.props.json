@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/segmentation-flood); fictional.",
+  "regions": "Chassis, Payload, Horizon, Beacon",
+  "floodAt": 0.6,
+  "flicker": "on",
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

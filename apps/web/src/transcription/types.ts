@@ -8,10 +8,26 @@ export interface TranscriptionSegment {
 	end: number;
 }
 
+/** One word with its time in the transcribed audio (seconds). */
+export interface TranscriptionWord {
+	text: string;
+	start: number;
+	end: number;
+}
+
+/**
+ * "exact" = the model's word-level timestamps (cross-attention alignment); "approximate" = segment timings split
+ * across the words by letter count (the model could not give word timings).
+ */
+export type WordTimingQuality = "exact" | "approximate";
+
 export interface TranscriptionResult {
 	text: string;
 	segments: TranscriptionSegment[];
 	language: string;
+	/** Word-level timings, when asked for (`words: true`). */
+	words?: TranscriptionWord[];
+	wordTimings?: WordTimingQuality;
 }
 
 export type TranscriptionStatus =
@@ -28,6 +44,7 @@ export interface TranscriptionProgress {
 }
 
 export type TranscriptionModelId =
+	| "whisper-base-timestamped"
 	| "whisper-tiny"
 	| "whisper-small"
 	| "whisper-medium"

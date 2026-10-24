@@ -1,5 +1,7 @@
 "use client";
 
+import { LastCommitLine } from "./last-commit";
+import { projectCrumbs } from "@/storyboard/labels";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,24 +23,14 @@ import type {
 	TProjectSortKey,
 	TProjectSortOption,
 } from "@/project/types";
-import { formatTimecode, mediaTimeToSeconds } from "opencut-wasm";
+import { formatTimecode, mediaTimeToSeconds } from "restorffcut-wasm";
 import { formatDate } from "@/utils/date";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import {
-	Calendar04Icon,
 	GridViewIcon,
 	LeftToRightListDashIcon,
 	PlusSignIcon,
 	Search01Icon,
-	Video01Icon,
 	MoreHorizontalIcon,
 	Delete02Icon,
 	Copy01Icon,
@@ -47,6 +39,7 @@ import {
 	InformationCircleIcon,
 } from "@hugeicons/core-free-icons";
 import { OcVideoIcon } from "@/components/icons";
+import { useBlankThumbnail } from "./thumbnail"; // ui-fix-panels (QA #28)
 import { Label } from "@/components/ui/label";
 import {
 	ContextMenu,
@@ -66,7 +59,8 @@ import { DeleteProjectDialog } from "@/project/components/delete-project-dialog"
 import { ProjectInfoDialog } from "@/project/components/project-info-dialog";
 import { RenameProjectDialog } from "@/project/components/rename-project-dialog";
 import { cn } from "@/utils/ui";
-import { ChangelogNotification } from "@/changelog/components/changelog-notification";
+import { Wordmark } from "@/components/wordmark";
+import { PARENT_PRODUCT_NAME } from "@/site/brand";
 const formatProjectDuration = ({
 	duration,
 }: {
@@ -107,7 +101,6 @@ export default function ProjectsPage() {
 		<div className="bg-background min-h-screen">
 			<MigrationDialog />
 			<StoragePersistenceDialog />
-			<ChangelogNotification />
 			<ProjectsHeader />
 			<ProjectsToolbar projectIds={projectsToDisplay.map((p) => p.id)} />
 			<main className="mx-auto px-4 pt-2 pb-6 flex flex-col gap-4">
@@ -119,7 +112,7 @@ export default function ProjectsPage() {
 					<div
 						className={
 							viewMode === "grid"
-								? "xs:grid-cols-2 grid grid-cols-1 gap-6 sm:grid-cols-3 lg:grid-cols-4 px-4"
+								? "grid grid-cols-2 gap-x-5 gap-y-7 px-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
 								: "flex flex-col"
 						}
 					>
@@ -141,26 +134,15 @@ function ProjectsHeader() {
 	const { viewMode, isHydrated, setViewMode } = useProjectsStore();
 
 	return (
-		<header className="sticky top-0 z-20 px-8 bg-background flex flex-col gap-2">
-			<div className="flex items-center justify-between h-16 pt-2">
+		<header className="sticky top-0 z-20 px-6 bg-background flex flex-col gap-2 border-b">
+			<div className="flex items-center justify-between h-[4.25rem]">
 				<div className="flex items-center gap-5">
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									<Link href="/" className="text-sm sm:text-base">
-										Home
-									</Link>
-								</BreadcrumbLink>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator />
-							<BreadcrumbItem>
-								<BreadcrumbPage className="text-sm sm:text-base font-medium">
-									All projects
-								</BreadcrumbPage>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
+					<Link href="/projects" aria-label="All projects">
+						<Wordmark />
+					</Link>
+					<span className="rc-mono hidden text-[0.8125rem] text-[#C9C7C2] sm:inline">
+						in {PARENT_PRODUCT_NAME} <span className="text-fog">·</span> All projects
+					</span>
 
 					<div className="hidden md:flex items-center rounded-md border p-1 px-1.5 h-10">
 						{VIEW_MODE_OPTIONS.map(({ mode, icon, label }) => (
@@ -226,7 +208,7 @@ function ProjectsToolbar({ projectIds }: { projectIds: string[] }) {
 	};
 
 	return (
-		<div className="sticky top-16 z-10 flex items-center justify-between px-6 h-14 pt-2 bg-background">
+		<div className="sticky top-[4.3rem] z-10 flex items-center justify-between px-5 h-14 pt-2 bg-background">
 			<div className="flex items-center gap-2">
 				<Label
 					className="flex items-center gap-3 cursor-pointer px-2"
@@ -516,14 +498,10 @@ function NewProjectButton() {
 	};
 
 	return (
-		<Button
-			size="lg"
-			className="flex px-5 md:px-6"
-			onClick={handleCreateProject}
-		>
-			<span className="text-sm font-medium hidden md:block">New project</span>
-			<span className="text-sm font-medium block md:hidden">New</span>
-		</Button>
+		<button type="button" className="rc-pill" onClick={handleCreateProject}>
+			<span className="hidden md:block">New project</span>
+			<span className="block md:hidden">New</span>
+		</button>
 	);
 }
 
@@ -549,6 +527,9 @@ function ProjectItem({
 	const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
 	const editor = useEditor();
 	const durationLabel = formatProjectDuration({ duration: project.duration });
+	// ui-fix-panels (QA #28): a black thumbnail shows the placeholder instead of a solid black card
+	const blankThumbnail = useBlankThumbnail(project.thumbnail);
+	const thumbnail = blankThumbnail ? null : project.thumbnail;
 	const isMultiSelect = selectedProjectCount > 1;
 	const isGridView = viewMode === "grid";
 
@@ -577,38 +558,47 @@ function ProjectItem({
 		setProjectSelected({ projectId: project.id, isSelected: checked });
 	};
 
+	// Ads are 9:16, so the cards are too; brand / ad from the name or metadata.restorff.
+	const crumbs = projectCrumbs(
+		project.name,
+		(project as { restorff?: unknown }).restorff,
+	);
 	const gridContent = (
-		<Card className="bg-background overflow-hidden border-none p-0">
-			<div className="bg-muted relative aspect-video">
+		<Card className="bg-background overflow-hidden rounded-none border-none p-0">
+			<div className="bg-surface relative aspect-[9/16] overflow-hidden rounded-[16px] shadow-[0_0_0_1px_#2e2e35] transition-shadow group-hover:shadow-[0_0_0_1px_#8c8c95]">
 				<div className="absolute inset-0">
-					{project.thumbnail ? (
+					{thumbnail ? (
 						<Image
-							src={project.thumbnail}
+							src={thumbnail}
 							alt="Project thumbnail"
 							fill
 							className="object-cover"
 						/>
 					) : (
-						<div className="flex size-full items-center justify-center">
+						<div className="flex size-full flex-col items-center justify-center gap-2">
 							<OcVideoIcon className="text-muted-foreground size-12 shrink-0" />
+							{blankThumbnail && <span className="rc-mono text-fog text-[10px]">no picture yet</span>}
 						</div>
 					)}
 				</div>
 
 				{durationLabel && (
-					<div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded-sm">
+					<div className="rc-mono absolute bottom-2 right-2 rounded-full bg-black/70 px-2.5 py-1 text-[0.72rem] text-bone">
 						{durationLabel}
 					</div>
 				)}
 			</div>
 
-			<CardContent className="flex flex-col gap-2 px-0 pt-4">
-				<h3 className="group-hover:text-foreground/90 line-clamp-2 text-sm leading-snug font-medium">
-					{project.name}
+			<CardContent className="flex flex-col gap-1 px-0.5 pt-2.5">
+				{crumbs.brand && (
+					<span className="rc-mono text-mist truncate text-[11px]">{crumbs.brand}</span>
+				)}
+				<h3 className="line-clamp-2 text-[14px] leading-snug font-semibold text-bone">
+					{crumbs.ad ?? project.name}
 				</h3>
-				<div className="text-muted-foreground flex items-center gap-1.5 text-sm">
-					<HugeiconsIcon icon={Calendar04Icon} className="size-4" />
-					<span>Created {formatDate({ date: project.createdAt })}</span>
+				<div className="rc-mono text-fog flex min-w-0 flex-col gap-0.5 text-[11px]">
+					<LastCommitLine projectId={project.id} />
+					<span>edited {formatDate({ date: project.updatedAt ?? project.createdAt })}</span>
 				</div>
 			</CardContent>
 		</Card>
@@ -617,9 +607,9 @@ function ProjectItem({
 	const listRowContent = (
 		<div className="flex items-center gap-3 flex-1 min-w-0">
 			<div className="bg-muted relative size-10 rounded overflow-hidden shrink-0">
-				{project.thumbnail ? (
+				{thumbnail ? (
 					<Image
-						src={project.thumbnail}
+						src={thumbnail}
 						alt="Project thumbnail"
 						fill
 						className="object-cover"
@@ -635,11 +625,11 @@ function ProjectItem({
 				{project.name}
 			</h3>
 
-			<span className="text-muted-foreground text-sm shrink-0 hidden sm:block">
+			<span className="rc-mono text-muted-foreground text-xs shrink-0 hidden sm:block">
 				{durationLabel ?? "—"}
 			</span>
 
-			<span className="text-muted-foreground text-sm shrink-0 w-auto pl-8 text-right hidden xs:block">
+			<span className="rc-mono text-muted-foreground text-xs shrink-0 w-auto pl-8 text-right hidden xs:block">
 				{formatDate({ date: project.createdAt })}
 			</span>
 		</div>
@@ -923,13 +913,13 @@ function ProjectsSkeleton() {
 	);
 
 	return (
-		<div className="px-4 xs:grid-cols-2 grid grid-cols-1 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+		<div className="grid grid-cols-2 gap-x-5 gap-y-7 px-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
 			{skeletonIds.map((skeletonId) => (
 				<Card
 					key={skeletonId}
 					className="bg-background overflow-hidden border-none p-0"
 				>
-					<div className="bg-muted relative aspect-video">
+					<div className="bg-surface relative aspect-[9/16] rounded-[16px]">
 						<div className="absolute inset-0">
 							<Skeleton className="bg-muted/50 size-full" />
 						</div>
@@ -994,23 +984,22 @@ function EmptyState() {
 	}
 
 	return (
-		<div className="flex flex-col items-center justify-center gap-6 py-16 text-center">
-			<div className="flex flex-col items-center gap-2">
-				<div className="bg-muted/30 flex size-16 items-center justify-center rounded-full">
-					<HugeiconsIcon
-						icon={Video01Icon}
-						className="text-muted-foreground size-8"
-					/>
-				</div>
-				<h3 className="text-lg font-medium">No projects yet</h3>
+		<div className="flex flex-col items-center justify-center gap-7 py-24 text-center">
+			<div className="flex flex-col items-center gap-4">
+				<span className="rc-label">Projects · 0</span>
+				<h3 className="rc-display text-3xl">No cuts yet</h3>
 				<p className="text-muted-foreground max-w-md">
-					Start creating your first project. Import media, edit, and export your
-					videos. All privately.
+					Start a project, import clips, cut. Everything stays in this browser.
 				</p>
 			</div>
-			<Button size="lg" className="gap-2" onClick={handleCreateProject}>
+			{/* The one neon isolate on this view: the action waiting on you. */}
+			<Button
+				size="lg"
+				className="bg-neon hover:bg-neon/90 gap-2 rounded-full px-6 font-bold text-[#0C0C0E] shadow-[0_0_32px_-6px_rgba(246,255,0,0.55)]"
+				onClick={handleCreateProject}
+			>
 				<HugeiconsIcon icon={PlusSignIcon} />
-				Create your first project
+				Start your first cut
 			</Button>
 		</div>
 	);

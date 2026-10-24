@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/ticker-takeover); fictional.",
+  "options": "build,shape,launch,repeat,scale",
+  "finalWord": "launch",
+  "accent": "violet",
+  "speed": 1
+}

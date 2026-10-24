@@ -5,6 +5,8 @@ import { TimelineElement } from "./timeline-element";
 import type { TimelineTrack } from "@/timeline";
 import type { TimelineElement as TimelineElementType } from "@/timeline";
 import { TIMELINE_LAYERS } from "./layers";
+import { TIMELINE_LANE_CLASS } from "./theme";
+import { cn } from "@/utils/ui";
 import type { ElementDragView } from "@/timeline";
 
 interface TimelineTrackContentProps {
@@ -64,7 +66,7 @@ export function TimelineTrackContent({
 			/>
 			{/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- spatial gesture surface; the wrapping <button> handles keyboard track selection, this <div> only forwards background clicks for box-select / deselect. */}
 			<div
-				className="relative h-full min-w-full"
+				className={cn("relative h-full min-w-full", TIMELINE_LANE_CLASS)}
 				style={{ zIndex: TIMELINE_LAYERS.trackContent }}
 				onMouseUp={(event) => {
 					if (event.target !== event.currentTarget) return;
@@ -78,7 +80,7 @@ export function TimelineTrackContent({
 				}}
 			>
 				{track.elements.length === 0 ? (
-					<div className="text-muted-foreground border-muted/30 pointer-events-none flex size-full items-center justify-center rounded-sm border-2 border-dashed text-xs" />
+					<div className="pointer-events-none size-full" />
 				) : (
 					track.elements.map((element) => {
 						const isSelected = isElementSelected({

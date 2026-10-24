@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon grid outro</title>
+<!-- neon-grid kit, piece 8 of 8 (composition-v3). A dial lies on the grid; the camera orbits it while an accent arc
+     sweeps and a counter counts; then the camera cranes up to the end title (kicker pill + one or two igniting
+     lines); with loop on, the title lifts out and the camera lands on neon-hook's opening pose, so the last frame
+     flows into the first. Every word, number and time comes from the params. -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "neon-outro",
+  "title": "Neon grid outro",
+  "description": "End scene on a dark 3D grid: a dial on the floor with a sweeping accent arc and a counter while the camera orbits, then a crane up to the end title (kicker pill, one or two igniting lines); with loop on it lands on neon-hook's opening shot so the video loops. Times follow the voice-over's words.",
+  "duration": 8.1,
+  "size": [1080, 1920],
+  "fps": 30,
+  "fit": false,
+  "kit": "neon-grid",
+  "opaque": true,
+  "tags": ["neon-grid", "outro", "end-card", "dial", "counter", "loop", "title", "3d"],
+  "params": {
+    "t0": { "type": "number", "default": 0, "min": 0, "max": 600, "step": 0.01, "label": "Starts at", "description": "Where this clip starts on the timeline (s). Every other time here is TIMELINE seconds. composition write fills it from t.", "display": false },
+    "words": { "type": "list", "default": [], "label": "Voice words", "description": "The voice-over's words with timeline times [{w, s, e}]: they time every item whose time is -1 and draw the captions.", "of": { "type": "object", "fields": { "w": { "type": "string" }, "s": { "type": "number" }, "e": { "type": "number", "default": 0 } } } },
+    "captions": { "type": "boolean", "default": true, "label": "Captions", "description": "Show the voice word by word (needs words); hidden once the end title is up." },
+    "keys": { "type": "list", "default": [], "of": { "type": "string" }, "label": "Key words", "description": "Caption words painted in the accent." },
+    "dial": { "type": "object", "label": "Dial", "description": "The dial on the floor: `count` ticks (a long one every `major`, numbered), an arc that sweeps from 0 to all of them between from and to, and a counter showing the swept value with its unit.",
+      "fields": {
+        "count": { "type": "number", "min": 2, "max": 60, "step": 1 },
+        "major": { "type": "number", "default": 3, "min": 1, "max": 30, "step": 1 },
+        "unit": { "type": "string", "default": "", "maxLength": 6 },
+        "from": { "type": "number", "default": -1, "min": -1, "max": 600, "description": "timeline s the sweep starts; -1 = 0.4 s in" },
+        "to": { "type": "number", "default": -1, "min": -1, "max": 600, "description": "timeline s the sweep ends; -1 = 37 % into the clip" } },
+      "default": { "count": 12, "major": 3, "unit": "", "from": -1, "to": -1 } },
+    "pulseAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Ticks pulse", "description": "Timeline s the ticks pulse once; -1 = on pulseWord, else never." },
+    "pulseWord": { "type": "string", "default": "", "maxLength": 20, "label": "Pulse word", "description": "The voice word the ticks pulse on (optional)." },
+    "craneAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Crane up", "description": "Timeline s the camera leaves the dial and cranes up; -1 = just after the sweep." },
+    "kicker": { "type": "string", "default": "", "maxLength": 32, "label": "Kicker", "description": "Mono pill over the end title, e.g. the brand (blank: none)." },
+    "kickerAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Kicker at", "description": "Timeline s; -1 = on its first word in the voice after the crane, else just after it." },
+    "lines": { "type": "list", "minItems": 1, "maxItems": 2, "required": true, "label": "End title", "description": "One or two lines of big type; each reveals and ignites when said.",
+      "of": { "type": "object", "fields": {
+        "text": { "type": "string", "maxLength": 14 },
+        "at": { "type": "number", "default": -1, "min": -1, "max": 600 },
+        "word": { "type": "string", "default": "" } } },
+      "default": [ { "text": "THE END." } ] },
+    "keyword": { "type": "string", "default": "", "maxLength": 14, "label": "Keyword", "description": "The word (inside the last line) that ignites last; the rest of its line stays white. Blank: lines ignite whole." },
+    "keywordAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Keyword at", "description": "Timeline s; -1 = when the keyword is said." },
+    "loop": { "type": "boolean", "default": true, "label": "Loop", "description": "The title lifts out and the camera lands on neon-hook's opening pose, so the last frame flows into frame 0 of a neon-hook clip." },
+    "loopAt": { "type": "number", "default": -1, "min": -1, "max": 600, "step": 0.01, "label": "Loop starts", "description": "Timeline s the title lifts out and the camera heads home; -1 = 1.15 s before the end." },
+    "openCreep": { "type": "number", "default": 0.55, "min": 0, "max": 5, "step": 0.01, "label": "Opening creep", "description": "Grid cells per second neon-hook's camera creeps at speed 1: the last frame sits one frame before its first." },
+    "accent": { "type": "color", "default": "#FF5A1F", "label": "Accent", "description": "The one isolate: arc, counter ignite, title ignite, pill." },
+    "speed": { "type": "number", "default": 1, "min": 0.25, "max": 4, "step": 0.01, "label": "Camera speed", "description": "Orbit and dolly speed (the words stay on the voice)." }
+  }
+}
+</script>
+<style>
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #07070A; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+var S = {};
+var DZ = 70; // the dial's centre on the floor: (0, 0, DZ)
+RC.composition({
+  build: function (RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, st = document.getElementById("stage");
+    var T = new KIT.Timing(P, RC.duration);
+    S.T = T;
+    var D = P.dial;
+    S.cv = KIT.canvas(st); S.ctx = S.cv.getContext("2d");
+    S.cam = new KIT.Camera(W, H, 64);
+    S.unit = D.unit ? " " + D.unit : "";
+    S.count = KIT.big(st, KIT.pad2(Math.round(D.count)) + S.unit, 150 * u, { fontStretch: "112%" });
+    S.title = RC.el("div", { style: { position: "absolute", left: "0", top: "0", width: W + "px", height: H + "px" } });
+    st.appendChild(S.title);
+    S.kick = P.kicker ? KIT.pill(S.title, P.kicker, 32 * u, P.accent, { letterSpacing: ".22em", padding: 12 * u + "px " + 28 * u + "px" }) : null;
+    var key = KIT.norm(P.keyword);
+    var maxW = W - RC.safe.left - RC.safe.right + 40 * u;
+    S.lines = P.lines.map(function (ln) {
+      var d = RC.el("div", { style: { position: "absolute", whiteSpace: "nowrap", fontFamily: "Archivo", fontWeight: "900", fontStretch: "125%",
+        lineHeight: "0.92", fontSize: 190 * u + "px", color: KIT.BONE, letterSpacing: "-0.01em", textTransform: "uppercase" } });
+      d._spans = String(ln.text).split(/\s+/).filter(Boolean).map(function (w, i, all) {
+        var sp = RC.el("span", { text: w + (i < all.length - 1 ? " " : "") });
+        sp._key = !!key && KIT.norm(w) === key;
+        d.appendChild(sp);
+        return sp;
+      });
+      d._hasKey = d._spans.some(function (sp) { return sp._key; });
+      S.title.appendChild(d);
+      return d;
+    });
+    var px = Math.min.apply(null, S.lines.map(function (d) { return RC.fitText(d, maxW, 200 * u, 80 * u); }));
+    if (S.kick) KIT.centre(S.kick, 560 * u);
+    var y = 660 * u;
+    S.lines.forEach(function (d) { d.style.fontSize = px + "px"; KIT.centre(d, y); y += d.offsetHeight + 6 * u; });
+    // times
+    S.sweepFrom = D.from >= 0 ? D.from : T.t0 + 0.42;
+    S.sweepTo = D.to >= 0 ? D.to : Math.max(S.sweepFrom + 0.5, T.frac(0.367));
+    S.pulseAt = P.pulseAt >= 0 ? P.pulseAt : P.pulseWord ? T.find(P.pulseWord, T.t0) : null;
+    S.craneAt = P.craneAt >= 0 ? P.craneAt : S.sweepTo + 0.38;
+    T.cursor = Math.max(T.cursor, S.craneAt - 0.5);
+    S.kickAt = S.kick ? T.at({ at: P.kickerAt, text: P.kicker }, S.craneAt + 0.4) : null;
+    S.lineAt = P.lines.map(function (ln, i) { return T.at(ln, T.frac(0.694 + 0.095 * i)); });
+    S.keyLine = S.lines.filter(function (d) { return d._hasKey; })[0] || null;
+    S.keyAt = S.keyLine ? T.at({ at: P.keywordAt, text: P.keyword }, S.lineAt[S.lines.indexOf(S.keyLine)] + 0.15) : null;
+    S.loopAt = P.loopAt >= 0 ? P.loopAt : T.end - 1.15;
+    KIT.cue(T, S.sweepFrom, "riser", "the arc sweeps");
+    KIT.cue(T, S.sweepTo, "ignite", "the counter lands");
+    if (S.pulseAt != null) KIT.cue(T, S.pulseAt, "tick", "ticks pulse");
+    KIT.cue(T, S.craneAt, "whoosh", "crane up");
+    if (S.kick) KIT.cue(T, S.kickAt, "pop", "kicker");
+    S.lines.forEach(function (d, i) { if (!d._hasKey) KIT.cue(T, S.lineAt[i], "ignite", "line " + (i + 1) + " ignites"); });
+    if (S.keyAt != null) KIT.cue(T, S.keyAt, "ignite", "keyword ignites");
+    S.cap = KIT.captionsFor(st, P, T, { to: Math.min(T.end, S.kick ? S.kickAt : S.lineAt[0]) });
+  },
+  render: function (time, RC) {
+    var P = RC.params, u = RC.u, W = RC.width, H = RC.height, ctx = S.ctx, A = P.accent, T = S.T, D = P.dial;
+    var g = T.t0 + time.T, c = T.t0 + time.t;
+    // camera: orbit the dial, then crane up and dolly forward
+    var orb = RC.progress(c, T.t0, S.craneAt - T.t0 + 0.4, "smooth");
+    var a = (RC.mix(-32, 22, orb) * Math.PI) / 180;
+    var ox = 6.6 * Math.sin(a), oy = 7.0, oz = DZ - 6.6 * Math.cos(a);
+    var oyaw = (Math.atan2(-ox, DZ + 0.6 - oz) * 180) / Math.PI;
+    var opitch = (Math.atan2(-oy, Math.sqrt(ox * ox + (DZ + 0.6 - oz) * (DZ + 0.6 - oz))) * 180) / Math.PI;
+    var cr = RC.progress(c, S.craneAt, 2.0, "smooth");
+    var fz = DZ - 9 + 0.45 * Math.max(0, c - S.craneAt - 2.0);
+    var cx = RC.mix(ox, 0, cr), cy = RC.mix(oy, 1.8, cr), cz = RC.mix(oz, fz, cr), cyaw = RC.mix(oyaw, 0, cr), cpitch = RC.mix(opitch, -12, cr), croll = RC.mix(3, 0, cr);
+    if (P.loop) {
+      // the camera eases onto the opening pose (x 0, height 1.4, yaw 0, pitch -10) on a whole grid cell, one frame of
+      // the opening creep before it (the grid repeats every cell): the last frame flows into frame 0 of neon-hook
+      var endT = T.t0 + RC.duration - 1 / RC.fps;
+      var lp = RC.progress(g, S.loopAt, endT - S.loopAt, "smooth");
+      var zEnd = DZ - 9 + 0.45 * Math.max(0, T.t0 + (RC.duration - 1 / RC.fps) * RC.rate - S.craneAt - 2.0);
+      var zLoop = Math.ceil(zEnd) - P.openCreep / RC.fps;
+      S.cam.set(RC.mix(cx, 0, lp), RC.mix(cy, 1.4, lp), RC.mix(cz, zLoop, lp), RC.mix(cyaw, 0, lp), RC.mix(cpitch, -10, lp), RC.mix(croll, 0, lp));
+    } else S.cam.set(cx, cy, cz, cyaw, cpitch, croll);
+    KIT.backdrop(ctx, W, H);
+    KIT.drawGrid(ctx, S.cam, { color: KIT.BONE, alpha: 0.24, lw: 1.7, reach: 30, accent: A, axes: 0, glow: 1, u: u });
+    // the dial on the floor
+    var n = Math.max(2, Math.round(D.count)), major = Math.max(1, Math.round(D.major));
+    var dial = RC.progress(g, T.t0, 0.5, "smooth") * (1 - RC.progress(g, S.craneAt + 0.2, 0.9, "smooth"));
+    var R = 3.2, sweep = RC.progress(g, S.sweepFrom, S.sweepTo - S.sweepFrom, "smooth");
+    var pulse = S.pulseAt != null ? Math.exp(-Math.pow((g - S.pulseAt) / 0.18, 2)) : 0;
+    function th(h) { return (h / n) * Math.PI * 2; }
+    function fp(h, r) { return [Math.sin(th(h)) * r, DZ + Math.cos(th(h)) * r]; }
+    if (dial > 0.01) {
+      ctx.save();
+      ctx.globalAlpha = dial;
+      ctx.strokeStyle = "rgba(242,238,230,.55)"; ctx.lineWidth = 3 * u;
+      ctx.beginPath();
+      for (var i = 0; i < 96; i++) { var p0 = fp((i / 96) * n, R), p1 = fp(((i + 1) / 96) * n, R); S.cam.line3(ctx, p0[0], 0, p0[1], p1[0], 0, p1[1]); }
+      ctx.stroke();
+      ctx.font = "700 " + 30 * u + "px 'JetBrains Mono'"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      for (var h = 0; h < n; h++) {
+        var lit = h <= sweep * n;
+        var long = h % major === 0;
+        var q0 = fp(h, R + 0.12), q1 = fp(h, R + (long ? 0.75 : 0.42));
+        ctx.strokeStyle = lit ? RC.alpha(A, 0.95) : RC.alpha(KIT.BONE, 0.45 + 0.5 * pulse);
+        ctx.lineWidth = (long ? 5 : 3) * u * (1 + 0.6 * pulse);
+        if (lit) { ctx.shadowColor = A; ctx.shadowBlur = 12 * u; } else ctx.shadowBlur = 0;
+        ctx.beginPath(); S.cam.line3(ctx, q0[0], 0, q0[1], q1[0], 0, q1[1]); ctx.stroke();
+        if (long) {
+          var lpt = fp(h, R + 1.25), sp = S.cam.point(lpt[0], 0, lpt[1]);
+          if (sp) { ctx.shadowBlur = 0; ctx.fillStyle = lit ? A : "rgba(242,238,230,.7)"; ctx.fillText(String(h), sp[0], sp[1]); }
+        }
+      }
+      if (sweep > 0) {
+        ctx.strokeStyle = A; ctx.lineWidth = 9 * u; ctx.shadowColor = A; ctx.shadowBlur = 24 * u; ctx.lineCap = "round";
+        ctx.beginPath();
+        var m = Math.max(1, Math.round(96 * sweep));
+        for (var j = 0; j < m; j++) { var s0 = fp((j / 96) * n, R - 0.3), s1 = fp(((j + 1) / 96) * n, R - 0.3); S.cam.line3(ctx, s0[0], 0, s0[1], s1[0], 0, s1[1]); }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    KIT.vignette(ctx, W, H, 0.6);
+    // the counter at the dial's centre (follows the projection)
+    var cp = S.cam.point(0, 0, DZ);
+    var hv = Math.round(sweep * D.count);
+    S.count.textContent = KIT.pad2(hv) + S.unit;
+    if (cp) { S.count.style.left = cp[0] - S.count.offsetWidth / 2 + "px"; S.count.style.top = cp[1] - S.count.offsetHeight / 2 + "px"; }
+    S.count.style.opacity = String(dial * RC.progress(g, S.sweepFrom - 0.3, 0.3, "smooth"));
+    KIT.ignite(S.count, g, S.sweepTo, A, u, 0.3);
+    if (g < S.sweepTo) { S.count.style.color = KIT.BONE; S.count.style.textShadow = "0 " + 6 * u + "px " + 24 * u + "px rgba(0,0,0,.6)"; }
+    // the end title
+    if (S.kick) KIT.pop(S.kick, g, S.kickAt);
+    S.lines.forEach(function (d, i) {
+      KIT.reveal(d, RC.progress(g, S.lineAt[i] - (d._hasKey ? 0.05 : 0), 0.32, "smooth"));
+      if (d._hasKey) d._spans.forEach(function (sp) { if (sp._key) KIT.ignite(sp, g, S.keyAt, A, u, 0.35); else sp.style.color = KIT.BONE; });
+      else KIT.ignite(d, g, S.lineAt[i], A, u);
+    });
+    S.cap.render(g);
+    // with loop: the title lifts out the way the hook leaves, before the camera lands on the opening shot
+    var out = P.loop ? RC.progress(g, S.loopAt, 0.45, "ease-in") : 0;
+    RC.set(S.title, { y: -90 * u * out, opacity: 1 - out, blur: 14 * out });
+  },
+});
+</script>
+</body>
+</html>

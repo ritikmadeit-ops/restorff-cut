@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/stitched-text-draw); fictional.",
+  "text": "SEWN 24",
+  "stitch": "coarse",
+  "accent": "violet",
+  "exit": "none",
+  "speed": 1
+}

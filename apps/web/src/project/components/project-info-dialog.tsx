@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import type { TProjectMetadata } from "@/project/types";
 import { formatDate } from "@/utils/date";
-import { formatTimecode, mediaTimeToSeconds } from "opencut-wasm";
+import { formatTimecode, mediaTimeToSeconds } from "restorffcut-wasm";
 import { Button } from "@/components/ui/button";
 
 function InfoRow({

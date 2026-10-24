@@ -1,0 +1,275 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/titlecard-calm@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html
+  lang="en"
+  data-composition-id="titlecard-calm"
+  data-composition-duration="4"
+  data-composition-variables='[
+    { "id": "headline", "type": "string", "role": "content", "label": "Headline", "description": "Primary title displayed in the card.", "default": "Less, but better" },
+    { "id": "kicker", "type": "string", "role": "content", "label": "Kicker", "description": "Small uppercase label displayed above the headline.", "default": "DESIGN PRINCIPLE" }
+  ]'
+>
+<head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "titlecard-calm",
+  "title": "Titlecard Calm",
+  "description": "A restrained title card where a mono kicker and generous grotesque headline fade upward, drift almost imperceptibly, and exit cleanly. Imported from a HyperFrames component (hooks; provenance below).",
+  "duration": 4,
+  "size": [
+    1498,
+    670
+  ],
+  "fps": 30,
+  "tags": [
+    "hooks",
+    "motion-primitive",
+    "typography",
+    "title-card",
+    "calm",
+    "orient",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "headline": {
+      "type": "string",
+      "default": "Less, but better",
+      "label": "Headline",
+      "description": "Primary title displayed in the card.",
+      "required": true
+    },
+    "kicker": {
+      "type": "string",
+      "default": "DESIGN PRINCIPLE",
+      "label": "Kicker",
+      "description": "Small uppercase label displayed above the headline."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1498x670 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "headline": "headline",
+      "kicker": "kicker"
+    },
+    "width": 1498,
+    "height": 670,
+    "mode": "mount",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/titlecard-calm",
+    "path": "registry/components/titlecard-calm",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+
+
+
+
+</head>
+<body>
+<div id="rc-hf-host" data-composition-id="titlecard-calm" data-start="0" data-duration="4" data-width="1498" data-height="670" style="position:absolute;left:0;top:0;width:1498px;height:670px">
+
+      <div id="root" data-composition-id="titlecard-calm" data-duration="4" data-fps="30">
+        <style>
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+
+          #root {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            container-type: size;
+            isolation: isolate;
+            color: var(--fg, #f7f7f2);
+            font-family: var(--font-display, "Helvetica Neue", Helvetica, Arial, sans-serif);
+            pointer-events: none;
+          }
+
+          .tc-clip {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+          }
+
+          .tc-lockup {
+            display: flex;
+            width: 78cqw;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6cqh;
+            transform-origin: 50% 50%;
+            
+          }
+
+          .tc-kicker {
+            display: block;
+            width: 100%;
+            color: var(--muted, #b8c0cc);
+            font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+            font-size: 3.2cqmin;
+            font-weight: 600;
+            line-height: 1;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            
+          }
+
+          .tc-headline {
+            display: block;
+            width: 100%;
+            color: var(--fg, #f7f7f2);
+            font-family: var(--font-display, "Helvetica Neue", Helvetica, Arial, sans-serif);
+            font-size: 17cqmin;
+            font-weight: 600;
+            line-height: 0.94;
+            letter-spacing: -0.055em;
+            overflow-wrap: anywhere;
+            text-wrap: balance;
+            
+          }
+        </style>
+
+        <div
+          id="titlecard-calm-clip"
+          class="tc-clip clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="0"
+        >
+          <div class="tc-lockup">
+            <span class="tc-kicker"></span>
+            <span class="tc-headline"></span>
+          </div>
+        </div>
+
+        
+        <script type="text/x-rc-deferred">
+          (function () {
+            "use strict";
+
+            var root = document.getElementById("root");
+            var lockup = root.querySelector(".tc-lockup");
+            var kicker = root.querySelector(".tc-kicker");
+            var headline = root.querySelector(".tc-headline");
+            var vars =
+              window.__hyperframes && window.__hyperframes.getVariables
+                ? window.__hyperframes.getVariables()
+                : {};
+
+            var headlineText = vars.headline == null ? "Less, but better" : String(vars.headline);
+            var kickerText = vars.kicker == null ? "DESIGN PRINCIPLE" : String(vars.kicker);
+
+            headline.textContent = headlineText;
+            kicker.textContent = kickerText;
+
+            var IN_BASE = 1.2;
+            var OUT_BASE = 0.55;
+            var parsedDuration = Number.parseFloat(root.dataset.duration);
+            var duration = Number.isFinite(parsedDuration) ? Math.max(0.001, parsedDuration) : 4;
+            var totalBase = IN_BASE + OUT_BASE;
+            var phaseScale = duration < totalBase ? duration / totalBase : 1;
+            var IN = IN_BASE * phaseScale;
+            var OUT = OUT_BASE * phaseScale;
+            var HOLD = Math.max(0, duration - IN - OUT);
+            var HOLD_START = IN;
+            var OUT_START = IN + HOLD;
+            var KICKER_IN = 0.5 * phaseScale;
+            var HEADLINE_AT = 0.28 * phaseScale;
+            var HEADLINE_IN = 0.72 * phaseScale;
+
+            gsap.set(lockup, { opacity: 1, y: "0cqh" });
+
+            var tl = gsap.timeline({ paused: true });
+
+            tl.fromTo(
+              kicker,
+              { opacity: 0, y: "2.2cqh" },
+              { opacity: 1, y: "0cqh", duration: KICKER_IN, ease: "power2.out" },
+              0,
+            );
+            tl.fromTo(
+              headline,
+              { opacity: 0, y: "3.2cqh" },
+              { opacity: 1, y: "0cqh", duration: HEADLINE_IN, ease: "power3.out" },
+              HEADLINE_AT,
+            );
+
+            if (HOLD > 0) {
+              tl.to(lockup, { y: "-0.65cqh", duration: HOLD, ease: "sine.inOut" }, HOLD_START);
+            }
+
+            tl.to(
+              lockup,
+              { opacity: 0, y: "-2.1cqh", duration: OUT, ease: "power2.in" },
+              OUT_START,
+            );
+
+            tl.seek(0);
+            window.__timelines = window.__timelines || {};
+            window.__timelines["titlecard-calm"] = tl;
+          })();
+        </script>
+      </div>
+    
+</div>
+<script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/trust-strip); fictional.",
+  "marks": "NORTHWIND,ACME CORP,GLOBEX,INITECH,UMBRA",
+  "tone": "muted",
+  "cues": "",
+  "accent": "green",
+  "exit": "none",
+  "speed": 1
+}

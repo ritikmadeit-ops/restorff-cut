@@ -1,0 +1,68 @@
+{
+  "composition": "chart-grow",
+  "source": "compositions/chart-grow/chart-grow.html",
+  "renderer": "@restorffcut/compositions 0.1.0",
+  "chrome": "HeadlessChrome/153.0.8010.12",
+  "out": "samples/chart-grow.webm",
+  "format": "webm",
+  "frames": 120,
+  "fps": 30,
+  "duration": 4,
+  "width": 1080,
+  "height": 1920,
+  "ms": {
+    "total": 3752,
+    "load": 240,
+    "capture": 3512
+  },
+  "secondsPerSecond": 0.94,
+  "workers": 4,
+  "bytes": 452121,
+  "inputHash": "58db89cf02286a752bf86dda8697faf79ba75f2ff375f763111cabc789c530f8",
+  "framesHash": "29118143ada7b91312416d1129412eb973eb8b9e8c9f294c8e489b299630b38d",
+  "params": {
+    "title": "CANS SOLD PER WEEK",
+    "bars": [
+      {
+        "label": "W1",
+        "value": 1.2
+      },
+      {
+        "label": "W2",
+        "value": 2.9
+      },
+      {
+        "label": "W3",
+        "value": 4.1
+      },
+      {
+        "label": "W4",
+        "value": 7.8
+      },
+      {
+        "label": "W5",
+        "value": 12.4
+      }
+    ],
+    "prefix": "",
+    "suffix": "k",
+    "decimals": 1,
+    "highlight": -1,
+    "style": "bars",
+    "callout": "↗ 10x in 5 weeks",
+    "source": "Halcyon sales dashboard, weeks 1-5 (fictional)",
+    "accent": "#F6FF00",
+    "stagger": 0.14,
+    "card": true,
+    "scale": 1,
+    "speed": 1,
+    "ease": "snappy",
+    "anchor": "center",
+    "offsetY": 0,
+    "exit": true
+  },
+  "sidecar": "samples/chart-grow.webm.json",
+  "crf": 31,
+  "warnings": [],
+  "renderedAt": "2026-10-19T22:59:28.786Z"
+}

@@ -1,0 +1,7 @@
+{
+  "$comment": "Old paper as a background sheet (put collage pieces above it). For the overlay look over footage: mode overlay.",
+  "mode": "background",
+  "kind": "old",
+  "amount": 0.6,
+  "folds": false
+}

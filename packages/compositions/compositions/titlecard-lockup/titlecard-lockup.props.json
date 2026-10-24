@@ -1,0 +1,10 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/titlecard-lockup); fictional.",
+  "wordmark": "NORTH",
+  "label": "SECURE AGENTS PLATFORM",
+  "kicker": "MEET",
+  "rule": "show",
+  "accent": "green",
+  "exit": "none",
+  "speed": 1
+}

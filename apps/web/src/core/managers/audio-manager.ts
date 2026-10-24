@@ -20,6 +20,11 @@ import {
 	Input,
 	type WrappedAudioBuffer,
 } from "mediabunny";
+import {
+	type AudioCrossfade,
+	crossfadeAutomation,
+	planAudioCrossfades,
+} from "@/transitions/audio-crossfade";
 
 export class AudioManager {
 	private audioContext: AudioContext | null = null;
@@ -45,6 +50,13 @@ export class AudioManager {
 	private lastVolume = 1;
 	private playbackLatencyCompensationSeconds = 0;
 	private unsubscribers: Array<() => void> = [];
+	/**
+	 * RestorffCut (polish, 2026-10-20): audio crossfades under picture transitions, by element id — the same plan the
+	 * export mix uses (transitions/audio-crossfade.ts). A faded clip plays into its handles and goes through one fade
+	 * GainNode per scheduling run.
+	 */
+	private crossfades = new Map<string, AudioCrossfade>();
+	private fadeNodes = new Set<GainNode>();
 
 	constructor(private editor: EditorCore) {
 		this.lastVolume = this.editor.playback.getVolume();
@@ -165,6 +177,13 @@ export class AudioManager {
 		}
 
 		this.clips = await collectAudioClips({ tracks, mediaAssets });
+		const audibleIds = new Set(
+			this.clips.filter((clip) => !clip.muted).map((clip) => clip.id),
+		);
+		this.crossfades = planAudioCrossfades({
+			tracks,
+			isAudible: (id) => audibleIds.has(id),
+		});
 		if (!this.editor.playback.getIsPlaying()) return;
 
 		this.playbackStartTime = time;
@@ -189,9 +208,9 @@ export class AudioManager {
 			if (clip.muted) continue;
 			if (this.activeClipIds.has(clip.id)) continue;
 
-			const clipEnd = clip.startTime + clip.duration;
+			const { start: clipStart, end: clipEnd } = this.getAudibleSpan({ clip });
 			if (clipEnd <= currentTime) continue;
-			if (clip.startTime > windowEnd) continue;
+			if (clipStart > windowEnd) continue;
 
 			this.activeClipIds.add(clip.id);
 			if (this.shouldUsePreparedClipBuffer({ clip })) {
@@ -229,6 +248,65 @@ export class AudioManager {
 			source.disconnect();
 		}
 		this.queuedSources.clear();
+
+		for (const node of this.fadeNodes) {
+			node.disconnect();
+		}
+		this.fadeNodes.clear();
+	}
+
+	/** Timeline span a clip is heard over: its own span plus the handles a crossfade plays (seconds). */
+	private getAudibleSpan({ clip }: { clip: AudioClipSource }): {
+		start: number;
+		end: number;
+		extendBefore: number;
+		extendAfter: number;
+	} {
+		const fade = this.crossfades.get(clip.id);
+		const extendBefore = fade?.extendBefore ?? 0;
+		const extendAfter = fade?.extendAfter ?? 0;
+		return {
+			start: clip.startTime - extendBefore,
+			end: clip.startTime + clip.duration + extendAfter,
+			extendBefore,
+			extendAfter,
+		};
+	}
+
+	/**
+	 * Where a clip's audio goes: the master, or (under a transition) a fade GainNode carrying the equal-power
+	 * envelope from `fromTimelineTime` on, as linear ramps between points of the curve.
+	 */
+	private connectClipOutput({
+		audioContext,
+		clip,
+		fromTimelineTime,
+	}: {
+		audioContext: AudioContext;
+		clip: AudioClipSource;
+		fromTimelineTime: number;
+	}): AudioNode {
+		const destination = this.masterGain ?? audioContext.destination;
+		const fade = this.crossfades.get(clip.id);
+		if (!fade) return destination;
+
+		const node = audioContext.createGain();
+		node.connect(destination);
+		this.fadeNodes.add(node);
+		const toContextTime = (timelineTime: number) =>
+			this.playbackStartContextTime +
+			this.playbackLatencyCompensationSeconds +
+			(timelineTime - this.playbackStartTime);
+		const points = crossfadeAutomation(fade, fromTimelineTime);
+		const now = audioContext.currentTime;
+		node.gain.value = points[0].gain;
+		node.gain.setValueAtTime(points[0].gain, Math.max(now, toContextTime(points[0].t)));
+		for (const point of points.slice(1)) {
+			const at = toContextTime(point.t);
+			if (at <= now) continue;
+			node.gain.linearRampToValueAtTime(point.gain, at);
+		}
+		return node;
 	}
 
 	private async runClipIterator({
@@ -247,8 +325,8 @@ export class AudioManager {
 		if (!sink || !this.editor.playback.getIsPlaying()) return;
 		if (sessionId !== this.playbackSessionId) return;
 
-		const clipStart = clip.startTime;
-		const clipEnd = clip.startTime + clip.duration;
+		// RestorffCut: under a transition the span reaches into the clip's handles (getAudibleSpan).
+		const { start: clipStart, end: clipEnd } = this.getAudibleSpan({ clip });
 		const playbackTimeAfterSinkReady = this.getPlaybackTime();
 		const iteratorStartTime = Math.max(
 			startTime,
@@ -258,16 +336,23 @@ export class AudioManager {
 		if (iteratorStartTime >= clipEnd) {
 			return;
 		}
-		const sourceStartTime =
+		const sourceStartTime = Math.max(
+			0,
 			clip.trimStart +
-			getSourceTimeAtClipTime({
-				clipTime: iteratorStartTime - clip.startTime,
-				retime: clip.retime,
-			});
+				getSourceTimeAtClipTime({
+					clipTime: iteratorStartTime - clip.startTime,
+					retime: clip.retime,
+				}),
+		);
 
 		const iterator = sink.buffers(sourceStartTime);
 		this.clipIterators.set(clip.id, iterator);
 		let consecutiveDroppedBufferCount = 0;
+		const clipOutput = this.connectClipOutput({
+			audioContext,
+			clip,
+			fromTimelineTime: iteratorStartTime,
+		});
 
 		for await (const { buffer, timestamp } of iterator) {
 			if (!this.editor.playback.getIsPlaying()) return;
@@ -289,7 +374,7 @@ export class AudioManager {
 			const clipGain = audioContext.createGain();
 			clipGain.gain.value = clip.volume;
 			node.connect(clipGain);
-			clipGain.connect(this.masterGain ?? audioContext.destination);
+			clipGain.connect(clipOutput);
 
 			const startTimestamp =
 				this.playbackStartContextTime +
@@ -365,8 +450,11 @@ export class AudioManager {
 		if (!buffer || !this.editor.playback.getIsPlaying()) return;
 		if (sessionId !== this.playbackSessionId) return;
 
-		const clipStart = clip.startTime;
-		const clipEnd = clip.startTime + clip.duration;
+		// RestorffCut: the prepared buffer includes the crossfade handles (getPreparedClipBuffer), so it starts
+		// `extendBefore` s before the clip.
+		const { start: clipStart, end: clipEnd, extendBefore } = this.getAudibleSpan({
+			clip,
+		});
 		const playbackTimeAfterReady = this.getPlaybackTime();
 		const effectiveStartTime = Math.max(
 			startTime,
@@ -380,8 +468,15 @@ export class AudioManager {
 		const node = audioContext.createBufferSource();
 		node.buffer = buffer;
 		const clipGain = audioContext.createGain();
+		clipGain.gain.value = clip.volume;
 		node.connect(clipGain);
-		clipGain.connect(this.masterGain ?? audioContext.destination);
+		clipGain.connect(
+			this.connectClipOutput({
+				audioContext,
+				clip,
+				fromTimelineTime: effectiveStartTime,
+			}),
+		);
 
 		const startTimestamp =
 			this.playbackStartContextTime +
@@ -400,12 +495,14 @@ export class AudioManager {
 			node.start(actualStartTimestamp, actualClipOffset);
 		}
 
+		// Volume automation runs in clip-local time; the buffer offset includes the head handle.
+		const handleLeft = Math.max(0, extendBefore - actualClipOffset);
 		this.scheduleClipGainAutomation({
 			audioContext,
 			clip,
 			clipGain,
-			startTimestamp: actualStartTimestamp,
-			startLocalTime: actualClipOffset,
+			startTimestamp: actualStartTimestamp + handleLeft,
+			startLocalTime: Math.max(0, actualClipOffset - extendBefore),
 		});
 
 		this.queuedSources.add(node);
@@ -522,6 +619,7 @@ export class AudioManager {
 	}: {
 		clip: AudioClipSource;
 	}): string {
+		const { extendBefore, extendAfter } = this.getAudibleSpan({ clip });
 		return JSON.stringify({
 			id: clip.id,
 			sourceKey: clip.sourceKey,
@@ -530,6 +628,8 @@ export class AudioManager {
 			trimStart: clip.trimStart,
 			trimEnd: clip.trimEnd,
 			retime: clip.retime ?? null,
+			extendBefore,
+			extendAfter,
 		});
 	}
 
@@ -555,14 +655,23 @@ export class AudioManager {
 				return null;
 			}
 
-			return await renderRetimedBuffer({
-				audioContext,
-				sourceBuffer: decodedBuffer,
-				trimStart: clip.trimStart,
-				clipDuration: clip.duration,
-				retime: clip.retime,
-				maintainPitch: clip.retime?.maintainPitch === true,
-			});
+			// RestorffCut: include the crossfade handles (only planned for rate-1 clips, so source = clip time).
+			const { extendBefore, extendAfter } = this.getAudibleSpan({ clip });
+			try {
+				return await renderRetimedBuffer({
+					audioContext,
+					sourceBuffer: decodedBuffer,
+					trimStart: clip.trimStart - extendBefore,
+					clipDuration: clip.duration + extendBefore + extendAfter,
+					retime: clip.retime,
+					maintainPitch: clip.retime?.maintainPitch === true,
+				});
+			} catch (error) {
+				// RestorffCut (ui-fix-render, QA #5): one clip that cannot be prepared is skipped with its reason, not an
+				// unhandled rejection from the scheduler.
+				console.warn(`[audio] clip ${clip.id} (${clip.timelineElement.name}) could not be prepared:`, error);
+				return null;
+			}
 		})();
 
 		this.preparedClipBuffers.set(cacheKey, promise);

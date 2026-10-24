@@ -3,15 +3,20 @@ import {
 	type AutomaticSpeechRecognitionPipeline,
 	type AutomaticSpeechRecognitionOutput,
 } from "@huggingface/transformers";
-import type { TranscriptionSegment } from "@/transcription/types";
+import type {
+	TranscriptionSegment,
+	TranscriptionWord,
+	WordTimingQuality,
+} from "@/transcription/types";
 import {
 	DEFAULT_CHUNK_LENGTH_SECONDS,
 	DEFAULT_STRIDE_SECONDS,
 } from "@/transcription/audio";
+import { normalizeWords, splitSegmentsIntoWords } from "@/transcription/words";
 
 export type WorkerMessage =
 	| { type: "init"; modelId: string }
-	| { type: "transcribe"; audio: Float32Array; language: string }
+	| { type: "transcribe"; audio: Float32Array; language: string; words?: boolean }
 	| { type: "cancel" };
 
 export type WorkerResponse =
@@ -23,6 +28,8 @@ export type WorkerResponse =
 			type: "transcribe-complete";
 			text: string;
 			segments: TranscriptionSegment[];
+			words?: TranscriptionWord[];
+			wordTimings?: WordTimingQuality;
 	  }
 	| { type: "transcribe-error"; error: string }
 	| { type: "cancelled" };
@@ -43,6 +50,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 			await handleTranscribe({
 				audio: message.audio,
 				language: message.language,
+				words: message.words ?? false,
 			});
 			break;
 		case "cancel":
@@ -116,12 +124,73 @@ async function handleInit({ modelId }: { modelId: string }) {
 	}
 }
 
-async function handleTranscribe({
+type Chunks = NonNullable<AutomaticSpeechRecognitionOutput["chunks"]>;
+
+function chunksToTimed(chunks: Chunks | undefined): TranscriptionSegment[] {
+	const timed: TranscriptionSegment[] = [];
+	for (const chunk of chunks ?? []) {
+		if (chunk.timestamp && chunk.timestamp.length >= 2) {
+			const start = chunk.timestamp[0] ?? 0;
+			timed.push({
+				text: chunk.text,
+				start,
+				end: chunk.timestamp[1] ?? start,
+			});
+		}
+	}
+	return timed;
+}
+
+async function run({
 	audio,
 	language,
+	timestamps,
 }: {
 	audio: Float32Array;
 	language: string;
+	timestamps: true | "word";
+}): Promise<AutomaticSpeechRecognitionOutput> {
+	if (!transcriber) throw new Error("Model not initialized");
+	const rawResult = await transcriber(audio, {
+		chunk_length_s: DEFAULT_CHUNK_LENGTH_SECONDS,
+		stride_length_s: DEFAULT_STRIDE_SECONDS,
+		language: language === "auto" ? undefined : language,
+		return_timestamps: timestamps,
+	});
+	return Array.isArray(rawResult) ? rawResult[0] : rawResult;
+}
+
+/** Sentence-ish segments rebuilt from words (for callers that read `segments`). */
+function segmentsFromWords(words: TranscriptionWord[]): TranscriptionSegment[] {
+	const segments: TranscriptionSegment[] = [];
+	let current: TranscriptionWord[] = [];
+	const flush = () => {
+		if (!current.length) return;
+		segments.push({
+			text: current.map((word) => word.text).join(" "),
+			start: current[0].start,
+			end: current[current.length - 1].end,
+		});
+		current = [];
+	};
+	words.forEach((word, index) => {
+		const previous = words[index - 1];
+		if (previous && word.start - previous.end > 0.8) flush();
+		current.push(word);
+		if (/[.!?]$/.test(word.text)) flush();
+	});
+	flush();
+	return segments;
+}
+
+async function handleTranscribe({
+	audio,
+	language,
+	words,
+}: {
+	audio: Float32Array;
+	language: string;
+	words: boolean;
 }) {
 	if (!transcriber) {
 		self.postMessage({
@@ -134,37 +203,43 @@ async function handleTranscribe({
 	cancelled = false;
 
 	try {
-		const rawResult = await transcriber(audio, {
-			chunk_length_s: DEFAULT_CHUNK_LENGTH_SECONDS,
-			stride_length_s: DEFAULT_STRIDE_SECONDS,
-			language: language === "auto" ? undefined : language,
-			return_timestamps: true,
-		});
-
-		if (cancelled) return;
-
-		const result: AutomaticSpeechRecognitionOutput = Array.isArray(rawResult)
-			? rawResult[0]
-			: rawResult;
-
-		const segments: TranscriptionSegment[] = [];
-
-		if (result.chunks) {
-			for (const chunk of result.chunks) {
-				if (chunk.timestamp && chunk.timestamp.length >= 2) {
-					segments.push({
-						text: chunk.text,
-						start: chunk.timestamp[0] ?? 0,
-						end: chunk.timestamp[1] ?? chunk.timestamp[0] ?? 0,
-					});
+		if (words) {
+			// Word-level timestamps need a model exported with cross-attentions; if this one can't, fall back to
+			// segment timings split across the words (marked approximate).
+			try {
+				const result = await run({ audio, language, timestamps: "word" });
+				if (cancelled) return;
+				const exact = normalizeWords({ words: chunksToTimed(result.chunks) });
+				if (exact.length) {
+					self.postMessage({
+						type: "transcribe-complete",
+						text: result.text,
+						segments: segmentsFromWords(exact),
+						words: exact,
+						wordTimings: "exact",
+					} satisfies WorkerResponse);
+					return;
 				}
+			} catch (error) {
+				if (cancelled) return;
+				console.warn("word timestamps unavailable, using segment timings:", error);
 			}
 		}
+
+		const result = await run({ audio, language, timestamps: true });
+		if (cancelled) return;
+		const segments = chunksToTimed(result.chunks);
 
 		self.postMessage({
 			type: "transcribe-complete",
 			text: result.text,
 			segments,
+			...(words
+				? {
+						words: normalizeWords({ words: splitSegmentsIntoWords({ segments }) }),
+						wordTimings: "approximate" as const,
+					}
+				: {}),
 		} satisfies WorkerResponse);
 	} catch (error) {
 		if (cancelled) return;

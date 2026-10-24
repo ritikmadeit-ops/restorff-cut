@@ -29,7 +29,7 @@ const tooltipVariants = cva(
 					"bg-purple-100/90 text-purple-900 dark:bg-purple-900/20 dark:text-purple-300 border-purple-900 [border-width:0.5px]",
 				forums:
 					"bg-blue-100/90 text-blue-900 dark:bg-blue-900/20 dark:text-blue-300 border-blue-900 [border-width:0.5px]",
-				sidebar: "bg-white dark:bg-[#413F3E] p-2.5 flex flex-col gap-2",
+				sidebar: "bg-raised border border-line p-2.5 flex flex-col gap-2",
 			},
 		},
 		defaultVariants: {
@@ -64,7 +64,7 @@ const TooltipContent = React.forwardRef<
 			>
 				<path
 					d="M6 0L0 5L6 10V0Z"
-					className="fill-white/80 dark:fill-[#413F3E]"
+					className="fill-raised"
 				/>
 			</svg>
 		)}

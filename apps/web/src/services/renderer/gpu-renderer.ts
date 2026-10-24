@@ -2,7 +2,7 @@ import {
 	applyEffectPasses,
 	applyMaskFeather as applyMaskFeatherWasm,
 	initializeGpu,
-} from "opencut-wasm";
+} from "restorffcut-wasm";
 import type { EffectPass, EffectUniformValue } from "@/effects/types";
 
 let gpuAvailable = false;

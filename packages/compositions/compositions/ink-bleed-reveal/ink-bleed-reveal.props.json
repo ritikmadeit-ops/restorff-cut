@@ -1,0 +1,7 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/ink-bleed-reveal); fictional.",
+  "blobs": 6,
+  "accent": "blue",
+  "exit": "none",
+  "speed": 1
+}

@@ -1,0 +1,7 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew): a slow mesh gradient in Halcyon's palette (espresso, roast, crema, Halcyon yellow) behind an end card.",
+  "look": "mesh-aurora",
+  "colors": ["#120F0D", "#3A2A20", "#C8A27A", "#F6FF00", "#120F0D"],
+  "seed": 7,
+  "speed": 0.8
+}

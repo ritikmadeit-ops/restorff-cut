@@ -1,0 +1,65 @@
+{
+  "composition": "headline-wall",
+  "source": "compositions/headline-wall/headline-wall.html",
+  "renderer": "@restorffcut/compositions 0.1.0",
+  "chrome": "HeadlessChrome/153.0.8010.12",
+  "out": "samples/headline-wall.webm",
+  "format": "webm",
+  "frames": 120,
+  "fps": 30,
+  "duration": 4,
+  "width": 1080,
+  "height": 1920,
+  "ms": {
+    "total": 6799,
+    "load": 248,
+    "capture": 6552
+  },
+  "secondsPerSecond": 1.7,
+  "workers": 4,
+  "bytes": 1698198,
+  "inputHash": "c663bd92499ebf30351acb10e66fcb6b3cc949ca1c8be5b335c21502c6ab8acc",
+  "framesHash": "5e41a6a31cc0ffcf595c37140266cd6b1ec64c545afabcc35851b86a32d7873c",
+  "params": {
+    "headlines": [
+      {
+        "source": "GRINDSTONE GAZETTE",
+        "headline": "Halcyon's third drop sells out in 40 minutes",
+        "date": "OCT 2026"
+      },
+      {
+        "source": "BREW WEEKLY",
+        "headline": "The 12-hour cold brew people queue for",
+        "date": "SEP 2026"
+      },
+      {
+        "source": "THE MORNING LEDGER",
+        "headline": "Small-batch coffee goes big, without the sugar",
+        "date": "AUG 2026"
+      },
+      {
+        "source": "CAFFEINE QUARTERLY",
+        "headline": "Why Halcyon steeps longer than anyone else",
+        "date": "JUL 2026"
+      }
+    ],
+    "highlight": -1,
+    "accent": "#F6FF00",
+    "paper": "#EDEBE6",
+    "ink": "#0C0C0E",
+    "fan": 6,
+    "stagger": 0.12,
+    "push": true,
+    "seed": 7,
+    "scale": 1,
+    "speed": 1,
+    "ease": "springy",
+    "anchor": "center",
+    "offsetY": 0,
+    "exit": true
+  },
+  "sidecar": "samples/headline-wall.webm.json",
+  "crf": 43,
+  "warnings": [],
+  "renderedAt": "2026-10-19T23:00:04.686Z"
+}

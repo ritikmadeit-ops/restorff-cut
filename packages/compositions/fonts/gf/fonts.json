@@ -1,0 +1,287 @@
+{
+  "anton": {
+    "family": "Anton",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/anton-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "Anton",
+        "style": "normal",
+        "weight": "400",
+        "file": "gf/anton-normal-400.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 18612
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "archivo black": {
+    "family": "Archivo Black",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/archivoblack-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "Archivo Black",
+        "style": "normal",
+        "weight": "400",
+        "file": "gf/archivoblack-normal-400.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 18604
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "caveat": {
+    "family": "Caveat",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/caveat-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "Caveat",
+        "style": "normal",
+        "weight": "400 700",
+        "file": "gf/caveat-normal-400-700.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 74932
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "courier prime": {
+    "family": "Courier Prime",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/courierprime-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "Courier Prime",
+        "style": "italic",
+        "weight": "400",
+        "file": "gf/courierprime-italic-400.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 21556
+      },
+      {
+        "family": "Courier Prime",
+        "style": "italic",
+        "weight": "700",
+        "file": "gf/courierprime-italic-700.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 21980
+      },
+      {
+        "family": "Courier Prime",
+        "style": "normal",
+        "weight": "400",
+        "file": "gf/courierprime-normal-400.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 18640
+      },
+      {
+        "family": "Courier Prime",
+        "style": "normal",
+        "weight": "700",
+        "file": "gf/courierprime-normal-700.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 19348
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "dm sans": {
+    "family": "DM Sans",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/dmsans-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "DM Sans",
+        "style": "italic",
+        "weight": "100 1000",
+        "file": "gf/dmsans-italic-100-1000.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 39712
+      },
+      {
+        "family": "DM Sans",
+        "style": "normal",
+        "weight": "100 1000",
+        "file": "gf/dmsans-normal-100-1000.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 36932
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "geist": {
+    "family": "Geist",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/geist-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "Geist",
+        "style": "italic",
+        "weight": "100 900",
+        "file": "gf/geist-italic-100-900.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 31008
+      },
+      {
+        "family": "Geist",
+        "style": "normal",
+        "weight": "100 900",
+        "file": "gf/geist-normal-100-900.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 29400
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "inter": {
+    "family": "Inter",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/inter-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "Inter",
+        "style": "italic",
+        "weight": "100 900",
+        "file": "gf/inter-italic-100-900.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 51832
+      },
+      {
+        "family": "Inter",
+        "style": "normal",
+        "weight": "100 900",
+        "file": "gf/inter-normal-100-900.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 48256
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "league gothic": {
+    "family": "League Gothic",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/leaguegothic-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "League Gothic",
+        "style": "normal",
+        "weight": "400",
+        "stretch": "100%",
+        "file": "gf/leaguegothic-normal-400-100.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 10436
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "montserrat": {
+    "family": "Montserrat",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/montserrat-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "Montserrat",
+        "style": "italic",
+        "weight": "100 900",
+        "file": "gf/montserrat-italic-100-900.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 39632
+      },
+      {
+        "family": "Montserrat",
+        "style": "normal",
+        "weight": "100 900",
+        "file": "gf/montserrat-normal-100-900.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 37956
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "oswald": {
+    "family": "Oswald",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/oswald-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "Oswald",
+        "style": "normal",
+        "weight": "200 700",
+        "file": "gf/oswald-normal-200-700.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 28488
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "permanent marker": {
+    "family": "Permanent Marker",
+    "licence": "Apache-2.0",
+    "licenceFile": "gf/permanentmarker-LICENSE.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "Permanent Marker",
+        "style": "normal",
+        "weight": "400",
+        "file": "gf/permanentmarker-normal-400.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 29564
+      }
+    ],
+    "fetched": "2026-10-24"
+  },
+  "space mono": {
+    "family": "Space Mono",
+    "licence": "OFL-1.1",
+    "licenceFile": "gf/spacemono-OFL.txt",
+    "source": "Google Fonts (fonts.google.com), latin subset",
+    "faces": [
+      {
+        "family": "Space Mono",
+        "style": "italic",
+        "weight": "400",
+        "file": "gf/spacemono-italic-400.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 18300
+      },
+      {
+        "family": "Space Mono",
+        "style": "italic",
+        "weight": "700",
+        "file": "gf/spacemono-italic-700.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 18640
+      },
+      {
+        "family": "Space Mono",
+        "style": "normal",
+        "weight": "400",
+        "file": "gf/spacemono-normal-400.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 16520
+      },
+      {
+        "family": "Space Mono",
+        "style": "normal",
+        "weight": "700",
+        "file": "gf/spacemono-normal-700.woff2",
+        "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+        "bytes": 16724
+      }
+    ],
+    "fetched": "2026-10-24"
+  }
+}

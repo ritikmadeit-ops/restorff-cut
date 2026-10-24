@@ -1,0 +1,8 @@
+{
+  "$comment": "Example values from the upstream item (HyperFrames registry/components/agent-cursor); fictional.",
+  "agentName": "Agent",
+  "steps": "Reading the page,Opening Settings,Turning on backups,Done",
+  "targets": "24.8,47.6;76.1,30.2",
+  "accent": "#0a84ff",
+  "speed": 1
+}

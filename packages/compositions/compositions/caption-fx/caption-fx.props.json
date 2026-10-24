@@ -1,0 +1,16 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew). Word timings would come from the word-timed transcript of the A-roll; these are hand-written. Try --set style=karaoke, marker (swipes the keywords), redact, scramble, blur-in or bounce-in.",
+  "style": "highlight-box",
+  "keywords": ["eighteen", "minute"],
+  "words": [
+    { "text": "Cold", "start": 0.1, "end": 0.38 },
+    { "text": "brew", "start": 0.38, "end": 0.7 },
+    { "text": "that", "start": 0.7, "end": 0.86 },
+    { "text": "takes", "start": 0.86, "end": 1.2 },
+    { "text": "eighteen", "start": 1.2, "end": 1.62 },
+    { "text": "hours.", "start": 1.62, "end": 2.1 },
+    { "text": "Worth", "start": 2.4, "end": 2.7 },
+    { "text": "every", "start": 2.7, "end": 2.95 },
+    { "text": "minute.", "start": 2.95, "end": 3.5 }
+  ]
+}

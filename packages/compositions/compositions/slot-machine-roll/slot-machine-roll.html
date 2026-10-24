@@ -1,0 +1,351 @@
+<!doctype html>
+<!-- Adapted from HyperFrames (Apache-2.0) registry/components/slot-machine-roll@0e4a0ff; modified (RestorffCut fx-sync 0.1.0: params block, injected libraries instead of CDN scripts, deferred inline scripts, localised fonts, determinism fixes). Copyright 2026 HeyGen, Inc. -->
+<html lang="en">
+  <head>
+<meta charset="utf-8">
+<!-- rc-lib gsap -->
+<!-- rc-kit -->
+<script type="application/json" id="params">
+{
+  "name": "slot-machine-roll",
+  "title": "Slot Machine Roll",
+  "description": "A vertical reel scrolls characters from one value to another. Imported from a HyperFrames component (data; provenance below).",
+  "duration": 5,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "tags": [
+    "data",
+    "video-primitive",
+    "motion-primitive",
+    "typography",
+    "imported",
+    "hyperframes"
+  ],
+  "kit": "hf-compat",
+  "params": {
+    "result": {
+      "type": "string",
+      "default": "A7K",
+      "label": "Result",
+      "description": "Characters the reels land on, one reel column per character. Whitespace is stripped and every reel starts on a zero.",
+      "required": true
+    },
+    "direction": {
+      "type": "enum",
+      "options": [
+        "up",
+        "down"
+      ],
+      "default": "up",
+      "label": "Direction",
+      "description": "Which way the reels roll: up lifts the zero out through the top, down drops it out through the bottom."
+    },
+    "size": {
+      "type": "enum",
+      "options": [
+        "small",
+        "standard",
+        "large"
+      ],
+      "default": "standard",
+      "label": "Size",
+      "description": "Reel height and type size. The roll distance scales with it so the reel always lands exactly one row on."
+    },
+    "tone": {
+      "type": "enum",
+      "options": [
+        "ink",
+        "paper",
+        "accent"
+      ],
+      "default": "ink",
+      "label": "Tone",
+      "description": "Character colour: ink for light frames, paper for dark ones, accent rides --brand."
+    },
+    "speed": {
+      "type": "number",
+      "default": 1,
+      "min": 0.25,
+      "max": 4,
+      "step": 0.01,
+      "unit": "x",
+      "label": "Speed",
+      "description": "Motion speed (the whole timeline runs faster or slower)."
+    },
+    "frameFit": {
+      "type": "enum",
+      "options": [
+        "contain",
+        "cover"
+      ],
+      "default": "contain",
+      "label": "Frame fit",
+      "description": "How the 1920x1080 design fills a render of another size: contain (all of it shows) or cover (fills, crops the edges)."
+    },
+    "backdrop": {
+      "type": "enum",
+      "options": [
+        "keep",
+        "transparent"
+      ],
+      "default": "transparent",
+      "label": "Backdrop",
+      "description": "keep = the design's own background (a full-frame scene); transparent = only the moving parts, over the footage."
+    },
+    "theme": {
+      "type": "enum",
+      "options": [
+        "none",
+        "restorff",
+        "bold",
+        "editorial",
+        "neutral"
+      ],
+      "default": "none",
+      "label": "Theme",
+      "description": "Design-token pack: none = the upstream look; restorff = our screen palette with one neon accent."
+    }
+  },
+  "hf": {
+    "vars": {
+      "result": "result",
+      "direction": "direction",
+      "size": "size",
+      "tone": "tone"
+    },
+    "width": 1920,
+    "height": 1080,
+    "mode": "demo",
+    "needsTimeline": true
+  },
+  "provenance": {
+    "source": "hyperframes",
+    "upstream": "components/slot-machine-roll",
+    "path": "registry/components/slot-machine-roll",
+    "commit": "0e4a0ffbabf6dfe1b45792ae0ca23bcc6f140331",
+    "licence": "Apache-2.0",
+    "repo": "https://github.com/heygen-com/hyperframes.git",
+    "tool": "fx-sync 0.1.0"
+  }
+}
+</script>
+<style data-rc-fonts>
+@font-face{font-family:"Inter";font-style:italic;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-italic-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:block;src:url("../../fonts/gf/inter-normal-100-900.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+</style>
+
+    
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Slot Machine Roll - Demo</title>
+    
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+      #demo {
+        width: 1920px;
+        height: 1080px;
+        display: grid;
+        place-items: center;
+        background: #f7f7f8;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      .demo-frame {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 32px;
+        /* ponytail: scale on non-GSAP wrapper — safe, GSAP only animates --hf-slot-y on inner <i> */
+        transform: scale(1.85);
+        transform-origin: center center;
+      }
+      .slot-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        background: #ffffff;
+        border: 1px solid #e4e4e7;
+        border-radius: 14px;
+        padding: 40px 56px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.1);
+      }
+      .slot-label {
+        font-family: Inter, system-ui, sans-serif;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #71717a;
+      }
+      .hf-catalog-slot-machine-roll {
+        color: #18181b;
+        font-family: Inter, system-ui, sans-serif;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+      }
+      .hf-catalog-slot-machine-roll {
+        display: inline-flex;
+        gap: 6px;
+        height: 74px;
+        overflow: hidden;
+        font:
+          900 74px/1 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+      }
+      .hf-catalog-slot-machine-roll span {
+        display: block;
+        height: 74px;
+        overflow: hidden;
+      }
+      .hf-catalog-slot-machine-roll i {
+        display: block;
+        font-style: normal;
+        transform: translateY(var(--hf-slot-y, 0px));
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="demo"
+      data-composition-id="slot-machine-roll-demo"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-duration="5"
+    >
+      <div class="demo-frame">
+        <div class="slot-card">
+          <div class="slot-label">Slot Machine Roll</div>
+          <div
+            class="hf-catalog-slot-machine-roll"
+            data-composition-variables='[
+    { "id": "result", "type": "string", "role": "content", "label": "Result", "description": "Characters the reels land on, one reel column per character. Whitespace is stripped and every reel starts on a zero.", "default": "A7K" },
+    { "id": "direction", "type": "enum", "role": "motion", "label": "Direction", "description": "Which way the reels roll: up lifts the zero out through the top, down drops it out through the bottom.", "default": "up", "options": [{ "value": "up", "label": "Up" }, { "value": "down", "label": "Down" }] },
+    { "id": "size", "type": "enum", "role": "layout", "label": "Size", "description": "Reel height and type size. The roll distance scales with it so the reel always lands exactly one row on.", "default": "standard", "options": [{ "value": "small", "label": "Small" }, { "value": "standard", "label": "Standard" }, { "value": "large", "label": "Large" }] },
+    { "id": "tone", "type": "enum", "role": "style", "label": "Tone", "description": "Character colour: ink for light frames, paper for dark ones, accent rides --brand.", "default": "ink", "options": [{ "value": "ink", "label": "Ink" }, { "value": "paper", "label": "Paper" }, { "value": "accent", "label": "Accent" }] }
+  ]'
+          >
+            <span
+              ><i>0<br />A</i></span
+            ><span
+              ><i>0<br />7</i></span
+            ><span
+              ><i>0<br />K</i></span
+            >
+          </div>
+        </div>
+      </div>
+      <script type="text/x-rc-deferred">
+        (function () {
+          "use strict";
+
+          var vars =
+            window.__hyperframes && window.__hyperframes.getVariables
+              ? window.__hyperframes.getVariables()
+              : {};
+
+          // Unrecognised overrides return to their declared defaults.
+          function pick(table, value, fallback) {
+            return Object.prototype.hasOwnProperty.call(table, value) ? value : fallback;
+          }
+
+          var directions = { up: 1, down: -1 };
+          var sizes = { small: 48, standard: 74, large: 104 };
+          var tones = {
+            ink: "#18181b",
+            paper: "#fafafa",
+            accent: "var(--brand, #34d399)",
+          };
+
+          var dir = directions[pick(directions, vars.direction, "up")];
+          var row = sizes[pick(sizes, vars.size, "standard")];
+          var tone = tones[pick(tones, vars.tone, "ink")];
+          var result = (typeof vars.result === "string" ? vars.result : "").replace(/\s+/g, "");
+          if (result.length === 0) result = "A7K";
+
+          var roots = document.querySelectorAll(".hf-catalog-slot-machine-roll");
+          for (var i = 0; i < roots.length; i += 1) {
+            var root = roots[i];
+            root.style.setProperty("--hf-slot-row", row + "px");
+            root.style.setProperty("--hf-slot-gain", String(row / 74));
+            root.style.setProperty("--hf-slot-dir", String(dir));
+            // Rolling down starts one row up, so the zero still sits in frame at rest.
+            root.style.setProperty("--hf-slot-base", (dir === 1 ? 0 : -row) + "px");
+            root.style.setProperty("--hf-slot-color", tone);
+            root.textContent = "";
+            for (var j = 0; j < result.length; j += 1) {
+              var reel = document.createElement("i");
+              reel.appendChild(document.createTextNode(dir === 1 ? "0" : result.charAt(j)));
+              reel.appendChild(document.createElement("br"));
+              reel.appendChild(document.createTextNode(dir === 1 ? result.charAt(j) : "0"));
+              var slot = document.createElement("span");
+              slot.appendChild(reel);
+              root.appendChild(slot);
+            }
+          }
+        })();
+      </script>
+      <script type="text/x-rc-deferred">
+        const tl = gsap.timeline({ paused: true });
+        const startTime = 0.5;
+        tl.fromTo(
+          ".hf-catalog-slot-machine-roll i",
+          { "--hf-slot-y": "0px" },
+          { "--hf-slot-y": "-74px", duration: 0.52, stagger: 0.06, ease: "power3.inOut" },
+          startTime,
+        );
+        tl.set({}, {}, 5);
+        window.__timelines = window.__timelines || {};
+        window.__timelines["slot-machine-roll-demo"] = tl;
+      </script>
+    </div>
+    <style>
+      .hf-catalog-slot-machine-roll {
+        color: var(--hf-slot-color, #18181b);
+        font-family: Inter, system-ui, sans-serif;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+      }
+      .hf-catalog-slot-machine-roll {
+        display: inline-flex;
+        gap: 6px;
+        height: var(--hf-slot-row, 74px);
+        overflow: hidden;
+        font:
+          900 var(--hf-slot-row, 74px)/1 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+      }
+      .hf-catalog-slot-machine-roll span {
+        display: block;
+        height: var(--hf-slot-row, 74px);
+        overflow: hidden;
+      }
+      .hf-catalog-slot-machine-roll i {
+        display: block;
+        font-style: normal;
+        transform: translateY(
+          calc(
+            var(--hf-slot-base, 0px) + var(--hf-slot-y, 0px) * var(--hf-slot-dir, 1) *
+              var(--hf-slot-gain, 1)
+          )
+        );
+      }
+    </style>
+  <script>RC.composition(RCHF.adapt());</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "$comment": "Fictional brand (Halcyon Cold Brew). Put tapAt on the word 'approve' in the voice-over.",
+  "appName": "Halcyon Assistant",
+  "request": "Reorder 2 cases of Oat Vanilla for Friday",
+  "answer": "Reorder ready: 2 cases · Oat Vanilla · delivered Fri",
+  "action": "Approve",
+  "done": "Approved",
+  "tapAt": 2.2,
+  "side": "right"
+}
